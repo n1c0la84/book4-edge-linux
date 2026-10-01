@@ -1,0 +1,14 @@
+[Unit]
+Description=Samsung Galaxy Book4 Edge keyboard backlight
+After=systemd-modules-load.service
+Before=upower.service
+ConditionPathExists=/sys/bus/platform/devices/b94000.i2c
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/book4-kbd-backlight-bind start
+ExecStop=/usr/local/sbin/book4-kbd-backlight-bind stop
+
+[Install]
+WantedBy=multi-user.target

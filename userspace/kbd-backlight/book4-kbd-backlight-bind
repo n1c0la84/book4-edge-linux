@@ -1,0 +1,23 @@
+#!/bin/bash
+# Bind the Galaxy Book4 Edge keyboard backlight driver to the EC's raw I2C
+# target (0x62 on the b94000 bus; no device tree node describes it).
+# Started by book4-kbd-backlight.service. "stop" unbinds.
+set -u
+bus=
+for i in $(seq 1 20); do
+    for d in /sys/bus/i2c/devices/i2c-*; do
+        [ "$(basename "$(readlink -f "$d/..")")" = b94000.i2c ] && bus=$(basename "$d")
+    done
+    [ -n "$bus" ] && break
+    sleep 0.5
+done
+[ -n "$bus" ] || { echo "book4-kbd-backlight: b94000 I2C bus not found" >&2; exit 1; }
+dev=/sys/bus/i2c/devices/${bus#i2c-}-0062
+
+if [ "${1:-start}" = stop ]; then
+    [ -e "$dev" ] && echo 0x62 > /sys/bus/i2c/devices/$bus/delete_device
+    exit 0
+fi
+
+modprobe book4_kbd_backlight || { echo "book4-kbd-backlight: module not built for $(uname -r)" >&2; exit 1; }
+[ -e "$dev" ] || echo book4-kbd-backlight 0x62 > /sys/bus/i2c/devices/$bus/new_device

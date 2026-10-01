@@ -13,3 +13,4 @@ modules.order
 *.mbn
 *.ann
 *.dis
+*.ko.cmd

@@ -37,6 +37,8 @@ copyright and licence headers are kept intact in every copied file.
   (`docs/ec-protocol.md`, `tools/ec/`), done before we knew of Anatase's work
   and matching it.
 - `drivers/book4-ec/`: our EC battery driver.
+- The keyboard backlight command and its observed behaviour, and the experimental
+  driver in `drivers/book4-kbd-backlight/` (`docs/keyboard-backlight.md`).
 - `drivers/anatase/patches/0001-*`: the charger hot-plug PD retry.
 - The UCM adaptation, topology alias and its analysis (`docs/audio.md`).
 - The Bluetooth public-address service and the Windows registry helper.

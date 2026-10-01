@@ -19,7 +19,7 @@ and adds what we found and fixed independently.
 | Display (eDP) | works | needs `samsung-emuec` loaded (it provides the USB-C DP bridges) |
 | Keyboard | works | udev rule: [userspace/keyboard](userspace/keyboard) |
 | Fn keys: brightness, volume | work | stock HID |
-| Keyboard backlight | does not work | EC-controlled (`EC2.sys` has `IOCTL_GET_KBDBLT`); no Linux driver yet |
+| Keyboard backlight | experimental, disabled | can be switched on (EC command `{0x10, x, level}` at 0x62) but our driver can't keep it lit without blinking: [docs/keyboard-backlight.md](docs/keyboard-backlight.md) |
 | Touchpad | works | stock |
 | Wi-Fi (WCN7850) | works | specific firmware, [docs/firmware.md](docs/firmware.md) |
 | Bluetooth | works | controller needs a public address: [userspace/bluetooth](userspace/bluetooth) |
@@ -61,6 +61,7 @@ What has actually been done so far (1 October 2026):
     drivers/
       anatase/    Anatase's battery + Type-C drivers, pristine, plus our patches (DKMS)
       book4-ec/   our own EC battery driver - superseded, kept as a record
+      book4-kbd-backlight/  keyboard backlight driver - experimental, disabled
     userspace/    boot hook, udev/modprobe/dracut snippets, Bluetooth, audio
     tools/        EC test tool, disassembly annotator, Windows registry helper
     install/      install-fedora.sh

@@ -94,3 +94,10 @@ ectool prints u32s assembled little-endian (byte off+0 lowest), shown MSB first,
 | 0xB4 | 3c a0 | 15520 | design voltage, mV |
 | 0xB6 | 00 25 | 37 | unknown, maybe cycle count |
 Little-endian gives garbage (0xA0 -> 25600), so big-endian is confirmed by the data.
+
+## Keyboard backlight (raw target 0x62)
+
+`IOCTL_SET_KBDBLT` queues `{0x10, timeout, level}`, `IOCTL_GET_KBDBLT` queues
+`{0x11}`; both go out as plain writes on the raw target. Level 0..3. The EC
+turns the light off ~3 s after each command regardless of the second byte.
+Details and the failed driver attempts: [keyboard-backlight.md](keyboard-backlight.md).
