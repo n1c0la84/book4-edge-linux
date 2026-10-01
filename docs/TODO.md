@@ -25,7 +25,12 @@ order of everyday usefulness within each section.
 
 ## Not working (needs investigation)
 
-- [ ] **Keyboard backlight**: command known, driver blinks. Ideas in
+- [ ] ~~**Keyboard backlight**~~ — **solved upstream 30 Sept.** Anatase's new
+      `samsung-galaxybook-ec` drives it through the `0xFF10` mailbox on `0x64`
+      (write `{0x40, 0x00, 0xff, 0x10, 0xfd}`, read `0xfc`), with the hotkey.
+      Our `0x62` command is a different mechanism and still unexplained, but
+      there is nothing left to build. Take theirs.
+      Old notes, if the `0x62` path is ever worth understanding: command known, driver blinks. Ideas in
       [keyboard-backlight.md](keyboard-backlight.md). **Lead:** ciscobugger's
       `EC2.sys` command descriptor table (payload lengths per command) may
       explain the blinking. Note their table covers only commands `>= 0x80`,
@@ -53,9 +58,9 @@ order of everyday usefulness within each section.
 - [ ] **Possibly four speakers**: each speaker bus also enumerates a second
       WSA883x at SoundWire address 1 that no device tree describes
       ([audio.md](audio.md)).
-- [ ] **EC event queue** (0x62, plain 12-byte reads; hotkey, fan and ACPI
-      events per EC2.sys) is never drained by Linux. Nothing visibly depends
-      on it now, but hotkeys and the keyboard backlight might.
+- [ ] ~~**EC event queue** (0x62)~~ — Anatase now describes it in the device
+      tree as `samsung,galaxybook4-edge-ec-events`, owned by the mailbox driver.
+      Nothing for us to do; adopt their DTS.
 - [ ] `deep` suspend never resumes (s2idle works; probably leave it).
 - [ ] EC word at `0xb6` (37 on this unit): cycle-count candidate, watch whether
       it ever increments.
@@ -76,6 +81,28 @@ Details in [upstream.md](upstream.md):
 - [ ] systemd/libinput: keyboard tagged as tablet pad.
 - [ ] linux-arm-msm DTS thread: `pmic-glink` cannot work on this machine (and,
       if wanted, a tester's report on the v6 series).
+
+## Carrying this elsewhere
+
+- [ ] **Omarchy Dragon** — the clearest unoccupied space: nobody on that team
+      owns a Samsung. Plan in [omarchy.md](omarchy.md). An issue on
+      `omacom/omarchy` offering a working 14" and test cycles costs ten minutes
+      and is the highest-leverage unspent thing here.
+- [ ] Help get `samsung-galaxybook-ec` and `samsung-emuec` to mainline, even
+      only as a tester. Until they land, every distribution needs a patched
+      kernel for this laptop.
+
+## Stale artefacts (30 September restructure)
+
+- [ ] `dts/x1e80100-samsung-galaxy-book4-edge-14.anatase.dtb` predates the
+      compatible change (`ene,kb9058-battery` -> `samsung,galaxybook4-edge-ec`).
+      Rebuild from their current tree.
+- [ ] `drivers/anatase/` carries `ene-kb9058-battery.c`, which no longer exists
+      upstream. Replace with `samsung-galaxybook-ec.c` or drop it in favour of
+      a local kernel build ([kernel.md](kernel.md)).
+- [ ] `userspace/boot/99-book4-devicetree.install` takes the DTB from
+      `/usr/lib/firmware/book4/`; with a locally built kernel it must take the
+      one the build produced.
 
 ## Repository
 

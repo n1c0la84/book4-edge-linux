@@ -5,8 +5,13 @@ that this machine would benefit from and that we do **not** have, because all
 three are compiled into the kernel rather than loadable as modules. This is the
 analysis of whether that is worth acting on, and how.
 
-Short answer: **do not rebuild the kernel. Use Anatase's prebuilt RPMs** — but
-report our `samsung-emuec` patch to them first, or we lose it.
+Short answer, revised 1 October: **build Anatase's tree locally.** Taking their
+prebuilt RPMs was the earlier recommendation and it is no longer the better one,
+because their tree restructured on 30 September — the battery driver became a
+full EC platform driver, the device tree compatible changed, and a DTB or DKMS
+package from the day before no longer matches. Building the whole thing from one
+tree keeps the kernel, the drivers and the device tree in step, carries our own
+`samsung-emuec` patch, and lets us follow a tree that is moving daily.
 
 ## What each patch actually buys
 
@@ -111,3 +116,39 @@ That last point sets the order:
    — that is the regression to watch for, and the only one.
 
 Doing it in the other order trades a working charger for a working clock.
+
+## Building it locally (revised recommendation, 1 October)
+
+Everything comes from one tree, so nothing can skew:
+
+    sudo dnf install -y gcc make flex bison bc openssl-devel \
+        elfutils-libelf-devel ncurses-devel dwarves perl rsync
+
+    git clone --depth 1 -b anatase-7.2 \
+        https://github.com/anatase-org/patchwork.git
+    cd patchwork
+    patch -p1 < .../0001-samsung-emuec-retry-PD-request-after-hot-plug.patch
+
+    cp /boot/config-$(uname -r) .config
+    make olddefconfig
+    ./scripts/config --module EC_SAMSUNG_GALAXYBOOK
+    ./scripts/config --module TYPEC_SAMSUNG_EMUEC
+    make olddefconfig
+
+    make -j$(nproc)            # ~12 cores here, 1-3 hours
+    sudo make modules_install
+    sudo make install
+
+Three things that bite:
+
+- **The device tree now comes from the kernel tree**, `arch/arm64/boot/dts/qcom/`,
+  not from `/usr/lib/firmware/book4/`. `userspace/boot/99-book4-devicetree.install`
+  must be updated to take the newly built one, or a new kernel gets an old DTB
+  whose compatibles no longer match the drivers.
+- **Remove the DKMS package first**, or two drivers fight over the same EC.
+- About 25 GB of disk for the build tree.
+
+The honest cost is that a local build buys the rebuilds forever: every kernel
+security update becomes our work rather than someone else's. We are already
+running a kernel-install hook and pinning a default kernel, so this is not a new
+kind of burden — but it is more of it.

@@ -11,7 +11,11 @@ could simply take.
 
 The active upstream for this laptop. A Fedora ARK kernel tree carrying:
 
-- `drivers/power/supply/ene-kb9058-battery.c` — the EC battery driver we use
+- `drivers/platform/arm64/samsung-galaxybook-ec.c` — a **full EC platform
+  driver**. Until 30 September this was `drivers/power/supply/ene-kb9058-battery.c`
+  and did battery only; it now also drives the **keyboard backlight** (via the
+  `0xFF10` mailbox, commands `0xfc`/`0xfd`), the backlight hotkey and fan
+  platform profiles. `CONFIG_EC_SAMSUNG_GALAXYBOOK`.
 - `drivers/usb/typec/samsung-emuec.c` — Type-C, charging, DP alt-mode
 - the QSEECOM allowlist patch (20 September — ten days before we drafted our own)
 - a HID multi-input quirk for our keyboard
@@ -91,16 +95,33 @@ USB-C and audio. The maintainer owns a 14" like ours.
 
 Ranked by confidence, after the survey.
 
-**Almost certainly new:**
+**Still ours, verified 1 October against their current tree:**
 
-1. **The keyboard backlight EC command.** Nobody else has backlight, and
-   ciscobugger's command table documents only the space above `0x80` while ours
-   sits below it.
-2. **Two bugs in Anatase's battery driver**: `KB9058_CYCLES` points at `0xd0`,
-   which on this unit holds the state of charge; and `CAPACITY` is computed
-   from charge_now/charge_full when the EC reports the gauge's own percentage
-   at `0xa0`.
-3. **Two bugs in the Saddytech driver** (swapped capacities, rate sign).
+1. **The `samsung-emuec` PD retry fix.** Checked: `pd_attempted` is still a
+   `bool` set once, so the bug is live in their tree and the patch is still
+   wanted. ciscobugger reached the same conclusion first on their own driver,
+   so present it as a fix rather than a finding.
+2. **Two bugs in the Saddytech driver** (swapped capacities, rate sign). That
+   repository has not changed since 17 August and is the one most people run.
+3. **The ath12k firmware regression** — see below.
+
+**Overtaken on 30 September:**
+
+- **The keyboard backlight.** Anatase's new EC driver implements it and it
+  works, through the `0xFF10` mailbox on address `0x64` (`{0x40, 0x00, 0xff,
+  0x10, 0xfd}` to write, `0xfc` to read). Our command — `{0x10, x, level}` at
+  address `0x62` — is a genuinely different mechanism on the event channel, and
+  the discovery stands; but theirs works where ours blinks, so there is nothing
+  left to contribute here except, perhaps, an explanation of why the other path
+  misbehaves.
+- **The two battery-driver bugs** (`KB9058_CYCLES` at `0xd0`, `CAPACITY`
+  computed rather than read from `0xa0`). The driver was rewritten as a platform
+  EC driver; re-check against `samsung-galaxybook-ec.c` before reporting
+  anything.
+- **The EC event interface at `0x62`**, which we were chasing, is now described
+  in their device tree as `samsung,galaxybook4-edge-ec-events`, owned by the
+  mailbox driver.
+- **`usb_mp` is now 16-inch only** in their DTS, which was our observation.
 4. **The ath12k firmware regression**: c7-00108 fails where c5-00302 works. No
    one appears to have reported it; Anatase solved the board-id lookup with an
    alias, which is a different problem.
@@ -108,6 +129,13 @@ Ranked by confidence, after the survey.
    [kernel.md](kernel.md).
 6. **This 14" ADSP image has no `charger_pd`**, with the per-model contrast
    against the 15.6" now established.
+
+**The one thing nobody else has:** a **Fedora** integration. Anatase ships its
+own distribution; ciscobugger's repository is Arch-shaped (mkinitcpio,
+systemd-boot). The GRUB guard, the `chain.mod` Windows entry, the dnf hooks and
+the update-safety analysis in this repository are the only ones that exist for
+this machine on Fedora. That is integration rather than discovery, and it is
+still the reason this repository is worth keeping.
 
 **Probably new, worth checking before claiming:** the UCM profile and mic gains,
 the `chain.mod` trick for a Windows entry under Fedora's signed GRUB, the GRUB
@@ -119,7 +147,10 @@ registry. See [CREDITS.md](../CREDITS.md).
 
 ## The most useful thing to do next
 
-Open an issue on `ciscobugger/book4-edge-linux`. Same machine family,
+**Omarchy Dragon** is the clearest unoccupied space — see [omarchy.md](omarchy.md).
+Nobody on that team owns a Samsung, and we have a working one.
+
+Then: open an issue on `ciscobugger/book4-edge-linux`. Same machine family,
 complementary gaps: they have the camera and a deeper EC decode, we have the
 backlight command and the 14". That exchange moves both repositories the same
 day, which no mailing list will.

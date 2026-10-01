@@ -19,7 +19,7 @@ and adds what we found and fixed independently.
 | Display (eDP) | works | needs `samsung-emuec` loaded (it provides the USB-C DP bridges) |
 | Keyboard | works | udev rule: [userspace/keyboard](userspace/keyboard) |
 | Fn keys: brightness, volume | work | stock HID |
-| Keyboard backlight | experimental, disabled | can be switched on (EC command `{0x10, x, level}` at 0x62) but our driver can't keep it lit without blinking: [docs/keyboard-backlight.md](docs/keyboard-backlight.md) |
+| Keyboard backlight | solved upstream, not adopted here yet | Anatase's `samsung-galaxybook-ec` drives it via the `0xFF10` mailbox and handles the hotkey; our own `0x62` experiment blinks and is superseded ([docs/related-work.md](docs/related-work.md)) |
 | Touchpad | works | stock |
 | Wi-Fi (WCN7850) | works | specific firmware, [docs/firmware.md](docs/firmware.md) |
 | Bluetooth | works | controller needs a public address: [userspace/bluetooth](userspace/bluetooth) |
@@ -42,6 +42,8 @@ and adds what we found and fixed independently.
 
 **Who else is working on this machine**, what they already have and what is
 genuinely ours: [docs/related-work.md](docs/related-work.md).
+**Carrying this to Arch / Omarchy Dragon**, where nobody owns a Samsung:
+[docs/omarchy.md](docs/omarchy.md).
 **Why we have not rebuilt the kernel** (QSEECOM, the UFS and HID quirks, and
 what QSEECOM would actually fix): [docs/kernel.md](docs/kernel.md).
 
