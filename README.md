@@ -38,7 +38,7 @@ and adds what we found and fixed independently.
 | Webcam | does not work | sensor identified (OV02C10, I2C 0x36), no device tree node yet: [docs/camera.md](docs/camera.md) |
 | Fingerprint reader | does not work | not visible to Linux at all (no USB/SPI device; `fprintd`: no devices); not investigated |
 | EFI variables / NVRAM boot entries | works (Anatase kernel) | QSEECOM allowlist; 197 variables, `efibootmgr` reads the boot order; not working on the Fedora kernel |
-| RTC | readable on the Anatase kernel, but wrong (2024-05-30) | offset lives in an EFI variable (`qcom,uefi-rtc-info`); not yet written once; mind Windows' local-time RTC |
+| RTC | set (Anatase kernel), persistence across reboot to be verified | UTC: `hwclock --systohc --utc` wrote it (offset kept in the `RTCInfo` EFI variable); Windows needs `RealTimeIsUniversal=1`, see [docs/kernel.md](docs/kernel.md) |
 
 **Open points** (to test, not working, to report): [docs/TODO.md](docs/TODO.md).
 

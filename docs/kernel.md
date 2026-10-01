@@ -195,3 +195,19 @@ back at 20 V, the keyboard backlight and its Fn hotkey, EFI variables
 
 Harmless: `failed to load gen70500_sqe.fw` early in boot; the GPU loads it
 from the root filesystem ~16 s later.
+
+### Clock (RTC), set 1 October
+
+The RTC (`rtc-pm8xxx`, `qcom,uefi-rtc-info`) read 2024-05-30 on the first
+boot. Convention chosen: **UTC in the hardware clock** for both systems.
+
+- Linux (already `RTC in local TZ: no`): `sudo hwclock --systohc --utc`. The
+  RTC then matched UTC to the second; the offset is kept in the UEFI variable
+  `RTCInfo-882f8c2b-9646-435f-8de5-f208ff80c1bd`.
+- Windows, once, in an administrator Command Prompt, then restart:
+  `reg add "HKLM\System\CurrentControlSet\Control\TimeZoneInformation" /v RealTimeIsUniversal /t REG_DWORD /d 1 /f`
+  Without it Windows reads the clock as local time (2 h off in Rome in
+  summer) and may write local time back.
+
+To verify: after a reboot the early kernel log timestamps should already be
+right, before the network syncs the clock.
