@@ -37,8 +37,10 @@ order of everyday usefulness within each section.
       while ours is `0x10` at address `0x62` — the dispatcher branches elsewhere
       below `0x80` and nobody has followed it. This is still the most clearly
       new thing we have.
-- [ ] **Touchscreen**: Goodix `27C6:0123` binds via `i2c_hid_of` as a mouse plus
-      two "UNKNOWN" interfaces; no touch input.
+- [x] **Touchscreen** works (found 1 Oct under KDE Plasma on the Anatase
+      kernel): Goodix `27C6:0123` is a multitouch direct-touch device; the
+      "mouse" and two "UNKNOWN" interfaces misled us. Still to check: GNOME,
+      the Fedora kernel, and what the "UNKNOWN" interfaces are (pen? gestures?).
 - [ ] **Webcam**: sensor identified as **OV02C10 at 0x36** (same as the 15.6"),
       power sequence and GPIOs decoded from the Windows driver store; no device
       tree node yet. Findings and first experiment: [camera.md](camera.md).
