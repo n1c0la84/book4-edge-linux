@@ -15,7 +15,7 @@ and adds what we found and fixed independently.
 | Area | State | How |
 |---|---|---|
 | Boot from internal UFS | works | hand-built DTB via GRUB `devicetree`, `cutmem`, see [docs/bootstrap.md](docs/bootstrap.md) |
-| Windows from the GRUB menu | in testing | signed GRUB has no built-in chainloader: the hook ships `chain.mod` + deps to `\EFI\book4\arm64-efi\` |
+| Windows from the GRUB menu | works | Fedora's signed arm64 GRUB has no built-in `chainloader`; the hook copies `chain.mod` to `\EFI\book4\arm64-efi\` and the entry loads it |
 | Display (eDP) | works | needs `samsung-emuec` loaded (it provides the USB-C DP bridges) |
 | Keyboard | works | udev rule: [userspace/keyboard](userspace/keyboard) |
 | Fn keys: brightness, volume | work | stock HID |
@@ -34,6 +34,7 @@ and adds what we found and fixed independently.
 | External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | does not work | Goodix `27C6:0123` binds via `i2c_hid_of` but only as a mouse + two "UNKNOWN" interfaces; no touch input |
 | Webcam | does not work | no device tree node in any tree yet |
+| Fingerprint reader | does not work | not visible to Linux at all (no USB/SPI device; `fprintd`: no devices); not investigated |
 | EFI variables / NVRAM boot entries | not working | needs the QSEECOM allowlist patch (Anatase has it, needs a kernel build) |
 | RTC | resets to a fixed date each boot | probably also QSEECOM |
 

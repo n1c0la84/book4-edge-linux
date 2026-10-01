@@ -102,6 +102,10 @@ EOF
 
 menuentry "Windows Boot Manager" {
     search --no-floppy --set=winesp --file /EFI/Microsoft/Boot/bootmgfw.efi
+    # Fedora's signed arm64 GRUB lacks the chainloader command (chain.mod);
+    # its dependencies (boot, net, efinet, ...) are built in. Load the copy of
+    # chain.mod this hook keeps on the ESP, matching the installed GRUB.
+    insmod (\$winesp)/EFI/book4/arm64-efi/chain.mod
     chainloader (\$winesp)/EFI/Microsoft/Boot/bootmgfw.efi
 }
 EOF
@@ -121,6 +125,11 @@ gen > "$tmp" && grep -q "vmlinuz-$default" "$tmp" && grep -q cutmem "$tmp" || {
     echo "book4: generated grub.cfg failed checks, leaving $ESPCFG untouched" >&2
     rm -f "$tmp"; exit 0
 }
+# GRUB modules for the Windows entry, matching the installed GRUB version.
+if [ -d /usr/lib/grub/arm64-efi ] && [ -e /boot/efi/EFI/Microsoft/Boot/bootmgfw.efi ]; then
+    install -d /boot/efi/EFI/book4/arm64-efi
+    cp -f /usr/lib/grub/arm64-efi/chain.mod /boot/efi/EFI/book4/arm64-efi/
+fi
 [ -e "$ESPCFG" ] && cp -p "$ESPCFG" "$ESPCFG.prev"
 mv "$tmp" "$ESPCFG"
 sync -f "$ESPCFG"

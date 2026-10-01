@@ -13,6 +13,13 @@ live with the workstation copy of this project; this is the distilled version.
   machine in the stock kernel), so there is no NVRAM boot entry; the firmware
   boots `\EFI\BOOT\bootaa64.efi`, or pick the disk from the firmware boot menu.
 - The ESP is shared with Windows: only add files, never delete.
+- Windows is started from the GRUB menu by chainloading
+  `\EFI\Microsoft\Boot\bootmgfw.efi`. Fedora's signed arm64 GRUB has no
+  `chainloader` built in (`can't find command 'chainloader'`); its module,
+  `chain.mod`, is in `/usr/lib/grub/arm64-efi/`, and its dependencies are
+  already built in (loading them again prints "already loaded"). The boot hook
+  copies `chain.mod` to `\EFI\book4\arm64-efi\` on every run (so it matches the
+  installed GRUB) and the Windows entry `insmod`s it by path.
 
 ## Load-bearing details
 
