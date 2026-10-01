@@ -30,8 +30,9 @@ whole profile (`snd_pcm_hw_params_set_channels(2) failed`).
 Internal microphones: two DMICs on DMIC0/DMIC1 (DMIC2/3 are silent; the
 `dmic23` pin group is configured but nothing answers there). The stock
 sequences set `VA_DEC0/1 Volume` to 100 (+16 dB), which leaves speech around
--34 dBFS; the profile uses 120 (+36 dB, about -14 dBFS, no clipping, noise
-floor about -46 dBFS). The enable sequences are inlined because an
+-34 dBFS. At 120 (+36 dB) normal speech reached about -14 dBFS but louder
+speech clipped (407 samples in 5 s) and sounded distorted, so the profile uses
+114 (+30 dB): normal speech around -20 dBFS with headroom. The enable sequences are inlined because an
 `EnableSequence` placed after an `Include` of the stock one does not override
 it.
 
