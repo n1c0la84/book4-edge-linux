@@ -1,0 +1,3 @@
+# Galaxy Book4 Edge: after GRUB's package scripts overwrite the ESP grub.cfg
+# with Fedora's stub, put our static grub.cfg (cutmem, devicetree) back.
+post_transaction:grub2-efi-aa64:in::/usr/local/sbin/book4-regen-grub

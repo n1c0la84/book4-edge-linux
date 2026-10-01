@@ -1,0 +1,13 @@
+#!/bin/bash
+# Run after a grub2-efi-aa64 install/upgrade (dnf5 actions plugin).
+# Its %posttrans copies Fedora's stub grub.cfg over /boot/efi/EFI/fedora/grub.cfg,
+# which would drop cutmem and our device tree: regenerate ours and verify it.
+CFG=/boot/efi/EFI/fedora/grub.cfg
+/etc/kernel/install.d/99-book4-devicetree.install add "$(uname -r)"
+if grep -q cutmem "$CFG" && grep -q devicetree "$CFG"; then
+    echo "book4: $CFG regenerated after GRUB update (cutmem + devicetree present)"
+else
+    echo "book4: WARNING: $CFG lacks cutmem/devicetree - DO NOT REBOOT; run:" >&2
+    echo "  sudo /etc/kernel/install.d/99-book4-devicetree.install add \$(uname -r)" >&2
+    exit 1
+fi

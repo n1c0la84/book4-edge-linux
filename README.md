@@ -14,6 +14,7 @@ and adds what we found and fixed independently.
 | Area | State | How |
 |---|---|---|
 | Boot from internal UFS | works | hand-built DTB via GRUB `devicetree`, `cutmem`, see [docs/bootstrap.md](docs/bootstrap.md) |
+| Windows from the GRUB menu | entry added, untested | chainloads `\EFI\Microsoft\Boot\bootmgfw.efi` |
 | Display (eDP) | works | needs `samsung-emuec` loaded (it provides the USB-C DP bridges) |
 | Keyboard | works | udev rule: [userspace/keyboard](userspace/keyboard) |
 | Touchpad | works | stock |
@@ -28,9 +29,16 @@ and adds what we found and fixed independently.
 | Lid-close suspend (s2idle) | works | `mem_sleep_default=s2idle`; overnight drain not measured |
 | `deep` suspend | never resumes | do not use |
 | USB-C DisplayPort, HDMI | untested | |
-| Webcam | not supported | no DT node anywhere yet |
+| Touchscreen | does not work | Goodix `27C6:0123` binds via `i2c_hid_of` but only as a mouse + two "UNKNOWN" interfaces; no touch input |
+| Webcam | does not work | no device tree node in any tree yet |
 | EFI variables / NVRAM boot entries | not working | needs the QSEECOM allowlist patch (Anatase has it, needs a kernel build) |
 | RTC | resets to a fixed date each boot | probably also QSEECOM |
+
+## Updating the system
+
+**Read [docs/updates.md](docs/updates.md) before `dnf update`.** A GRUB package
+update overwrites the boot configuration this machine needs; `install/guard-grub.sh`
+makes that safe.
 
 ## Layout
 

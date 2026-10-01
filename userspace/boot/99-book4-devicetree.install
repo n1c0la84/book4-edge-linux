@@ -96,6 +96,16 @@ EOF
     for k in "${kernels[@]:1}"; do
         entry "$k" "Book4 Edge (other)" ""
     done
+    # Windows shares the ESP; chainload its boot manager when it is there.
+    if [ -e /boot/efi/EFI/Microsoft/Boot/bootmgfw.efi ] || [ -n "$BOOK4_WINDOWS" ]; then
+        cat <<EOF
+
+menuentry "Windows Boot Manager" {
+    search --no-floppy --set=winesp --file /EFI/Microsoft/Boot/bootmgfw.efi
+    chainloader (\$winesp)/EFI/Microsoft/Boot/bootmgfw.efi
+}
+EOF
+    fi
     printf '\nmenuentry "UEFI Firmware Settings" { fwsetup }\n'
 }
 
