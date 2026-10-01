@@ -84,7 +84,7 @@ The kernel quirk is the better long-term home — see
 distribution gets it without a kernel patch — but there is nothing to gain by
 switching today.
 
-## The recommendation, and the order
+## Earlier recommendation: Anatase's prebuilt RPMs (superseded, see below)
 
 Rebuilding a Fedora kernel for one line is a lot of machinery. Anatase already
 publishes kernel RPMs with **all three patches plus the two drivers built in**,

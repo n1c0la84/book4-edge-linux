@@ -29,7 +29,7 @@ and adds what we found and fixed independently.
 | Speakers (stereo) | works | topology alias + UCM profile: [docs/audio.md](docs/audio.md) |
 | Internal microphones | works | DMIC0/1, gain raised in the UCM profile |
 | Headphones, headset mic | profile present, untested | |
-| Suspend (s2idle): lid close/open, power key | works | `mem_sleep_default=s2idle`; both lid and power key suspend and wake; overnight drain not measured |
+| Suspend (s2idle): lid close/open, power key | works | `mem_sleep_default=s2idle`; both lid and power key suspend and wake; drain measured at 1 % in 3 h 04 min (about 0.2 W) |
 | `deep` suspend | never resumes | do not use |
 | External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | does not work | Goodix `27C6:0123` binds via `i2c_hid_of` but only as a mouse + two "UNKNOWN" interfaces; no touch input |
