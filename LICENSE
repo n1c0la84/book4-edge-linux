@@ -1,0 +1,27 @@
+Licensing of this repository
+============================
+
+Our own work in this repository is licensed as follows:
+
+- Code, scripts, configuration files and drivers we wrote (everything under
+  drivers/book4-ec/, drivers/book4-kbd-backlight/, install/, tools/,
+  userspace/, and our Makefile, dkms.conf and patches in drivers/anatase/):
+  GNU General Public License, version 2 only (GPL-2.0-only).
+  Full text: LICENSES/GPL-2.0-only.txt
+
+- Documentation (README.md, CREDITS.md, docs/, and the README files in
+  subdirectories):
+  Creative Commons Attribution 4.0 International (CC-BY-4.0).
+  Full text: LICENSES/CC-BY-4.0.txt
+
+Files taken from others keep their own licences and copyright notices; see
+CREDITS.md for the full list. In particular:
+
+- drivers/anatase/*.c: GPL-2.0-only, Copyright (c) 2026 Antheas Kapenekakis.
+- userspace/audio/ucm2/: BSD-3-Clause, derived from alsa-ucm-conf
+  (https://github.com/alsa-project/alsa-ucm-conf); its licence and copyright
+  notice: LICENSES/BSD-3-Clause-alsa-ucm-conf.txt
+- dts/*.dtb: compiled from Linux device tree sources, under the licences in
+  their SPDX headers.
+
+Copyright (c) 2026 Nicola Nicodemo and contributors.

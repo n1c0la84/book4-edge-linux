@@ -3,8 +3,8 @@
 This repository is Fedora-only. The hardware knowledge in it is not, and the
 clearest unoccupied space for this machine right now is
 **[Omarchy Dragon](https://omarchy.org/news/2026/09/introducing-omarchy-dragon/)**,
-the Snapdragon effort for Omarchy (Arch-based): nobody there is working on a
-Samsung.
+the Snapdragon effort for Omarchy (Arch-based): as far as we could tell from
+its public issue threads (1 October 2026), nobody there is working on a Samsung.
 
 ## What exists there
 
@@ -65,13 +65,13 @@ and Fedora this machine for free, and is worth more than any single port.
 
 ## What we can actually offer that project
 
-A working 14" X1E80100, documented, and the one thing their team structurally
-lacks: nobody owns a Samsung. Jim Martin is on a Surface, Birk Skyum on a Yoga
-Slim 7x, Matt Gilg on a Yoga and a DGX Spark.
+A working 14" X1E80100, documented. The machines mentioned in their public
+threads (as of 1 October 2026) are Surface, Lenovo Yoga and similar laptops;
+we found no Samsung among them, so test cycles on one may be useful.
 
 An issue on `omacom/omarchy` saying "I have a Galaxy Book4 Edge 14" running
 mainline-based Linux, here is the state, here is what I can test" costs ten
-minutes. It is the highest-leverage unspent thing in this repository.
+minutes, and may well be the most useful thing this repository can offer them.
 
 Be honest in it about what is ours and what is not: the hardware enablement is
 overwhelmingly Anatase's and the upstream DTS authors', and

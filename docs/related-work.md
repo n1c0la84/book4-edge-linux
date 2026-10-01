@@ -67,15 +67,14 @@ which is why it is still ours — see [keyboard-backlight.md](keyboard-backlight
 
 ### Saddytech — `Saddytech/Galaxy-Book4-Edge-linux`
 
-The battery driver recommended in `zensanp/linux-book4-edge#4`, and the one
-most people are running. Same EC protocol, two bugs we can show:
+The battery driver recommended in `zensanp/linux-book4-edge#4`. Same EC protocol, two bugs we can show:
 design/last-full swapped, and the rate cast to `s16` when the EC reports an
 unsigned magnitude. Details in [upstream.md](upstream.md).
 
 ### zensanp — `zensanp/linux-book4-edge`
 
 The community issue tracker for this laptop. Issue #3 is Wi-Fi, #4 battery, #8
-USB-C and audio. The maintainer owns a 14" like ours.
+USB-C and audio. The maintainer reports a 14" too.
 
 ## Other distributions
 
@@ -83,7 +82,7 @@ USB-C and audio. The maintainer owns a 14" like ours.
   `omacom/omarchy#8672` and `omacom/omarchy-iso#129`. Plus a community port,
   `bprendie/omarchy-snapdragon`, with downloadable ISOs. Machines covered:
   ThinkPad T14s Gen 6, HP, ASUS A16/A14, Yoga Slim 7x, Surface Laptop 8.
-  **No Samsung, and nobody working on one.**
+  No Samsung among the machines listed (as of 1 October 2026).
 
   Architectural note: the community port is Arch userspace on an **Ubuntu
   kernel** (`7.2.0-18-qcom-x1e`). So "port this to Arch" really means "which
@@ -148,7 +147,8 @@ registry. See [CREDITS.md](../CREDITS.md).
 ## The most useful thing to do next
 
 **Omarchy Dragon** is the clearest unoccupied space — see [omarchy.md](omarchy.md).
-Nobody on that team owns a Samsung, and we have a working one.
+We found no Samsung among the machines in their public threads (1 October 2026),
+and we have a working one.
 
 Then: open an issue on `ciscobugger/book4-edge-linux`. Same machine family,
 complementary gaps: they have the camera and a deeper EC decode, we have the

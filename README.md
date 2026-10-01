@@ -47,8 +47,8 @@ and adds what we found and fixed independently.
 genuinely ours: [docs/related-work.md](docs/related-work.md).
 **Carrying this to Arch / Omarchy Dragon**, where nobody owns a Samsung:
 [docs/omarchy.md](docs/omarchy.md).
-**Why we have not rebuilt the kernel** (QSEECOM, the UFS and HID quirks, and
-what QSEECOM would actually fix): [docs/kernel.md](docs/kernel.md).
+**The Anatase kernel**: why it is worth running, how it is built and installed,
+and what it fixed here: [docs/kernel.md](docs/kernel.md).
 
 ## Updating the system
 
@@ -68,7 +68,7 @@ What has actually been done so far (1 October 2026):
 ## Layout
 
     docs/         how it works, how we got here, and who else is working on it
-    firmware/     what to extract from Windows (no blobs are shipped)
+    (firmware)    nothing shipped: docs/firmware.md says what to extract from Windows
     dts/          the device trees we boot (compiled, with provenance)
     drivers/
       anatase/    Anatase's battery + Type-C drivers, pristine, plus our patches (DKMS)
@@ -76,16 +76,42 @@ What has actually been done so far (1 October 2026):
       book4-kbd-backlight/  keyboard backlight driver - experimental, disabled
     userspace/    boot hook, udev/modprobe/dracut snippets, Bluetooth, audio
     tools/        EC test tool, disassembly annotator, Windows registry helper
-    install/      install-fedora.sh
+    install/      install-fedora.sh, install-anatase-kernel.sh, guard-grub.sh, helpers
+    LICENSES/     full licence texts (see LICENSE)
 
 ## Installing (Fedora)
 
-On a system that already boots this machine:
+This is how the reference machine is set up. Every step was tested on it; the
+scripts as a whole have not been run on a fresh install, so read them first.
 
-    bash install/install-fedora.sh [BLUETOOTH_ADDRESS]
+0. **A system that boots** this machine: [docs/bootstrap.md](docs/bootstrap.md),
+   and the DSP firmware copied from Windows: [docs/firmware.md](docs/firmware.md).
+1. **Base layer and fallback kernel**:
 
-Read the script first: it is assembled from individually tested steps but has
-not been run end to end on a fresh system.
+       bash install/install-fedora.sh [BLUETOOTH_ADDRESS]
+
+   Installs the boot hook, the keyboard/dracut/modprobe snippets, the audio
+   profile, the Bluetooth address service and `mem_sleep_default=s2idle`, plus
+   Anatase's drivers via DKMS and their device tree for the **stock Fedora
+   kernel**. That alone gives a working laptop (battery, USB-C, charging,
+   audio), minus the keyboard backlight, EFI variables and the clock.
+2. **Recommended: the Anatase kernel** (adds the keyboard backlight, EFI
+   variables, the clock, and keeps kernel, drivers and device tree in step).
+   Build it as in [docs/kernel.md](docs/kernel.md) (about 25 minutes on the
+   laptop), then:
+
+       bash install/install-anatase-kernel.sh
+
+   It is added to the GRUB menu next to the Fedora kernel; once tested, make
+   it the default with `echo <version> | sudo tee /etc/book4/default-kernel`
+   and re-run the boot hook.
+3. **Before any `dnf update`**: `bash install/guard-grub.sh` once, and read
+   [docs/updates.md](docs/updates.md).
+
+Smaller helpers: `install/update-boot-hook.sh` and `install/update-audio.sh`
+reinstall those pieces from the repo; `install/install-kbd-backlight.sh` and
+`install/disable-kbd-backlight.sh` belong to our experimental keyboard
+backlight driver, which the Anatase kernel makes unnecessary.
 
 ## Credits
 
@@ -96,6 +122,9 @@ and the linux-firmware/Debian packagers. **[CREDITS.md](CREDITS.md) lists every
 file taken from elsewhere with its origin, author, licence and whether we
 changed it**, and separates that from our own work.
 
-Copied files keep their original copyright and licence headers. Drivers are
-GPL-2.0-only as marked; the UCM profile is BSD-3-Clause (derived from
-alsa-ucm-conf).
+## Licence
+
+Our code and scripts are **GPL-2.0-only**, our documentation **CC BY 4.0**;
+files taken from others keep their own licences and copyright headers
+(Anatase's drivers GPL-2.0-only, the UCM profile BSD-3-Clause from
+alsa-ucm-conf). Details in [LICENSE](LICENSE) and [CREDITS.md](CREDITS.md).
