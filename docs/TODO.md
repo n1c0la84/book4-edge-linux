@@ -104,9 +104,9 @@ Details in [upstream.md](upstream.md):
 
 ## Repository
 
-- [ ] Choose a licence for our own files (drivers are GPL-2.0-only, the UCM
+- [x] Licence chosen 1 Oct: our code GPL-2.0-only, docs CC BY 4.0 (LICENSE, LICENSES/). Was: Choose a licence for our own files (drivers are GPL-2.0-only, the UCM
       profile BSD-3-Clause; scripts and docs have none yet).
-- [ ] Review [CREDITS.md](../CREDITS.md) before making the repository public.
+- [x] Reviewed and published: the repository is public since 1 October 2026.
 - [ ] Import the device tree **sources** (only compiled DTBs are here; the
       sources are on the workstation / in Anatase's tree).
 - [ ] Try another distribution (the repo is Fedora-only so far). The hardware
