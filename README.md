@@ -11,6 +11,8 @@ carried to other distributions, but no other distribution has been tried yet.
 
 ![fastfetch on the Galaxy Book4 Edge 14": Fedora 45, kernel 7.2.7-book4, KDE Plasma 6.7.5 on Wayland, Snapdragon X Elite X1E-80-100, Adreno X1-85, 2880x1800 at 120 Hz](docs/images/fastfetch.png)
 
+![fastfetch on the Galaxy Book4 Edge 14": Fedora 45, kernel 7.2.7-book4, KDE Plasma 6.7.5 on Wayland, Snapdragon X Elite X1E-80-100, Adreno X1-85, 2880x1800 at 120 Hz](docs/images/fastfetch.png)
+
 This builds on the **[Anatase](https://github.com/anatase-org/patchwork)**
 project (branch `anatase-7.2`), whose device tree and EC/Type-C drivers we use,
 and adds what we found and fixed independently.
