@@ -2,7 +2,9 @@
 
 ## To Anatase (`ene-kb9058-battery`, `samsung-emuec`)
 
-1. **PD request after hot plug times out.** `samsung_emuec_request_pdo()` is
+1. **PD request after hot plug times out.** **Reported 1 October 2026 with the
+   patch: https://github.com/anatase-org/kernel-anatase/issues/1** (their
+   process: issues with patches in kernel-anatase; patchwork closes PRs). `samsung_emuec_request_pdo()` is
    sent before the S2MM006 has settled; it times out (-110) and is never
    retried (`pd_attempted`), leaving the charger at 5 V. Repeating it ~1 s later
    succeeds. Patch: [drivers/anatase/patches/0001](../drivers/anatase/patches).

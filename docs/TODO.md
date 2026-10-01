@@ -69,7 +69,9 @@ Details in [upstream.md](upstream.md):
       anything on this list; complementary gaps both ways. See
       [related-work.md](related-work.md) and the last section of
       [upstream.md](upstream.md).
-- [ ] Anatase: PD request retry after hot plug (patch ready — note they are not
+- [x] Anatase: PD request retry after hot plug, and the cycle-count note:
+      reported in https://github.com/anatase-org/kernel-anatase/issues/1
+      (patch ready — note they are not
       the first to find it), cycle count register (`0xd0` is the state of charge
       here), and `CAPACITY` which could come from the gauge's own `0xa0`.
 - [ ] Saddytech driver: design/last-full swapped, rate sign.
