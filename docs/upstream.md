@@ -6,6 +6,10 @@
    sent before the S2MM006 has settled; it times out (-110) and is never
    retried (`pd_attempted`), leaving the charger at 5 V. Repeating it ~1 s later
    succeeds. Patch: [drivers/anatase/patches/0001](../drivers/anatase/patches).
+   Compared on 1 October with ciscobugger's 17 September fix for the 15.6", a
+   user-space daemon: it builds its own Request (which `samsung-emuec` already
+   does) and retries at most twice, 30 s apart. A 1 s retry inside the driver
+   is enough on the 14", so our patch stands; credit them for finding it first.
    Not a discovery: ciscobugger reached the same conclusion two weeks earlier on
    their own driver for the 15.6" ("stage the PD request ourselves", 17 Sept).
    It is still a real fix to *this* driver, and worth sending as one.

@@ -33,7 +33,7 @@ and adds what we found and fixed independently.
 | `deep` suspend | never resumes | do not use |
 | External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | does not work | Goodix `27C6:0123` binds via `i2c_hid_of` but only as a mouse + two "UNKNOWN" interfaces; no touch input |
-| Webcam | does not work | no device tree node in any tree yet |
+| Webcam | does not work | sensor identified (OV02C10, I2C 0x36), no device tree node yet: [docs/camera.md](docs/camera.md) |
 | Fingerprint reader | does not work | not visible to Linux at all (no USB/SPI device; `fprintd`: no devices); not investigated |
 | EFI variables / NVRAM boot entries | not working | needs the QSEECOM allowlist patch, see [docs/kernel.md](docs/kernel.md) |
 | RTC | resets to a fixed date each boot | same cause: the DT node carries `qcom,uefi-rtc-info`, so the clock offset lives in an EFI variable ([docs/kernel.md](docs/kernel.md)) |

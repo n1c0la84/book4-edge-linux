@@ -39,13 +39,9 @@ order of everyday usefulness within each section.
       new thing we have.
 - [ ] **Touchscreen**: Goodix `27C6:0123` binds via `i2c_hid_of` as a mouse plus
       two "UNKNOWN" interfaces; no touch input.
-- [ ] **Webcam**: no device tree node in any tree yet. **Lead:** ciscobugger has
-      the camera working on the 15.6" with an **OV02C10** sensor (in-tree driver
-      + DT node + an HFLIP patch for the 180-degree mounting). Our DSDT names
-      only the Qualcomm CAMSS/CCI blocks (`QCOM0C06`, `QCOM0C26`, `QCOM0C32`) —
-      `CAMP`, `CAMS`, `CAMF`, `CAMI`, `CAMT`, `CAMU` — and not the sensor, so
-      identify it from the Windows driver store, the method that has worked
-      every other time. If it is also an OV02C10, their DT node is most of it.
+- [ ] **Webcam**: sensor identified as **OV02C10 at 0x36** (same as the 15.6"),
+      power sequence and GPIOs decoded from the Windows driver store; no device
+      tree node yet. Findings and first experiment: [camera.md](camera.md).
 - [ ] **Fingerprint reader**: not visible to Linux at all.
 - [ ] **EFI variables / NVRAM boot entries and the RTC** (clock resets each
       boot): one cause, the missing QSEECOM allowlist entry. The RTC dependency
