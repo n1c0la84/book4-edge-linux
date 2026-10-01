@@ -38,6 +38,8 @@ and adds what we found and fixed independently.
 | EFI variables / NVRAM boot entries | not working | needs the QSEECOM allowlist patch (Anatase has it, needs a kernel build) |
 | RTC | resets to a fixed date each boot | probably also QSEECOM |
 
+**Open points** (to test, not working, to report): [docs/TODO.md](docs/TODO.md).
+
 ## Updating the system
 
 **Read [docs/updates.md](docs/updates.md) before `dnf update`.** A GRUB package
