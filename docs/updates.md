@@ -10,8 +10,9 @@ Checked on 1 October 2026 against 963 pending Fedora 45 updates.
 - Then the rest of the system, holding back the kernel and firmware:
   `sudo dnf update --exclude='kernel*' --exclude='*firmware*'` (1265 package
   changes, on the Anatase kernel). `grub.cfg` still had `cutmem`; the Wi-Fi
-  firmware, audio topology alias and UCM profile were untouched. The reboot
-  after it is **not yet verified**.
+  firmware, audio topology alias and UCM profile were untouched. After a
+  reboot everything worked (display, GPU, Wi-Fi, Bluetooth, audio, battery,
+  keyboard backlight, EFI variables, RTC).
 - Not yet experienced: a Fedora **kernel** update and a **firmware** package
   update; "Safe by design" below is still analysis for those.
 

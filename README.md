@@ -39,13 +39,13 @@ and adds what we found and fixed independently.
 | Webcam | does not work | sensor identified (OV02C10, I2C 0x36), no device tree node yet: [docs/camera.md](docs/camera.md) |
 | Fingerprint reader | does not work | not visible to Linux at all (no USB/SPI device; `fprintd`: no devices); not investigated |
 | EFI variables / NVRAM boot entries | works (Anatase kernel) | QSEECOM allowlist; 197 variables, `efibootmgr` reads the boot order; not working on the Fedora kernel |
-| RTC | set (Anatase kernel), persistence across reboot to be verified | UTC: `hwclock --systohc --utc` wrote it (offset kept in the `RTCInfo` EFI variable); Windows needs `RealTimeIsUniversal=1`, see [docs/kernel.md](docs/kernel.md) |
+| RTC | works (Anatase kernel) | kept in UTC (offset in the `RTCInfo` EFI variable); sets the system clock 1.9 s into boot, before the network; Windows needs `RealTimeIsUniversal=1`, see [docs/kernel.md](docs/kernel.md) |
 
 **Open points** (to test, not working, to report): [docs/TODO.md](docs/TODO.md).
 
 **Who else is working on this machine**, what they already have and what is
 genuinely ours: [docs/related-work.md](docs/related-work.md).
-**Carrying this to Arch / Omarchy Dragon**, where nobody owns a Samsung:
+**Carrying this to Arch / Omarchy Dragon** (no Samsung there as far as we know):
 [docs/omarchy.md](docs/omarchy.md).
 **The Anatase kernel**: why it is worth running, how it is built and installed,
 and what it fixed here: [docs/kernel.md](docs/kernel.md).
@@ -65,8 +65,9 @@ What has actually been done so far (1 October 2026):
   `sudo dnf update --exclude='kernel*' --exclude='*firmware*'` on 1 October,
   1265 package changes (systemd 262, Mesa 26.2.3, PipeWire 1.6.9, ...), running
   the Anatase kernel. `grub.cfg` kept `cutmem`; our Wi-Fi firmware, audio
-  topology alias and UCM profile were untouched. **Reboot afterwards: not yet
-  verified.** Kernel and firmware packages (45) remain pending by choice.
+  topology alias and UCM profile were untouched, and the machine rebooted and
+  worked normally afterwards. Kernel and firmware packages (45) remain pending
+  by choice.
 
 ## Layout
 

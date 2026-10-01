@@ -209,8 +209,10 @@ boot. Convention chosen: **UTC in the hardware clock** for both systems.
   Without it Windows reads the clock as local time (2 h off in Rome in
   summer) and may write local time back.
 
-To verify: after a reboot the early kernel log timestamps should already be
-right, before the network syncs the clock.
+Verified after a reboot: `rtc-pm8xxx ... setting system clock to
+2026-10-01T15:42:08 UTC` at 1.9 s, correct, and chrony only selected an NTP
+source at 24 s. Log lines from the first ~1.9 s (before the RTC module loads)
+still carry systemd's fallback date.
 
 ### Default since 1 October
 

@@ -5,7 +5,7 @@ order of everyday usefulness within each section.
 
 ## To test (should work, never verified)
 
-- [x] **Full `dnf update`** done 1 Oct with `kernel*` and `*firmware*` excluded (reboot after it still to verify). Was: (963 packages pending, incl. kernel 7.2.8,
+- [x] **Full `dnf update`** done 1 Oct with `kernel*` and `*firmware*` excluded (rebooted fine afterwards). Was: (963 packages pending, incl. kernel 7.2.8,
       linux-firmware, systemd, PipeWire, Mesa). Follow [updates.md](updates.md);
       check `cutmem` in the ESP grub.cfg before rebooting.
 - [ ] **Kernel 7.2.8** from the "(other)" menu entry after the update: DKMS
@@ -43,7 +43,7 @@ order of everyday usefulness within each section.
       power sequence and GPIOs decoded from the Windows driver store; no device
       tree node yet. Findings and first experiment: [camera.md](camera.md).
 - [ ] **Fingerprint reader**: not visible to Linux at all.
-- [x] **EFI variables / NVRAM boot entries** work on the Anatase kernel (1 Oct); **RTC** readable but still wrong, see below. Was: **EFI variables / NVRAM boot entries and the RTC** (clock resets each
+- [x] **EFI variables / NVRAM boot entries** work on the Anatase kernel (1 Oct); **RTC** set in UTC and verified across a reboot (1 Oct). Was: **EFI variables / NVRAM boot entries and the RTC** (clock resets each
       boot): one cause, the missing QSEECOM allowlist entry. The RTC dependency
       is not a guess — the DT node carries `qcom,uefi-rtc-info`, so the clock
       offset is stored in an EFI variable. Decision and method in
