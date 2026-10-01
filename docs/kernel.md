@@ -211,3 +211,12 @@ boot. Convention chosen: **UTC in the hardware clock** for both systems.
 
 To verify: after a reboot the early kernel log timestamps should already be
 right, before the network syncs the clock.
+
+### Default since 1 October
+
+`/etc/book4/default-kernel` = `7.2.7-book4`. Menu: 7.2.7-book4 (default),
+7.2.7-book4 verbose, 7.2.0-61 "(other)" (its own DTB from
+`/usr/lib/firmware/book4/` plus the DKMS drivers), Windows, firmware settings.
+The "alt DT book4-own.dtb" entry was removed (`/etc/book4/test-dtb` deleted):
+it always uses the default kernel, and the new kernel's drivers do not match
+that older device tree.

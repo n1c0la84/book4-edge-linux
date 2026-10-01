@@ -5,7 +5,8 @@ distribution on the **Samsung Galaxy Book4 Edge 14" (NP940XMA, X1E80100)**.
 **Currently Fedora only:** everything here was developed and tested on
 Fedora 45 (aarch64). Since 1 October it runs a kernel built from Anatase's
 `anatase-7.2` tree (7.2.7 plus our charger patch, see [docs/kernel.md](docs/kernel.md));
-the stock Fedora kernel 7.2.0-61 with the DKMS drivers remains the fallback. The pieces are written so they can be
+it is the **default** boot entry, and the stock Fedora kernel 7.2.0-61 with the
+DKMS drivers stays in the menu as the fallback ("(other)"). The pieces are written so they can be
 carried to other distributions, but no other distribution has been tried yet.
 
 This builds on the **[Anatase](https://github.com/anatase-org/patchwork)**
