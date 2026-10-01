@@ -1,0 +1,14 @@
+[Unit]
+Description=Samsung Galaxy Book4 Edge EC battery and AC driver
+After=systemd-modules-load.service
+Before=upower.service
+ConditionPathExists=/sys/bus/platform/devices/b80000.i2c
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/book4-ec-bind start
+ExecStop=/usr/local/sbin/book4-ec-bind stop
+
+[Install]
+WantedBy=multi-user.target

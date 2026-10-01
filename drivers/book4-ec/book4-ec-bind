@@ -1,0 +1,23 @@
+#!/bin/bash
+# Bind the Samsung Galaxy Book4 Edge EC battery driver to 0x64 on the b80000 I2C bus.
+# Started by book4-ec.service. "stop" unbinds.
+set -u
+
+bus=
+for i in $(seq 1 20); do
+    for d in /sys/bus/i2c/devices/i2c-*; do
+        [ "$(basename "$(readlink -f "$d/..")")" = b80000.i2c ] && bus=$(basename "$d")
+    done
+    [ -n "$bus" ] && break
+    sleep 0.5
+done
+[ -n "$bus" ] || { echo "book4-ec: b80000 I2C bus not found" >&2; exit 1; }
+dev=/sys/bus/i2c/devices/${bus#i2c-}-0064
+
+if [ "${1:-start}" = stop ]; then
+    [ -e "$dev" ] && echo 0x64 > /sys/bus/i2c/devices/$bus/delete_device
+    exit 0
+fi
+
+modprobe book4_ec || { echo "book4-ec: module not built for $(uname -r)" >&2; exit 1; }
+[ -e "$dev" ] || echo book4-ec 0x64 > /sys/bus/i2c/devices/$bus/new_device

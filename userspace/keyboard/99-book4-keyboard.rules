@@ -1,0 +1,10 @@
+# Samsung Galaxy Book4 Edge 14" (NP940XMA), ENE KB9058 embedded controller.
+# input_id mis-classifies this keyboard as a tablet pad; libinput then binds it
+# as a pad and no key events reach the session. Clear the tablet tags.
+# See launchpad #2084591.
+SUBSYSTEM=="input", ATTRS{name}=="hid-over-i2c 0CF2:9050 Keyboard", \
+  ENV{ID_INPUT}="1", \
+  ENV{ID_INPUT_KEYBOARD}="1", \
+  ENV{ID_INPUT_KEY}="1", \
+  ENV{ID_INPUT_TABLET}:="", \
+  ENV{ID_INPUT_TABLET_PAD}:=""

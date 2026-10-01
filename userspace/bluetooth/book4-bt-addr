@@ -1,0 +1,24 @@
+#!/bin/bash
+# The Galaxy Book4 Edge's WCN7850 Bluetooth comes up "unconfigured" (no public
+# address), so BlueZ ignores it. Give it a public address at boot.
+#
+# The address is read from /etc/book4/bt-address (one line, AA:BB:CC:DD:EE:FF).
+# Use the one Windows uses so pairings stay valid on both systems:
+#   tools/bt-address-from-windows.py /path/to/mounted/windows
+CONF=/etc/book4/bt-address
+ADDR=$(tr -d ' \n' < "$CONF" 2>/dev/null)
+if ! [[ $ADDR =~ ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$ ]]; then
+    echo "book4-bt-addr: no valid address in $CONF" >&2
+    exit 1
+fi
+
+for i in $(seq 1 60); do
+    if btmgmt config 2>/dev/null | grep -q 'missing options: public-address'; then
+        exec btmgmt --index 0 public-addr "$ADDR"
+    fi
+    # Already configured (e.g. service restarted): nothing to do.
+    btmgmt info 2>/dev/null | grep -qi "addr $ADDR" && exit 0
+    sleep 0.5
+done
+echo "book4-bt-addr: hci0 never appeared as an unconfigured controller" >&2
+exit 1

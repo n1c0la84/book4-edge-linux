@@ -1,0 +1,15 @@
+# build output
+*.ko
+*.o
+*.mod
+*.mod.c
+*.cmd
+.*.cmd
+Module.symvers
+modules.order
+.tmp_versions/
+# never commit proprietary binaries or their disassembly
+*.sys
+*.mbn
+*.ann
+*.dis

@@ -1,0 +1,57 @@
+From: book4-edge-linux
+Subject: [PATCH] usb: typec: samsung-emuec: retry the PD request after a hot plug
+
+On a hot plug the sink request is sent before the S2MM006 has settled and
+times out (-ETIMEDOUT), leaving the charger at 5 V / 15 W. The same request
+succeeds when repeated about a second later (tested on a 14" Galaxy Book4
+Edge with a 65 W charger: request 1 fails, request 2 gives 20 V / 2.99 A).
+Retry up to five times, one second apart, instead of giving up.
+
+---
+--- a/samsung-emuec.c	2026-10-01 09:41:08.863267704 +0000
++++ b/samsung-emuec.c	2026-10-01 09:41:08.869267374 +0000
+@@ -103,7 +103,7 @@
+ 	bool dp_enter_requested;
+ 	bool dp_hpd;
+ 	u8 dp_pin;
+-	bool pd_attempted;
++	u8 pd_attempts;
+ 	u8 caps_retries;
+ };
+ 
+@@ -267,7 +267,7 @@
+ 		schedule_work(&pdic->hpd_work);
+ 	}
+ 	pdic->dp_pin = 0;
+-	pdic->pd_attempted = false;
++	pdic->pd_attempts = 0;
+ 	pdic->usb_mode = USB_MODE_NONE;
+ 	pdic->caps_retries = 0;
+ 	pdic->attempted_mode = SAMSUNG_EMUEC_MODE_NONE;
+@@ -447,12 +447,22 @@
+ 		rdo_op_current(active) > pdo_max_current(pdos[actual - 1]) ||
+ 		pdo_fixed_voltage(pdos[actual - 1]) *
+ 		rdo_op_current(active) < mv * ma) {
+-		if (!pdic->pd_attempted) {
+-			pdic->pd_attempted = true;
++		/*
++		 * On a hot plug the request can arrive before the PD controller
++		 * has settled and time out; it succeeds when repeated a little
++		 * later, so retry a few times instead of staying at 5 V.
++		 */
++		if (pdic->pd_attempts < 5) {
++			pdic->pd_attempts++;
+ 			ret = samsung_emuec_request_pdo(pdic, requested);
+-			if (ret)
++			if (ret) {
+ 				dev_warn(&pdic->client->dev,
+-						"PD contract request failed: %d\n", ret);
++					 "PD contract request %u failed: %d\n",
++					 pdic->pd_attempts, ret);
++				if (pdic->pd_attempts < 5)
++					mod_delayed_work(system_dfl_wq, &pdic->work,
++							 msecs_to_jiffies(1000));
++			}
+ 			ret = samsung_emuec_active_rdo(pdic, &active);
+ 			if (ret)
+ 				return;
