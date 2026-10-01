@@ -61,9 +61,12 @@ What has actually been done so far (1 October 2026):
 - **GRUB only:** `grub2*` upgraded from 2.12-76 to 2.12-81 with the guard in
   place. The guard restored `grub.cfg` (`cutmem` and `devicetree` present) and
   the machine booted normally afterwards.
-- **A full `dnf update` has not been attempted yet** (963 pending packages,
-  including kernel 7.2.8, linux-firmware, systemd, PipeWire and Mesa). The
-  analysis in docs/updates.md says it should be safe; it is unverified.
+- **Full update, kernel and firmware held back:**
+  `sudo dnf update --exclude='kernel*' --exclude='*firmware*'` on 1 October,
+  1265 package changes (systemd 262, Mesa 26.2.3, PipeWire 1.6.9, ...), running
+  the Anatase kernel. `grub.cfg` kept `cutmem`; our Wi-Fi firmware, audio
+  topology alias and UCM profile were untouched. **Reboot afterwards: not yet
+  verified.** Kernel and firmware packages (45) remain pending by choice.
 
 ## Layout
 

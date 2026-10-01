@@ -2,10 +2,22 @@
 
 Checked on 1 October 2026 against 963 pending Fedora 45 updates.
 
-**Status:** only the GRUB packages have been updated so far (2.12-76 to
-2.12-81, through `install/guard-grub.sh`); the guard worked and the machine
-booted normally. **No full `dnf update` has been run yet**, so everything in
-"Safe by design" below is analysis, not experience.
+**Status (1 October 2026):**
+
+- GRUB packages updated first (2.12-76 to 2.12-81) through
+  `install/guard-grub.sh`; the guard restored `grub.cfg` and the machine
+  booted normally.
+- Then the rest of the system, holding back the kernel and firmware:
+  `sudo dnf update --exclude='kernel*' --exclude='*firmware*'` (1265 package
+  changes, on the Anatase kernel). `grub.cfg` still had `cutmem`; the Wi-Fi
+  firmware, audio topology alias and UCM profile were untouched. The reboot
+  after it is **not yet verified**.
+- Not yet experienced: a Fedora **kernel** update and a **firmware** package
+  update; "Safe by design" below is still analysis for those.
+
+Excluding the Fedora kernel costs little while the Anatase kernel is the
+default: it is only the fallback. To keep it excluded permanently, add
+`excludepkgs=kernel*` to `[main]` in `/etc/dnf/dnf.conf`.
 
 ## The one real danger: GRUB updates
 

@@ -5,7 +5,7 @@ order of everyday usefulness within each section.
 
 ## To test (should work, never verified)
 
-- [ ] **Full `dnf update`** (963 packages pending, incl. kernel 7.2.8,
+- [x] **Full `dnf update`** done 1 Oct with `kernel*` and `*firmware*` excluded (reboot after it still to verify). Was: (963 packages pending, incl. kernel 7.2.8,
       linux-firmware, systemd, PipeWire, Mesa). Follow [updates.md](updates.md);
       check `cutmem` in the ESP grub.cfg before rebooting.
 - [ ] **Kernel 7.2.8** from the "(other)" menu entry after the update: DKMS
