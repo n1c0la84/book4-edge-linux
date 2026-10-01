@@ -54,11 +54,13 @@ not been run end to end on a fresh system.
 
 ## Credits
 
-- Anatase / Antheas Kapenekakis: device tree corrections, `ene-kb9058-battery`,
-  `samsung-emuec`, QSEECOM allowlist, keyboard HID quirk.
-- Maxim Storetvedt: the original Galaxy Book4 Edge DTS series on linux-arm-msm.
-- This repository: EC protocol reverse-engineered independently from the
-  Windows driver (matching Anatase's), charger hot-plug PD retry, audio UCM
-  profile, Bluetooth address service, boot hook, Wi-Fi firmware findings.
+Much of what works here is other people's work, above all the
+[Anatase](https://github.com/anatase-org/patchwork) project (Antheas
+Kapenekakis), Maxim Storetvedt's DTS series, Linaro's X1E80100 audio work
+and the linux-firmware/Debian packagers. **[CREDITS.md](CREDITS.md) lists every
+file taken from elsewhere with its origin, author, licence and whether we
+changed it**, and separates that from our own work.
 
-Drivers are GPL-2.0-only as marked in their headers.
+Copied files keep their original copyright and licence headers. Drivers are
+GPL-2.0-only as marked; the UCM profile is BSD-3-Clause (derived from
+alsa-ucm-conf).
