@@ -6,6 +6,9 @@
    sent before the S2MM006 has settled; it times out (-110) and is never
    retried (`pd_attempted`), leaving the charger at 5 V. Repeating it ~1 s later
    succeeds. Patch: [drivers/anatase/patches/0001](../drivers/anatase/patches).
+   Not a discovery: ciscobugger reached the same conclusion two weeks earlier on
+   their own driver for the 15.6" ("stage the PD request ourselves", 17 Sept).
+   It is still a real fix to *this* driver, and worth sending as one.
 2. **Cycle count reads the wrong register.** `KB9058_CYCLES` is `0xd0`, but on
    this 14" unit EC space `0xd0..0xd1` holds the state of charge (`00 62` = 98
    while the gauge at `0xa0` read 98 %). The BIX-style block at `0xb0..0xb7` is
@@ -38,7 +41,28 @@
 
 ## To the linux-arm-msm DTS thread
 
-- `pmic-glink` / `qcom_battmgr` cannot work on this machine: Samsung's ADSP
-  image has no `charger_pd` (verified against Dell/Lenovo X1E images and the
-  Windows driver store, where the battery is ACPI `PNP0C0A` via the EC). The
-  Anatase DTS already drops it.
+- `pmic-glink` / `qcom_battmgr` cannot work **with this 14" unit's firmware**:
+  Samsung's ADSP image has no `charger_pd` (verified against Dell/Lenovo X1E
+  images and the Windows driver store, where the battery is ACPI `PNP0C0A` via
+  the EC). The Anatase DTS already drops it.
+
+  **Scope correction (1 Oct).** This is a property of the firmware image, not of
+  the product line. ciscobugger's 15.6" (NP750XQA, X1P42100) ships a
+  `battmgr.jsn` in its ADSP firmware set, so that model *does* run the charger
+  protection domain. Any report should say "this firmware image" and not "the
+  Book4 Edge", or it will be contradicted by the next owner who checks.
+
+## To ciscobugger (`ciscobugger/book4-edge-linux`, 15.6" NP750XQA)
+
+Not a bug report — an exchange. Their repository and this one cover the same
+machine family from opposite ends. See [related-work.md](related-work.md).
+
+- **We can offer**: the keyboard backlight EC command (`{0x10, x, level}` at
+  address `0x62`), which sits in the sub-`0x80` command space their `EC2.sys`
+  table does not cover; the 14"/X1E80100 device tree and firmware set; the
+  ath12k c5/c7 firmware finding; and the ADSP `charger_pd` contrast between the
+  two models.
+- **We would like**: whether their camera sensor (OV02C10) is also the one in
+  the 14", and how they identified it; their EC command table applied to our
+  backlight blinking problem; and the charging command namespace
+  (`CMD_CHG_CUR` etc.), which may allow a charge limit.

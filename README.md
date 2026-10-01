@@ -35,10 +35,15 @@ and adds what we found and fixed independently.
 | Touchscreen | does not work | Goodix `27C6:0123` binds via `i2c_hid_of` but only as a mouse + two "UNKNOWN" interfaces; no touch input |
 | Webcam | does not work | no device tree node in any tree yet |
 | Fingerprint reader | does not work | not visible to Linux at all (no USB/SPI device; `fprintd`: no devices); not investigated |
-| EFI variables / NVRAM boot entries | not working | needs the QSEECOM allowlist patch (Anatase has it, needs a kernel build) |
-| RTC | resets to a fixed date each boot | probably also QSEECOM |
+| EFI variables / NVRAM boot entries | not working | needs the QSEECOM allowlist patch, see [docs/kernel.md](docs/kernel.md) |
+| RTC | resets to a fixed date each boot | same cause: the DT node carries `qcom,uefi-rtc-info`, so the clock offset lives in an EFI variable ([docs/kernel.md](docs/kernel.md)) |
 
 **Open points** (to test, not working, to report): [docs/TODO.md](docs/TODO.md).
+
+**Who else is working on this machine**, what they already have and what is
+genuinely ours: [docs/related-work.md](docs/related-work.md).
+**Why we have not rebuilt the kernel** (QSEECOM, the UFS and HID quirks, and
+what QSEECOM would actually fix): [docs/kernel.md](docs/kernel.md).
 
 ## Updating the system
 
@@ -57,7 +62,7 @@ What has actually been done so far (1 October 2026):
 
 ## Layout
 
-    docs/         how it works and how we got here
+    docs/         how it works, how we got here, and who else is working on it
     firmware/     what to extract from Windows (no blobs are shipped)
     dts/          the device trees we boot (compiled, with provenance)
     drivers/
