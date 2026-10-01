@@ -31,7 +31,7 @@ and adds what we found and fixed independently.
 | Headphones, headset mic | profile present, untested | |
 | Lid-close suspend (s2idle) | works | `mem_sleep_default=s2idle`; overnight drain not measured |
 | `deep` suspend | never resumes | do not use |
-| USB-C DisplayPort, HDMI | untested | |
+| External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | does not work | Goodix `27C6:0123` binds via `i2c_hid_of` but only as a mouse + two "UNKNOWN" interfaces; no touch input |
 | Webcam | does not work | no device tree node in any tree yet |
 | EFI variables / NVRAM boot entries | not working | needs the QSEECOM allowlist patch (Anatase has it, needs a kernel build) |
