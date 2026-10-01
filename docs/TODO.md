@@ -65,7 +65,7 @@ order of everyday usefulness within each section.
 
 Details in [upstream.md](upstream.md):
 
-- [ ] **Talk to ciscobugger** (15.6" NP750XQA) — highest value per minute of
+- [x] **Talk to ciscobugger**: issue opened 1 Oct, ciscobugger/book4-edge-linux#3 (15.6" NP750XQA) — highest value per minute of
       anything on this list; complementary gaps both ways. See
       [related-work.md](related-work.md) and the last section of
       [upstream.md](upstream.md).
@@ -107,6 +107,8 @@ Details in [upstream.md](upstream.md):
 - [x] Licence chosen 1 Oct: our code GPL-2.0-only, docs CC BY 4.0 (LICENSE, LICENSES/). Was: Choose a licence for our own files (drivers are GPL-2.0-only, the UCM
       profile BSD-3-Clause; scripts and docs have none yet).
 - [x] Reviewed and published: the repository is public since 1 October 2026.
+      Shared 1 Oct: zensanp/linux-book4-edge #3 (Wi-Fi), #4 (battery), #8
+      (audio); ciscobugger/book4-edge-linux#3; a link on anatase-org/kernel-anatase#1.
 - [ ] Import the device tree **sources** (only compiled DTBs are here; the
       sources are on the workstation / in Anatase's tree).
 - [ ] Try another distribution (the repo is Fedora-only so far). The hardware
