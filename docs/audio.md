@@ -27,6 +27,14 @@ channel 1 is the left speaker, channel 2 the right, 3 and 4 are silent. Stereo
 content plays correctly. Declaring it as two channels makes PipeWire drop the
 whole profile (`snd_pcm_hw_params_set_channels(2) failed`).
 
+Internal microphones: two DMICs on DMIC0/DMIC1 (DMIC2/3 are silent; the
+`dmic23` pin group is configured but nothing answers there). The stock
+sequences set `VA_DEC0/1 Volume` to 100 (+16 dB), which leaves speech around
+-34 dBFS; the profile uses 120 (+36 dB, about -14 dBFS, no clipping, noise
+floor about -46 dBFS). The enable sequences are inlined because an
+`EnableSequence` placed after an `Include` of the stock one does not override
+it.
+
 Open question: each speaker bus also enumerates a second WSA883x at SoundWire
 address 1 that no device tree describes. The machine may have four speakers.
 

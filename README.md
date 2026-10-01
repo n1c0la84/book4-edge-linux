@@ -23,7 +23,8 @@ and adds what we found and fixed independently.
 | USB-C data, hot-plug | works | Anatase `samsung-emuec` |
 | Charging, incl. hot replug at 20 V | works | `samsung-emuec` + [our retry patch](drivers/anatase/patches) |
 | Speakers (stereo) | works | topology alias + UCM profile: [docs/audio.md](docs/audio.md) |
-| Headphones, microphones | profile present, untested | |
+| Internal microphones | works | DMIC0/1, gain raised in the UCM profile |
+| Headphones, headset mic | profile present, untested | |
 | Lid-close suspend (s2idle) | works | `mem_sleep_default=s2idle`; overnight drain not measured |
 | `deep` suspend | never resumes | do not use |
 | USB-C DisplayPort, HDMI | untested | |
