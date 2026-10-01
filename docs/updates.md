@@ -2,6 +2,11 @@
 
 Checked on 1 October 2026 against 963 pending Fedora 45 updates.
 
+**Status:** only the GRUB packages have been updated so far (2.12-76 to
+2.12-81, through `install/guard-grub.sh`); the guard worked and the machine
+booted normally. **No full `dnf update` has been run yet**, so everything in
+"Safe by design" below is analysis, not experience.
+
 ## The one real danger: GRUB updates
 
 `/boot/efi/EFI/fedora/grub.cfg` is our static configuration (`cutmem`,

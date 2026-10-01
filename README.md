@@ -2,8 +2,9 @@
 
 Working notes, configuration and drivers for running a mainline-based Linux
 distribution on the **Samsung Galaxy Book4 Edge 14" (NP940XMA, X1E80100)**.
-Developed on Fedora 45 (kernel 7.2.0-61); written so the pieces can be carried
-to other distributions.
+**Currently Fedora only:** everything here was developed and tested on
+Fedora 45 (aarch64, kernel 7.2.0-61). The pieces are written so they can be
+carried to other distributions, but no other distribution has been tried yet.
 
 This builds on the **[Anatase](https://github.com/anatase-org/patchwork)**
 project (branch `anatase-7.2`), whose device tree and EC/Type-C drivers we use,
@@ -14,9 +15,11 @@ and adds what we found and fixed independently.
 | Area | State | How |
 |---|---|---|
 | Boot from internal UFS | works | hand-built DTB via GRUB `devicetree`, `cutmem`, see [docs/bootstrap.md](docs/bootstrap.md) |
-| Windows from the GRUB menu | entry added, untested | chainloads `\EFI\Microsoft\Boot\bootmgfw.efi` |
+| Windows from the GRUB menu | in testing | signed GRUB has no built-in chainloader: the hook ships `chain.mod` + deps to `\EFI\book4\arm64-efi\` |
 | Display (eDP) | works | needs `samsung-emuec` loaded (it provides the USB-C DP bridges) |
 | Keyboard | works | udev rule: [userspace/keyboard](userspace/keyboard) |
+| Fn keys: brightness, volume | work | stock HID |
+| Keyboard backlight | does not work | EC-controlled (`EC2.sys` has `IOCTL_GET_KBDBLT`); no Linux driver yet |
 | Touchpad | works | stock |
 | Wi-Fi (WCN7850) | works | specific firmware, [docs/firmware.md](docs/firmware.md) |
 | Bluetooth | works | controller needs a public address: [userspace/bluetooth](userspace/bluetooth) |
@@ -39,6 +42,15 @@ and adds what we found and fixed independently.
 **Read [docs/updates.md](docs/updates.md) before `dnf update`.** A GRUB package
 update overwrites the boot configuration this machine needs; `install/guard-grub.sh`
 makes that safe.
+
+What has actually been done so far (1 October 2026):
+
+- **GRUB only:** `grub2*` upgraded from 2.12-76 to 2.12-81 with the guard in
+  place. The guard restored `grub.cfg` (`cutmem` and `devicetree` present) and
+  the machine booted normally afterwards.
+- **A full `dnf update` has not been attempted yet** (963 pending packages,
+  including kernel 7.2.8, linux-firmware, systemd, PipeWire and Mesa). The
+  analysis in docs/updates.md says it should be safe; it is unverified.
 
 ## Layout
 
