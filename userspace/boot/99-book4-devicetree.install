@@ -12,9 +12,22 @@ SRC=/usr/lib/firmware/book4/$DTB
 BOOT=${BOOK4_BOOT:-/boot}   # override only for dry-run tests
 ESPCFG=/boot/efi/EFI/fedora/grub.cfg
 
+# A kernel that ships its own Book4 device tree (e.g. one built from the
+# Anatase tree, installed with dtbs_install into /usr/lib/modules/<kver>/dtb)
+# must use that one: its compatibles match its drivers. Fedora's kernels have
+# none, so they keep using the separately maintained DTB.
+KDTB=/usr/lib/modules/$KVER/dtb/qcom/$DTB
+[ -r "$KDTB" ] && SRC=$KDTB
+
 if [ "$COMMAND" = add ] && [ -r "$SRC" ] && [ -z "$BOOK4_DRYRUN" ]; then
     install -d -m 755 "/boot/dtb-$KVER"
-    install -m 644 "$SRC" "/boot/dtb-$KVER/$DTB"
+    # GRUB needs slack in the blob to write /chosen; kernel-built DTBs have
+    # none (unknown-block(0,0) at boot), so always re-pad.
+    if command -v dtc >/dev/null; then
+        dtc -q -I dtb -O dtb -p 8192 -o "/boot/dtb-$KVER/$DTB" "$SRC"
+    else
+        install -m 644 "$SRC" "/boot/dtb-$KVER/$DTB"
+    fi
 
     for e in /boot/loader/entries/*"$KVER"*.conf; do
         [ -e "$e" ] || continue

@@ -3,7 +3,9 @@
 Working notes, configuration and drivers for running a mainline-based Linux
 distribution on the **Samsung Galaxy Book4 Edge 14" (NP940XMA, X1E80100)**.
 **Currently Fedora only:** everything here was developed and tested on
-Fedora 45 (aarch64, kernel 7.2.0-61). The pieces are written so they can be
+Fedora 45 (aarch64). Since 1 October it runs a kernel built from Anatase's
+`anatase-7.2` tree (7.2.7 plus our charger patch, see [docs/kernel.md](docs/kernel.md));
+the stock Fedora kernel 7.2.0-61 with the DKMS drivers remains the fallback. The pieces are written so they can be
 carried to other distributions, but no other distribution has been tried yet.
 
 This builds on the **[Anatase](https://github.com/anatase-org/patchwork)**
@@ -19,11 +21,11 @@ and adds what we found and fixed independently.
 | Display (eDP) | works | needs `samsung-emuec` loaded (it provides the USB-C DP bridges) |
 | Keyboard | works | udev rule: [userspace/keyboard](userspace/keyboard) |
 | Fn keys: brightness, volume | work | stock HID |
-| Keyboard backlight | solved upstream, not adopted here yet | Anatase's `samsung-galaxybook-ec` drives it via the `0xFF10` mailbox and handles the hotkey; our own `0x62` experiment blinks and is superseded ([docs/related-work.md](docs/related-work.md)) |
+| Keyboard backlight | works (Anatase kernel) | Anatase's `samsung-galaxybook-ec` drives it via the `0xFF10` mailbox and handles the hotkey; our own `0x62` experiment blinks and is superseded ([docs/related-work.md](docs/related-work.md)) |
 | Touchpad | works | stock |
 | Wi-Fi (WCN7850) | works | specific firmware, [docs/firmware.md](docs/firmware.md) |
 | Bluetooth | works | controller needs a public address: [userspace/bluetooth](userspace/bluetooth) |
-| Battery / AC | works | Anatase `ene-kb9058-battery` |
+| Battery / AC | works, incl. charging confirmed | Anatase `samsung-galaxybook-ec` (built into the Anatase kernel); `ene-kb9058-battery` via DKMS on the Fedora kernel |
 | USB-C data, hot-plug | works | Anatase `samsung-emuec` |
 | Charging, incl. hot replug at 20 V | works | `samsung-emuec` + [our retry patch](drivers/anatase/patches) |
 | Speakers (stereo) | works | topology alias + UCM profile: [docs/audio.md](docs/audio.md) |
@@ -35,8 +37,8 @@ and adds what we found and fixed independently.
 | Touchscreen | does not work | Goodix `27C6:0123` binds via `i2c_hid_of` but only as a mouse + two "UNKNOWN" interfaces; no touch input |
 | Webcam | does not work | sensor identified (OV02C10, I2C 0x36), no device tree node yet: [docs/camera.md](docs/camera.md) |
 | Fingerprint reader | does not work | not visible to Linux at all (no USB/SPI device; `fprintd`: no devices); not investigated |
-| EFI variables / NVRAM boot entries | not working | needs the QSEECOM allowlist patch, see [docs/kernel.md](docs/kernel.md) |
-| RTC | resets to a fixed date each boot | same cause: the DT node carries `qcom,uefi-rtc-info`, so the clock offset lives in an EFI variable ([docs/kernel.md](docs/kernel.md)) |
+| EFI variables / NVRAM boot entries | works (Anatase kernel) | QSEECOM allowlist; 197 variables, `efibootmgr` reads the boot order; not working on the Fedora kernel |
+| RTC | readable on the Anatase kernel, but wrong (2024-05-30) | offset lives in an EFI variable (`qcom,uefi-rtc-info`); not yet written once; mind Windows' local-time RTC |
 
 **Open points** (to test, not working, to report): [docs/TODO.md](docs/TODO.md).
 

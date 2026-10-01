@@ -152,3 +152,46 @@ The honest cost is that a local build buys the rebuilds forever: every kernel
 security update becomes our work rather than someone else's. We are already
 running a kernel-install hook and pinning a default kernel, so this is not a new
 kind of burden — but it is more of it.
+
+## Done: 1 October 2026
+
+Built and running: `7.2.7-book4` from `anatase-org/patchwork` branch `anatase-7.2`
+(head `2ad788424`), plus our PD retry patch (branch `book4/pd-retry`, reported in
+https://github.com/anatase-org/kernel-anatase/issues/1).
+
+What it took, on the laptop itself:
+
+    git clone --depth 1 -b anatase-7.2 https://github.com/anatase-org/patchwork.git
+    cd patchwork
+    git submodule update --init --depth 1     # drivers/custom/* Kconfig needs them
+    git am / patch -p1 < our PD retry patch
+    cp /boot/config-7.2.0-61.fc45.aarch64 .config && make olddefconfig
+    ./scripts/config --module EC_SAMSUNG_GALAXYBOOK --module TYPEC_SAMSUNG_EMUEC \
+        --enable DEBUG_INFO_NONE --disable DEBUG_INFO_BTF \
+        --set-str LOCALVERSION "-book4" --disable LOCALVERSION_AUTO
+    make olddefconfig
+    systemd-inhibit --what=sleep:idle:handle-lid-switch make -j12 LOCALVERSION= all
+    bash install/install-anatase-kernel.sh
+
+- `LOCALVERSION=` on every make call drops the `+` for an untagged tree, so the
+  release is exactly `7.2.7-book4`.
+- Debug info off: the build took **25 minutes** on the 12 cores (no `pahole`
+  needed). `perl` and `ncurses-devel` were not needed either.
+- `install/install-anatase-kernel.sh` restricts our DKMS packages to Fedora
+  kernels (`BUILD_EXCLUSIVE_KERNEL`), otherwise their copies in `extra/` would
+  shadow the built-in drivers; installs modules and `dtbs_install` into
+  `/usr/lib/modules/<kver>/dtb`; and runs `make install`, which on Fedora is
+  `kernel-install` (dracut + our hook). The hook now prefers a Book4 DTB
+  shipped with the kernel and re-pads it with `dtc -p 8192`.
+- The kernel is added as an "(other)" GRUB entry; the pinned default stays the
+  Fedora kernel until it is pinned (`/etc/book4/default-kernel`).
+
+Verified on the 14": display (GPU accelerated, Adreno X1-85), keyboard,
+touchpad, Wi-Fi, Bluetooth, audio devices, battery and AC through
+`samsung-galaxybook-ec` (charging confirmed), USB-C and a charger hot replug
+back at 20 V, the keyboard backlight and its Fn hotkey, EFI variables
+(`efibootmgr` works). Kernel not tainted. The RTC is now readable but wrong
+(2024-05-30) until written once.
+
+Harmless: `failed to load gen70500_sqe.fw` early in boot; the GPU loads it
+from the root filesystem ~16 s later.

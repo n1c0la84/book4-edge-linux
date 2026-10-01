@@ -25,7 +25,7 @@ order of everyday usefulness within each section.
 
 ## Not working (needs investigation)
 
-- [ ] ~~**Keyboard backlight**~~ — **solved upstream 30 Sept.** Anatase's new
+- [x] ~~**Keyboard backlight**~~ works on the Anatase kernel, hotkey too (1 Oct). — **solved upstream 30 Sept.** Anatase's new
       `samsung-galaxybook-ec` drives it through the `0xFF10` mailbox on `0x64`
       (write `{0x40, 0x00, 0xff, 0x10, 0xfd}`, read `0xfc`), with the hotkey.
       Our `0x62` command is a different mechanism and still unexplained, but
@@ -43,7 +43,7 @@ order of everyday usefulness within each section.
       power sequence and GPIOs decoded from the Windows driver store; no device
       tree node yet. Findings and first experiment: [camera.md](camera.md).
 - [ ] **Fingerprint reader**: not visible to Linux at all.
-- [ ] **EFI variables / NVRAM boot entries and the RTC** (clock resets each
+- [x] **EFI variables / NVRAM boot entries** work on the Anatase kernel (1 Oct); **RTC** readable but still wrong, see below. Was: **EFI variables / NVRAM boot entries and the RTC** (clock resets each
       boot): one cause, the missing QSEECOM allowlist entry. The RTC dependency
       is not a guess — the DT node carries `qcom,uefi-rtc-info`, so the clock
       offset is stored in an EFI variable. Decision and method in
