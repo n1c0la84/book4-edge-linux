@@ -70,6 +70,14 @@ for i in "${!kernels[@]}"; do
 done
 default=${kernels[0]}
 TESTDTB=$(cat "${BOOK4_TESTFILE:-/etc/book4/test-dtb}" 2>/dev/null)
+# Optional replacement device tree for the default kernel's main entries:
+# /etc/book4/default-dtb holds "<kver> <DTB path under /boot>", e.g.
+# "7.2.7-book4 /dtb-test/camera.dtb". It applies only while <kver> is the
+# default, so a new kernel never boots with a DTB built for an older one.
+# The kernel's own DTB stays reachable as "standard DT".
+read -r DEFKVER DEFDTB < "${BOOK4_DEFAULTFILE:-/etc/book4/default-dtb}" 2>/dev/null || true
+
+[ -n "${DEFDTB:-}" ] && [ "${DEFKVER:-}" = "$default" ] && [ -e "$BOOT$DEFDTB" ] || DEFDTB=
 
 entry() {  # $1=kver $2=title suffix $3=extra args [$4=DTB path in /boot]
     cat <<EOF
@@ -99,11 +107,14 @@ if [ "\$lockdown" != "y" ]; then
   cutmem 0x8800000000 0x8fffffffff
 fi
 EOF
-    entry "$default" "Book4 Edge" ""
-    entry "$default" "verbose" " earlycon keep_bootcon ignore_loglevel"
+    entry "$default" "Book4 Edge" "" "$DEFDTB"
+    entry "$default" "verbose" " earlycon keep_bootcon ignore_loglevel" "$DEFDTB"
+    if [ -n "$DEFDTB" ]; then
+        entry "$default" "standard DT" ""
+    fi
     # Optional experimental device tree: /etc/book4/test-dtb names a DTB under /boot
     # (e.g. /dtb-test/ec-events.dtb). Never the default; delete the file to drop the entry.
-    if [ -n "$TESTDTB" ] && [ -e "$BOOT$TESTDTB" ]; then
+    if [ -n "$TESTDTB" ] && [ -e "$BOOT$TESTDTB" ] && [ "$TESTDTB" != "$DEFDTB" ]; then
         entry "$default" "alt DT ${TESTDTB##*/}" "" "$TESTDTB"
     fi
     for k in "${kernels[@]:1}"; do

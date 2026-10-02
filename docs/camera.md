@@ -20,6 +20,17 @@ How to try it: build the DTB in the Anatase tree (add it to
 then [`install/camera-dtb.sh`](../install/camera-dtb.sh) adds a separate
 "alt DT camera.dtb" GRUB entry for the default kernel (`remove` drops it).
 
+To make it the default (done on the reference machine on 2 October):
+
+    echo "7.2.7-book4 /dtb-test/camera.dtb" | sudo tee /etc/book4/default-dtb
+    bash install/update-boot-hook.sh
+
+The boot hook then uses that DTB for the default kernel's main and verbose
+entries and keeps the kernel's own DTB as "standard DT". The setting names the
+kernel it was built for and is ignored once another kernel becomes the
+default, so a newer kernel never boots with this DTB; rebuild the camera DTB
+from the new tree and update the file then.
+
 What the DTB adds to Anatase's 14" DTS: the CCI0 node and pins (from
 zensanp's `hamoa.dtsi`), the legacy-binding CAMSS node from the kernel's
 `qcom,x1e80100-camss.yaml` example, the sensor on `cci0_i2c0` with MCLK4 on
