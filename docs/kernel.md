@@ -222,3 +222,15 @@ still carry systemd's fallback date.
 The "alt DT book4-own.dtb" entry was removed (`/etc/book4/test-dtb` deleted):
 it always uses the default kernel, and the new kernel's drivers do not match
 that older device tree.
+
+**Not across a flat battery.** After the battery ran empty overnight
+(1-2 October) the kernel set the clock to 2026-09-30 11:44 on the next boot;
+chrony corrected it once online. The RTC counter evidently stops when the
+battery is fully drained.
+
+### Known problem: suspend drains the battery (2 October)
+
+On this kernel s2idle does not reach the SoC low-power states, so a night with
+the lid closed empties the battery. Details and the test in
+[power.md](power.md).
+

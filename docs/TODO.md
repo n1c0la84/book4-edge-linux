@@ -14,8 +14,12 @@ order of everyday usefulness within each section.
 - [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
       and HDMI (`rtd2171` bridge, `simple_bridge`).
 - [ ] **Headphones and headset microphone** (UCM devices exist, jack untested).
-- [x] **Battery drain in suspend**: lid closed 11:13-14:17 on 1 October
-      (3 h 04 min in s2idle), 99 % -> 98 %, about 0.2 W. Low-power state reached.
+- [x] **Battery drain in suspend, Fedora kernel**: lid closed 11:13-14:17 on
+      1 October (3 h 04 min in s2idle), 99 % -> 98 %, about 0.2 W.
+- [ ] **Battery drain in suspend, Anatase kernel: broken.** Empty after one
+      night (1-2 Oct); `qcom_stats` shows no SoC low-power entry. Run
+      `tools/power/suspend-test.sh` on the Fedora kernel to compare, then
+      bisect: [power.md](power.md).
 - [ ] **GRUB guard on a future GRUB update**, including the `chain.mod` copy for
       the Windows entry (the guard was tested before the Windows entry existed).
 - [ ] **`install/install-fedora.sh` end to end** on a fresh install (each step
@@ -111,6 +115,8 @@ Details in [upstream.md](upstream.md):
 - [x] Reviewed and published: the repository is public since 1 October 2026.
       Shared 1 Oct: zensanp/linux-book4-edge #3 (Wi-Fi), #4 (battery), #8
       (audio); ciscobugger/book4-edge-linux#3; a link on anatase-org/kernel-anatase#1.
+      Fedora Discussion, 2 Oct:
+      https://discussion.fedoraproject.org/t/fedora-45-on-the-samsung-galaxy-book4-edge-14-snapdragon-x-elite-what-works-and-how/203466
 - [ ] Import the device tree **sources** (only compiled DTBs are here; the
       sources are on the workstation / in Anatase's tree).
 - [ ] Try another distribution (the repo is Fedora-only so far). The hardware

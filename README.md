@@ -34,14 +34,14 @@ and adds what we found and fixed independently.
 | Speakers (stereo) | works | topology alias + UCM profile: [docs/audio.md](docs/audio.md) |
 | Internal microphones | works | DMIC0/1, gain raised in the UCM profile |
 | Headphones, headset mic | profile present, untested | |
-| Suspend (s2idle): lid close/open, power key | works | `mem_sleep_default=s2idle`; both lid and power key suspend and wake; drain measured at 1 % in 3 h 04 min (about 0.2 W) |
+| Suspend (s2idle): lid close/open, power key | **drains the battery on the Anatase kernel** | suspends and wakes with lid or power key on both kernels. Fedora kernel: 1 % in 3 h 04 min (about 0.2 W). Anatase kernel: a full battery was empty after one night; the SoC never reaches its low-power states (`qcom_stats` `aosd`/`cxsd`/`ddr` stay at 0). Under investigation: [docs/power.md](docs/power.md). Shut down, or stay on the charger, when away for hours |
 | `deep` suspend | never resumes | do not use |
 | External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | works (KDE Plasma, Anatase kernel) | Goodix `27C6:0123` via `i2c_hid_of`: a direct-touch multitouch device (`INPUT_PROP_DIRECT`, MT slots), which KWin uses as touch. Our earlier "no touch input" came from reading the `mouse0` handler and the two "UNKNOWN" interfaces; GNOME and the Fedora kernel not re-checked |
 | Webcam | does not work | sensor identified (OV02C10, I2C 0x36), no device tree node yet: [docs/camera.md](docs/camera.md) |
 | Fingerprint reader | does not work | not visible to Linux at all (no USB/SPI device; `fprintd`: no devices); not investigated |
 | EFI variables / NVRAM boot entries | works (Anatase kernel) | QSEECOM allowlist; 197 variables, `efibootmgr` reads the boot order; not working on the Fedora kernel |
-| RTC | works (Anatase kernel) | kept in UTC (offset in the `RTCInfo` EFI variable); sets the system clock 1.9 s into boot, before the network; Windows needs `RealTimeIsUniversal=1`, see [docs/kernel.md](docs/kernel.md) |
+| RTC | works (Anatase kernel), but loses time if the battery runs flat | kept in UTC (offset in the `RTCInfo` EFI variable); sets the system clock 1.9 s into boot, before the network; Windows needs `RealTimeIsUniversal=1`, see [docs/kernel.md](docs/kernel.md) |
 
 **Open points** (to test, not working, to report): [docs/TODO.md](docs/TODO.md).
 
