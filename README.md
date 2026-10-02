@@ -7,7 +7,7 @@ Fedora 45 (aarch64). Since 1 October it runs a kernel built from Anatase's
 `anatase-7.2` tree (7.2.7 plus our charger patch, see [docs/kernel.md](docs/kernel.md));
 it is the **default** boot entry, and the stock Fedora kernel 7.2.0-61 with the
 DKMS drivers stays in the menu as the fallback ("(other)"). The pieces are written so they can be
-carried to other distributions, but no other distribution has been tried yet.
+carried to other distributions; an Arch Linux ARM install is in progress ([docs/arch.md](docs/arch.md)).
 
 ![fastfetch on the Galaxy Book4 Edge 14": Fedora 45, kernel 7.2.7-book4, KDE Plasma 6.7.5 on Wayland, Snapdragon X Elite X1E-80-100, Adreno X1-85, 2880x1800 at 120 Hz](docs/images/fastfetch.png)
 
@@ -49,6 +49,8 @@ and adds what we found and fixed independently.
 genuinely ours: [docs/related-work.md](docs/related-work.md).
 **Carrying this to Arch / Omarchy Dragon** (no Samsung there as far as we know):
 [docs/omarchy.md](docs/omarchy.md).
+**Arch Linux ARM** next to Fedora on the same disk (toward Omarchy), in progress:
+[docs/arch.md](docs/arch.md).
 **The Anatase kernel**: why it is worth running, how it is built and installed,
 and what it fixed here: [docs/kernel.md](docs/kernel.md).
 
@@ -82,7 +84,8 @@ What has actually been done so far (1 October 2026):
       book4-kbd-backlight/  keyboard backlight driver - experimental, disabled
     userspace/    boot hook, udev/modprobe/dracut snippets, Bluetooth, audio
     tools/        EC test tool, disassembly annotator, Windows registry helper
-    install/      install-fedora.sh, install-anatase-kernel.sh, guard-grub.sh, helpers
+    install/      install-fedora.sh, install-anatase-kernel.sh, guard-grub.sh, helpers;
+                  arch/ for Arch Linux ARM in a second btrfs subvolume
     LICENSES/     full licence texts (see LICENSE)
 
 ## Installing (Fedora)

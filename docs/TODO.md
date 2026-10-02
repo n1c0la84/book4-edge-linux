@@ -125,6 +125,8 @@ Details in [upstream.md](upstream.md):
       https://discussion.fedoraproject.org/t/fedora-45-on-the-samsung-galaxy-book4-edge-14-snapdragon-x-elite-what-works-and-how/203466
 - [ ] Import the device tree **sources** (only compiled DTBs are here; the
       sources are on the workstation / in Anatase's tree).
+- [~] **Arch Linux ARM** in a btrfs subvolume next to Fedora (2 Oct): boots,
+      Wi-Fi works, desktop being set up. Log and next steps: [arch.md](arch.md).
 - [ ] Try another distribution (the repo is Fedora-only so far). The hardware
       layer (`dts/`, `firmware/`, `userspace/audio`, `userspace/keyboard`,
       `userspace/modprobe`) is already distribution-neutral; only the glue
