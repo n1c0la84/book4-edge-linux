@@ -14,12 +14,9 @@ order of everyday usefulness within each section.
 - [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
       and HDMI (`rtd2171` bridge, `simple_bridge`).
 - [ ] **Headphones and headset microphone** (UCM devices exist, jack untested).
-- [x] **Battery drain in suspend, Fedora kernel**: lid closed 11:13-14:17 on
-      1 October (3 h 04 min in s2idle), 99 % -> 98 %, about 0.2 W.
-- [ ] **Battery drain in suspend: broken since 1 Oct evening** (both kernels; KDE or the dnf update). Empty after one
-      night (1-2 Oct). `qcom_stats` reads 0 on both kernels (not usable). Next:
-      `tools/power/drain-test.sh` on Fedora kernel + KDE, to split kernel
-      from desktop: [power.md](power.md).
+- [ ] **Suspend drain is about 1.7 W** (~6 %/h) on both kernels and both
+      desktops; the 1 October "0.2 W" was a misreading. Find what keeps the
+      SoC from power-collapsing: [power.md](power.md).
 - [ ] **GRUB guard on a future GRUB update**, including the `chain.mod` copy for
       the Windows entry (the guard was tested before the Windows entry existed).
 - [ ] **`install/install-fedora.sh` end to end** on a fresh install (each step

@@ -1,72 +1,65 @@
 # Power: suspend drain
 
-## Symptom (2 October 2026, Anatase kernel `7.2.7-book4`, KDE Plasma)
+## Result (2 October 2026)
 
-Lid closed at 18:42 on 1 October with the battery full and the charger
-unplugged; the next morning the battery was empty. The log shows a normal
-suspend (`PM: suspend entry (s2idle)`) and nothing after it, so the machine
-slept and drained at roughly 3 W or more. On the stock Fedora kernel the same
-machine had measured about 0.2 W (1 % in 3 h, 1 October, GNOME).
+**s2idle draws about 1.7 W on this machine, about 6 % of the battery per
+hour.** A full battery lasts roughly 16 hours with the lid closed. This is the
+same on the Fedora kernel and the Anatase kernel, and under GNOME and KDE.
 
-## Measurement
+An earlier figure of "0.2 W" (1 October, written into this repository) was
+**wrong**: it came from reading the battery percentage right after opening the
+lid, when the EC had not refreshed it yet. UPower's own history
+(`/var/lib/upower/history-charge-*.dat`, readable by root) shows what actually
+happened:
 
-[`tools/power/suspend-test.sh`](../tools/power/suspend-test.sh) reads the SoC
-sleep counters in `/sys/kernel/debug/qcom_stats/` before and after one
-suspend:
-
-| counter | meaning | Anatase kernel, 2.5 min suspend |
-|---|---|---|
-| `aosd` | AOSS (always-on subsystem) sleep, whole SoC | 0 -> 0 |
-| `cxsd` | CX rail collapse | 0 -> 0 |
-| `ddr` | DDR self-refresh / low-power modes | 0 -> 0 |
-| `adsp`, `cdsp` | DSP sleep time | increased (the DSPs do sleep) |
-
-**Same result on the Fedora kernel** (`7.2.0-61`, same test, 2 October):
-`aosd`, `cxsd` and `ddr` also stay at 0, although that kernel measured about
-0.2 W in suspend the day before. These counters are evidently not populated by
-this machine's firmware, so they prove nothing either way. Drain has to be
-measured from the battery: [`tools/power/drain-test.sh`](../tools/power/drain-test.sh)
-records `charge_now` before and after a lid-closed suspend and prints mA and W.
-
-The RTC cannot wake this machine (`/dev/rtc0 not enabled for wakeup events`),
-so `rtcwake` is useless here; the test is ended with the power key.
-
-## Leads
-
-- The EC read error during suspend (`EC read failed: -13`) appears on **both**
-  kernels (`ene-kb9058-battery` on Fedora, `samsung-galaxybook-ec` on
-  Anatase): harmless, not the cause.
-- `hwmon hwmon62: PM: parent phy0 should not be sleeping` on resume (ath12k),
-  also on both kernels.
-- What differs between the good and the bad night: **kernel** (Fedora 7.2.0-61
-  vs Anatase 7.2.7-book4) **and desktop** (GNOME vs KDE Plasma, installed
-  that evening). KDE's PowerDevil requested the suspend; a desktop that keeps
-  waking the machine, or keeps a device busy, would drain it just as well.
-
-## Results
-
-| date | kernel | desktop | lid closed | battery | average |
+| date | kernel | desktop | lid closed | UPower history | rate |
 |---|---|---|---|---|---|
-| 1 Oct | Fedora 7.2.0-61 | GNOME | 3 h 04 min | 99 -> 98 % | about 0.2 W |
-| 1-2 Oct | Anatase 7.2.7-book4 | KDE Plasma | one night | 100 % -> empty | roughly 3 W or more |
-| 2 Oct | Fedora 7.2.0-61 | KDE Plasma | 31 min | 50 -> 47 % (see below) | about 1.6 W, the same rate as the bad night |
+| 1 Oct | Fedora 7.2.0-61 | GNOME | 13:13-16:17 (3 h 04 min) | 98 % -> 79 % | ~6 %/h, ~1.7 W |
+| 1-2 Oct | Anatase 7.2.7-book4 | KDE Plasma | overnight | 100 % -> empty | same order |
+| 2 Oct | Fedora 7.2.0-61 | KDE Plasma | 11:51-12:22 | 50 % -> 47 % | ~6 %/h |
+| 2 Oct | Fedora 7.2.0-61 | GNOME | 12:29-12:59 | 52 % -> 45 % | higher, short run |
 
-The battery values (`charge_now`, `capacity`) are refreshed late after resume:
-read 10 s after resume they still said 50 %, KDE showed 47 % a little later.
-The charger went back in 19 s after the lid opened, so the 3 % were used in
-suspend. The script now waits 60 s before reading.
+Nothing broke on 1 October: the full update, the Anatase kernel and KDE are
+all cleared. This is simply how far suspend gets on this machine today.
 
-So the **Anatase kernel is not the cause**: the Fedora kernel drains just the
-same now. Three things changed between the good measurement and the bad ones:
-the full `dnf update` (1265 packages, systemd 262), the kernel, and KDE. The
-kernel is cleared; the update and KDE remain.
+## How to measure
+
+- **UPower history** is the most reliable record: timestamped percentage, kept
+  across reboots.
+- [`tools/power/drain-test.sh`](../tools/power/drain-test.sh) reads
+  `charge_now` before and after one lid-closed suspend. The EC refreshes the
+  battery values late after resume, so it waits 60 s; still prefer runs of an
+  hour or more, and unplug the charger a few minutes before starting.
+- Ignore the percentage shown in the first minute after opening the lid.
+
+## What we know about the sleep state
+
+- **The machine stays asleep.** With `pm_debug_messages` on, one suspend of
+  five minutes showed a single wake-up, IRQ 131 = `gpio_keys` (the lid), when
+  the lid was opened. No wake-up storm.
+- `/sys/kernel/debug/qcom_stats` (`aosd`, `cxsd`, `ddr`) read 0 on both
+  kernels, before and after suspend, even since boot. Either the SoC never
+  reaches those states, or this firmware does not report them; the counters
+  alone cannot tell which.
+- `EC read failed: -13` during suspend and `hwmon62: parent phy0 should not be
+  sleeping` (ath12k) on resume appear on both kernels.
+- The RTC cannot wake this machine (`/dev/rtc0 not enabled for wakeup
+  events`), so `rtcwake` cannot be used for tests.
+
+For comparison, X1E laptops that reach CX power collapse in s2idle are
+reported at well under 1 W; ~1.7 W suggests the SoC does not fully
+power-collapse. Something keeps a vote; candidates are the Wi-Fi (ath12k /
+PCIe), the USB controllers (three are wakeup-enabled), the display and the
+DSPs.
 
 ## Next steps
 
-1. ~~Fedora kernel under KDE~~: done, drains (about 1.6 W).
-2. `drain-test.sh` on the Fedora kernel **under GNOME**. About 0.2 W: KDE is
-   the cause (compare what each desktop does at suspend, e.g. wakeup sources,
-   keyboard backlight). Still high: the dnf update is.
+1. Drain test (1 hour) in airplane mode, to see whether Wi-Fi/Bluetooth
+   account for part of it.
+2. Unbind devices one at a time before suspending (Wi-Fi, USB, ...) and
+   compare.
+3. Compare with other X1E machines' reports (Lenovo T14s, Dell XPS 13) and the
+   linux-arm-msm list.
 
-Until then: shut down, or keep the charger connected, when the lid will be
-closed for hours.
+In practice: closing the lid is fine for a few hours; for a night on battery,
+shut down.

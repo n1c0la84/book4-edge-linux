@@ -34,7 +34,7 @@ and adds what we found and fixed independently.
 | Speakers (stereo) | works | topology alias + UCM profile: [docs/audio.md](docs/audio.md) |
 | Internal microphones | works | DMIC0/1, gain raised in the UCM profile |
 | Headphones, headset mic | profile present, untested | |
-| Suspend (s2idle): lid close/open, power key | **drains the battery since 1 October** | suspends and wakes with lid or power key on both kernels. Fedora kernel: 1 % in 3 h 04 min (about 0.2 W). Since the full update and the switch to KDE: about 1.6 W on both kernels, a full battery is empty after one night. Not the kernel; KDE or the update. Under investigation: [docs/power.md](docs/power.md). Shut down, or stay on the charger, when away for hours |
+| Suspend (s2idle): lid close/open, power key | works, but **about 1.7 W** (~6 %/h, a full battery lasts ~16 h) | `mem_sleep_default=s2idle`; lid and power key suspend and wake, on both kernels. The earlier "0.2 W" was a misreading; measured from UPower's history in [docs/power.md](docs/power.md). Shut down for a night on battery |
 | `deep` suspend | never resumes | do not use |
 | External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | works (KDE Plasma, Anatase kernel) | Goodix `27C6:0123` via `i2c_hid_of`: a direct-touch multitouch device (`INPUT_PROP_DIRECT`, MT slots), which KWin uses as touch. Our earlier "no touch input" came from reading the `mouse0` handler and the two "UNKNOWN" interfaces; GNOME and the Fedora kernel not re-checked |
