@@ -14,7 +14,7 @@ read -r t0 c0 v0 p0 < <(r)
 echo "Start: $p0 %, $((c0/1000)) mAh. Close the lid now; open it after 30+ minutes."
 n=$(cat /sys/power/suspend_stats/success)
 while [ "$(cat /sys/power/suspend_stats/success)" = "$n" ]; do sleep 2; done
-sleep 10
+sleep 60   # the EC refreshes its battery values slowly after resume
 read -r t1 c1 v1 p1 < <(r)
 python3 - "$t0" "$c0" "$v0" "$p0" "$t1" "$c1" "$v1" "$p1" "$(uname -r)" "$XDG_SESSION_DESKTOP" <<'EOF' | tee "$OUT"
 import sys

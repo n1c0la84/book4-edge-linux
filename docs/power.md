@@ -43,13 +43,23 @@ so `rtcwake` is useless here; the test is ended with the power key.
   that evening). KDE's PowerDevil requested the suspend; a desktop that keeps
   waking the machine, or keeps a device busy, would drain it just as well.
 
+## Results
+
+| date | kernel | desktop | lid closed | battery | average |
+|---|---|---|---|---|---|
+| 1 Oct | Fedora 7.2.0-61 | GNOME | 3 h 04 min | 99 -> 98 % | about 0.2 W |
+| 1-2 Oct | Anatase 7.2.7-book4 | KDE Plasma | one night | 100 % -> empty | roughly 3 W or more |
+| 2 Oct | Fedora 7.2.0-61 | KDE Plasma | 31 min | 50 -> 50 %, 0 mAh | below the resolution; the overnight rate would have used ~3 % |
+
+The battery values (`charge_now`) update slowly, so short runs are coarse; the
+script now waits 60 s after resume before reading. KDE on the Fedora kernel
+does not show the overnight drain, which points at the Anatase kernel.
+
 ## Next steps
 
-1. `drain-test.sh` on the **Fedora kernel under KDE**, 30+ minutes on battery.
-   About 0.2 W: the Anatase kernel is the cause. Much more: KDE (or something
-   installed with it) is.
-2. Then the other half: Anatase kernel under GNOME, or Anatase under KDE again
-   to confirm the number.
+1. ~~Fedora kernel under KDE~~: done, low drain.
+2. `drain-test.sh` on the **Anatase kernel under KDE**, 1 hour, to confirm the
+   overnight number; then bisect between the two kernels (config, DTB, drivers).
 
 Until then: shut down, or keep the charger connected, when the lid will be
 closed for hours.
