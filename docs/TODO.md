@@ -50,7 +50,8 @@ order of everyday usefulness within each section.
       "mouse" and two "UNKNOWN" interfaces misled us. Still to check: GNOME,
       the Fedora kernel, and what the "UNKNOWN" interfaces are (pen? gestures?).
 - [x] **Webcam** works with the experimental camera DTB (2 Oct): OV02C10 via
-      CAMSS + libcamera software ISP. Open: libcamera tuning, browsers,
+      CAMSS + libcamera software ISP; privacy LED on TLMM 110 lit while
+      streaming. Open: libcamera tuning, browsers,
       power cost of the always-on GPIO hogs, upstreaming to Anatase.
 - [ ] **Fingerprint reader**: not visible to Linux at all.
 - [x] **EFI variables / NVRAM boot entries** work on the Anatase kernel (1 Oct); **RTC** set in UTC and verified across a reboot (1 Oct). Was: **EFI variables / NVRAM boot entries and the RTC** (clock resets each

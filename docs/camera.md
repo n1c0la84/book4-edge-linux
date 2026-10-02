@@ -24,11 +24,31 @@ What the DTB adds to Anatase's 14" DTS: the CCI0 node and pins (from
 zensanp's `hamoa.dtsi`), the legacy-binding CAMSS node from the kernel's
 `qcom,x1e80100-camss.yaml` example, the sensor on `cci0_i2c0` with MCLK4 on
 gpio100, reset gpio109, supplies `l7b`/`l10b`, CSIPHY0 supplies `l2c`/`l1c`,
-and GPIO hogs 96, 99, 221, 225 (after zensanp's and ciscobugger's trees).
+GPIO hogs 96, 99, 221, 225 (after zensanp's and ciscobugger's trees), and the
+privacy LED on TLMM 110 (below).
 
 Pitfall: the binding example gives the CSIPHY register regions 0x1000; the
 driver writes above that and the first capture oopsed in `csiphy_reset`.
 0x2000 (as in zensanp's `hamoa.dtsi`) works.
+
+## Privacy LED: TLMM GPIO 110
+
+The first captures ran with the LED next to the camera **off**: nothing in the
+sensor's power path drives it. Windows has a separate file for it,
+`CAMP_PRLD_QRD.bin` ("Privacy LED binary file", `qccamplatform_ext8380`),
+holding a single entry `0x0506` whose encoding we have not decoded. The Dell
+XPS 13 9345 DTS drives its camera indicator from TLMM 110; driving TLMM 110
+high here lights the LED (2 October).
+
+The DTB declares it as a `gpio-leds` LED (`white:camera-indicator`, default
+off) and links it to the sensor with `leds = <&cam_privacy_led>;
+led-names = "privacy";`. The V4L2 core then switches it on when the sensor
+starts streaming and off when it stops: verified on the 14" (brightness 1
+while streaming, 0 after, LED seen on and off).
+
+The LED is a GPIO the CPU controls, not hard-wired to the sensor's power, so
+it only protects as long as the kernel's own logic does. Treat it as an
+indicator, not a hardware guarantee.
 
 Still to do: tuning/sensor helper in libcamera (ciscobugger has one), test in
 a browser and PipeWire, check the GPIO hogs against power use (they keep the

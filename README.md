@@ -38,7 +38,7 @@ and adds what we found and fixed independently.
 | `deep` suspend | never resumes | do not use |
 | External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | works (KDE Plasma, Anatase kernel) | Goodix `27C6:0123` via `i2c_hid_of`: a direct-touch multitouch device (`INPUT_PROP_DIRECT`, MT slots), which KWin uses as touch. Our earlier "no touch input" came from reading the `mouse0` handler and the two "UNKNOWN" interfaces; GNOME and the Fedora kernel not re-checked |
-| Webcam | **works, experimental** (Anatase kernel + camera DTB) | OV02C10 on CCI0, CAMSS, libcamera software ISP: first frames 2 October, 1920x1092 at ~40 fps. Separate boot entry, not default: [docs/camera.md](docs/camera.md) |
+| Webcam | **works, experimental** (Anatase kernel + camera DTB) | OV02C10 on CCI0, CAMSS, libcamera software ISP: first frames 2 October, 1920x1092 at ~40 fps. Privacy LED (TLMM 110) lights while streaming. Separate boot entry, not default: [docs/camera.md](docs/camera.md) |
 | Fingerprint reader | does not work | not visible to Linux at all (no USB/SPI device; `fprintd`: no devices); not investigated |
 | EFI variables / NVRAM boot entries | works (Anatase kernel) | QSEECOM allowlist; 197 variables, `efibootmgr` reads the boot order; not working on the Fedora kernel |
 | RTC | works (Anatase kernel), but loses time if the battery runs flat | kept in UTC (offset in the `RTCInfo` EFI variable); sets the system clock 1.9 s into boot, before the network; Windows needs `RealTimeIsUniversal=1`, see [docs/kernel.md](docs/kernel.md) |

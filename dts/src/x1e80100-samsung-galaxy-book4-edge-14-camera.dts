@@ -12,7 +12,26 @@
  * (CAMF_RES_QRD.bin): GPIO 96/99 supplies, 109 reset, MCLK4 on gpio100.
  */
 
+#include <dt-bindings/leds/common.h>
 #include "x1e80100-samsung-galaxy-book4-edge-14.dts"
+
+/ {
+	camera-leds {
+		compatible = "gpio-leds";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam_indicator_en>;
+
+		/* Found 2 October by driving TLMM 110; same pin as the Dell XPS 13 9345 */
+		cam_privacy_led: led-camera-indicator {
+			label = "white:camera-indicator";
+			function = LED_FUNCTION_INDICATOR;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&tlmm 110 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+};
 
 &soc {
 		cci0: cci@ac15000 {
@@ -267,6 +286,13 @@ camss: isp@acb7000 {
 				};
 			};
 
+	cam_indicator_en: cam-indicator-en-state {
+		pins = "gpio110";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	cam_rgb_default: cam-rgb-default-state {
 		mclk-pins {
 			/* cam_aon_mclk4 */
@@ -328,6 +354,10 @@ camss: isp@acb7000 {
 		clocks = <&camcc CAM_CC_MCLK4_CLK>;
 		assigned-clocks = <&camcc CAM_CC_MCLK4_CLK>;
 		assigned-clock-rates = <19200000>;
+
+		/* lit by the V4L2 core while the sensor streams */
+		leds = <&cam_privacy_led>;
+		led-names = "privacy";
 
 		orientation = <0>; /* front */
 		rotation = <180>;
