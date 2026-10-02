@@ -17,6 +17,13 @@ order of everyday usefulness within each section.
 - [ ] **Suspend drain is about 1.7 W** (~6 %/h) on both kernels and both
       desktops; the 1 October "0.2 W" was a misreading. Find what keeps the
       SoC from power-collapsing: [power.md](power.md).
+- [ ] **Hibernation** as a workaround for the suspend drain. Both kernels have
+      `CONFIG_HIBERNATION=y`, lockdown is off. Needs a ~20 GB btrfs swap file
+      (current swap is zram), `resume=` + `resume_offset=` in the boot hook's
+      command line, and dracut's resume module. Unknown: whether ADSP/CDSP,
+      GPU and ath12k come back after restore on X1E. Suspend-then-hibernate
+      may not work because the RTC cannot wake this machine; try plain
+      hibernate first.
 - [ ] **GRUB guard on a future GRUB update**, including the `chain.mod` copy for
       the Windows entry (the guard was tested before the Windows entry existed).
 - [ ] **`install/install-fedora.sh` end to end** on a fresh install (each step
