@@ -15,6 +15,8 @@
    Not a discovery: ciscobugger reached the same conclusion two weeks earlier on
    their own driver for the 15.6" ("stage the PD request ourselves", 17 Sept).
    It is still a real fix to *this* driver, and worth sending as one.
+1b. **Front camera and privacy LED (14").** Device tree patches sent
+   2 October: https://github.com/anatase-org/kernel-anatase/issues/2
 2. **Cycle count reads the wrong register.** `KB9058_CYCLES` is `0xd0`, but on
    this 14" unit EC space `0xd0..0xd1` holds the state of charge (`00 62` = 98
    while the gauge at `0xa0` read 98 %). The BIX-style block at `0xb0..0xb7` is

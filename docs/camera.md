@@ -50,9 +50,15 @@ The LED is a GPIO the CPU controls, not hard-wired to the sensor's power, so
 it only protects as long as the kernel's own logic does. Treat it as an
 indicator, not a hardware guarantee.
 
+Sent to Anatase on 2 October as two device tree patches (CCI0 + CAMSS in
+`hamoa.dtsi`, disabled; the camera and LED in the 14" DTS):
+https://github.com/anatase-org/kernel-anatase/issues/2 . Copies in
+[`dts/patches/`](../dts/patches). They are functionally identical to the
+tested DTB apart from three empty CAMSS port nodes.
+
 Still to do: tuning/sensor helper in libcamera (ciscobugger has one), test in
 a browser and PipeWire, check the GPIO hogs against power use (they keep the
-sensor powered permanently), and fold the nodes into Anatase's DTS upstream.
+sensor powered permanently).
 
 ## Background
 

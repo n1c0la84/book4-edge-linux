@@ -52,7 +52,8 @@ order of everyday usefulness within each section.
 - [x] **Webcam** works with the experimental camera DTB (2 Oct): OV02C10 via
       CAMSS + libcamera software ISP; privacy LED on TLMM 110 lit while
       streaming. Open: libcamera tuning, browsers,
-      power cost of the always-on GPIO hogs, upstreaming to Anatase.
+      power cost of the always-on GPIO hogs. Sent to Anatase:
+      https://github.com/anatase-org/kernel-anatase/issues/2
 - [ ] **Fingerprint reader**: not visible to Linux at all.
 - [x] **EFI variables / NVRAM boot entries** work on the Anatase kernel (1 Oct); **RTC** set in UTC and verified across a reboot (1 Oct). Was: **EFI variables / NVRAM boot entries and the RTC** (clock resets each
       boot): one cause, the missing QSEECOM allowlist entry. The RTC dependency
