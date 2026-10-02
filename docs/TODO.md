@@ -49,9 +49,9 @@ order of everyday usefulness within each section.
       kernel): Goodix `27C6:0123` is a multitouch direct-touch device; the
       "mouse" and two "UNKNOWN" interfaces misled us. Still to check: GNOME,
       the Fedora kernel, and what the "UNKNOWN" interfaces are (pen? gestures?).
-- [ ] **Webcam**: sensor identified as **OV02C10 at 0x36** (same as the 15.6"),
-      power sequence and GPIOs decoded from the Windows driver store; no device
-      tree node yet. Findings and first experiment: [camera.md](camera.md).
+- [x] **Webcam** works with the experimental camera DTB (2 Oct): OV02C10 via
+      CAMSS + libcamera software ISP. Open: libcamera tuning, browsers,
+      power cost of the always-on GPIO hogs, upstreaming to Anatase.
 - [ ] **Fingerprint reader**: not visible to Linux at all.
 - [x] **EFI variables / NVRAM boot entries** work on the Anatase kernel (1 Oct); **RTC** set in UTC and verified across a reboot (1 Oct). Was: **EFI variables / NVRAM boot entries and the RTC** (clock resets each
       boot): one cause, the missing QSEECOM allowlist entry. The RTC dependency

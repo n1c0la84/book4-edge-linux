@@ -1,6 +1,42 @@
-# Webcam (not working yet)
+# Webcam (works, experimental)
 
-No device tree describes the 14" camera. Findings so far (1 October 2026),
+## Status, 2 October 2026: it works
+
+With the experimental device tree
+[`dts/src/x1e80100-samsung-galaxy-book4-edge-14-camera.dts`](../dts/src/x1e80100-samsung-galaxy-book4-edge-14-camera.dts)
+on the Anatase kernel (`7.2.7-book4`), the OV02C10 probes on CCI0 (it reads
+its chip ID), CAMSS registers `/dev/video0`, and libcamera 0.7.2 (Fedora
+`libcamera-tools`) captures frames through its software ISP:
+
+    cam -l                     # "Internal front camera"
+    cam -c1 -C5 -s pixelformat=ABGR8888 --file=frame-#.bin
+
+1920x1092 at about 40 fps, upright, plausible colours, dark at first
+(libcamera has no `ov02c10.yaml` tuning file and no sensor helper for it:
+"Failed to create camera sensor helper for ov02c10").
+
+How to try it: build the DTB in the Anatase tree (add it to
+`arch/arm64/boot/dts/qcom/Makefile`, `make LOCALVERSION= qcom/<name>.dtb`),
+then [`install/camera-dtb.sh`](../install/camera-dtb.sh) adds a separate
+"alt DT camera.dtb" GRUB entry for the default kernel (`remove` drops it).
+
+What the DTB adds to Anatase's 14" DTS: the CCI0 node and pins (from
+zensanp's `hamoa.dtsi`), the legacy-binding CAMSS node from the kernel's
+`qcom,x1e80100-camss.yaml` example, the sensor on `cci0_i2c0` with MCLK4 on
+gpio100, reset gpio109, supplies `l7b`/`l10b`, CSIPHY0 supplies `l2c`/`l1c`,
+and GPIO hogs 96, 99, 221, 225 (after zensanp's and ciscobugger's trees).
+
+Pitfall: the binding example gives the CSIPHY register regions 0x1000; the
+driver writes above that and the first capture oopsed in `csiphy_reset`.
+0x2000 (as in zensanp's `hamoa.dtsi`) works.
+
+Still to do: tuning/sensor helper in libcamera (ciscobugger has one), test in
+a browser and PipeWire, check the GPIO hogs against power use (they keep the
+sensor powered permanently), and fold the nodes into Anatase's DTS upstream.
+
+## Background
+
+Before this, no device tree described the 14" camera. Findings so far (1 October 2026),
 from the Windows driver store and the X1E80100 pin table.
 
 ## Sensor: OmniVision OV02C10, I2C 0x36
