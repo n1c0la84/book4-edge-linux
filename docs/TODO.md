@@ -51,7 +51,7 @@ order of everyday usefulness within each section.
       the Fedora kernel, and what the "UNKNOWN" interfaces are (pen? gestures?).
 - [x] **Webcam** works with the experimental camera DTB (2 Oct): OV02C10 via
       CAMSS + libcamera software ISP; privacy LED on TLMM 110 lit while
-      streaming. Open: libcamera tuning, browsers,
+      streaming. Chrome works via PipeWire (2 Oct). Open: libcamera tuning (washed-out colours),
       power cost of the always-on GPIO hogs. Sent to Anatase:
       https://github.com/anatase-org/kernel-anatase/issues/2
 - [ ] **Fingerprint reader**: not visible to Linux at all.

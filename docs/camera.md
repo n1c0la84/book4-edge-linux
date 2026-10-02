@@ -42,6 +42,17 @@ Pitfall: the binding example gives the CSIPHY register regions 0x1000; the
 driver writes above that and the first capture oopsed in `csiphy_reset`.
 0x2000 (as in zensanp's `hamoa.dtsi`) works.
 
+## In the browser
+
+Works in Chrome 154 (2 October) through PipeWire, which exposes libcamera's
+processed stream as "Built-in Front Camera" (`pipewire-plugin-libcamera`).
+Chrome must be told to use PipeWire for cameras:
+`chrome://flags/#enable-webrtc-pipewire-camera` -> Enabled, then restart.
+Without it Chrome sees CAMSS's raw `/dev/video*` nodes, which deliver no
+usable picture. webcamtests.com measured 1920x1080 at 41 fps
+(https://webcamtests.com/reviews/218154); saturation is low (about 5 %), so
+colours look washed out until libcamera gets a tuning file for the sensor.
+
 ## Privacy LED: TLMM GPIO 110
 
 The first captures ran with the LED next to the camera **off**: nothing in the
