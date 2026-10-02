@@ -16,7 +16,7 @@ order of everyday usefulness within each section.
 - [ ] **Headphones and headset microphone** (UCM devices exist, jack untested).
 - [x] **Battery drain in suspend, Fedora kernel**: lid closed 11:13-14:17 on
       1 October (3 h 04 min in s2idle), 99 % -> 98 %, about 0.2 W.
-- [ ] **Battery drain in suspend, Anatase kernel: broken.** Empty after one
+- [ ] **Battery drain in suspend: broken since 1 Oct evening** (both kernels; KDE or the dnf update). Empty after one
       night (1-2 Oct). `qcom_stats` reads 0 on both kernels (not usable). Next:
       `tools/power/drain-test.sh` on Fedora kernel + KDE, to split kernel
       from desktop: [power.md](power.md).

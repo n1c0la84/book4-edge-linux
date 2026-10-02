@@ -49,17 +49,24 @@ so `rtcwake` is useless here; the test is ended with the power key.
 |---|---|---|---|---|---|
 | 1 Oct | Fedora 7.2.0-61 | GNOME | 3 h 04 min | 99 -> 98 % | about 0.2 W |
 | 1-2 Oct | Anatase 7.2.7-book4 | KDE Plasma | one night | 100 % -> empty | roughly 3 W or more |
-| 2 Oct | Fedora 7.2.0-61 | KDE Plasma | 31 min | 50 -> 50 %, 0 mAh | below the resolution; the overnight rate would have used ~3 % |
+| 2 Oct | Fedora 7.2.0-61 | KDE Plasma | 31 min | 50 -> 47 % (see below) | about 1.6 W, the same rate as the bad night |
 
-The battery values (`charge_now`) update slowly, so short runs are coarse; the
-script now waits 60 s after resume before reading. KDE on the Fedora kernel
-does not show the overnight drain, which points at the Anatase kernel.
+The battery values (`charge_now`, `capacity`) are refreshed late after resume:
+read 10 s after resume they still said 50 %, KDE showed 47 % a little later.
+The charger went back in 19 s after the lid opened, so the 3 % were used in
+suspend. The script now waits 60 s before reading.
+
+So the **Anatase kernel is not the cause**: the Fedora kernel drains just the
+same now. Three things changed between the good measurement and the bad ones:
+the full `dnf update` (1265 packages, systemd 262), the kernel, and KDE. The
+kernel is cleared; the update and KDE remain.
 
 ## Next steps
 
-1. ~~Fedora kernel under KDE~~: done, low drain.
-2. `drain-test.sh` on the **Anatase kernel under KDE**, 1 hour, to confirm the
-   overnight number; then bisect between the two kernels (config, DTB, drivers).
+1. ~~Fedora kernel under KDE~~: done, drains (about 1.6 W).
+2. `drain-test.sh` on the Fedora kernel **under GNOME**. About 0.2 W: KDE is
+   the cause (compare what each desktop does at suspend, e.g. wakeup sources,
+   keyboard backlight). Still high: the dnf update is.
 
 Until then: shut down, or keep the charger connected, when the lid will be
 closed for hours.
