@@ -18,9 +18,22 @@ happened:
 | 1-2 Oct | Anatase 7.2.7-book4 | KDE Plasma | overnight | 100 % -> empty | same order |
 | 2 Oct | Fedora 7.2.0-61 | KDE Plasma | 11:51-12:22 | 50 % -> 47 % | ~6 %/h |
 | 2 Oct | Fedora 7.2.0-61 | GNOME | 12:29-12:59 | 52 % -> 45 % | higher, short run |
+| 2 Oct | Fedora 7.2.0-61 | KDE Plasma | 13:33-17:30 (3 h 57 min) | 67 % -> 42 % | ~6.3 %/h |
+| 2 Oct | Fedora 7.2.0-61 | KDE, **airplane mode** (rfkill Wi-Fi + BT) | 17:35-18:03 | 41 % -> 37 % | ~7 %/h: no better |
 
 Nothing broke on 1 October: the full update, the Anatase kernel and KDE are
 all cleared. This is simply how far suspend gets on this machine today.
+
+UPower's live history is readable without root:
+`busctl --system --json=short call org.freedesktop.UPower /org/freedesktop/UPower/devices/battery_kb9058_battery org.freedesktop.UPower.Device GetHistory suu charge 21600 500`
+(the files in `/var/lib/upower/` are written only now and then).
+
+## Charger plugged in during suspend is not negotiated
+
+On 2 October a charger connected while the lid was closed did not charge for
+4 hours. On resume `samsung-emuec 1-0033: failed to clear interrupt: -13`
+(five times): the S2MM006 interrupt arrives while the I2C controller is
+suspended, and no PD contract is made. Plug chargers in while awake.
 
 ## How to measure
 
@@ -53,8 +66,9 @@ DSPs.
 
 ## Next steps
 
-1. Drain test (1 hour) in airplane mode, to see whether Wi-Fi/Bluetooth
-   account for part of it.
+1. ~~Airplane mode~~: done, no improvement. Switching the radios off with
+   rfkill does not help; whether the Wi-Fi PCIe link itself matters is still
+   open (unbinding ath12k is avoided on this machine).
 2. Unbind devices one at a time before suspending (Wi-Fi, USB, ...) and
    compare.
 3. Compare with other X1E machines' reports (Lenovo T14s, Dell XPS 13) and the
