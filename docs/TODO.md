@@ -17,9 +17,9 @@ order of everyday usefulness within each section.
 - [x] **Battery drain in suspend, Fedora kernel**: lid closed 11:13-14:17 on
       1 October (3 h 04 min in s2idle), 99 % -> 98 %, about 0.2 W.
 - [ ] **Battery drain in suspend, Anatase kernel: broken.** Empty after one
-      night (1-2 Oct); `qcom_stats` shows no SoC low-power entry. Run
-      `tools/power/suspend-test.sh` on the Fedora kernel to compare, then
-      bisect: [power.md](power.md).
+      night (1-2 Oct). `qcom_stats` reads 0 on both kernels (not usable). Next:
+      `tools/power/drain-test.sh` on Fedora kernel + KDE, to split kernel
+      from desktop: [power.md](power.md).
 - [ ] **GRUB guard on a future GRUB update**, including the `chain.mod` copy for
       the Windows entry (the guard was tested before the Windows entry existed).
 - [ ] **`install/install-fedora.sh` end to end** on a fresh install (each step

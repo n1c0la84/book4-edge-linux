@@ -34,7 +34,7 @@ and adds what we found and fixed independently.
 | Speakers (stereo) | works | topology alias + UCM profile: [docs/audio.md](docs/audio.md) |
 | Internal microphones | works | DMIC0/1, gain raised in the UCM profile |
 | Headphones, headset mic | profile present, untested | |
-| Suspend (s2idle): lid close/open, power key | **drains the battery on the Anatase kernel** | suspends and wakes with lid or power key on both kernels. Fedora kernel: 1 % in 3 h 04 min (about 0.2 W). Anatase kernel: a full battery was empty after one night; the SoC never reaches its low-power states (`qcom_stats` `aosd`/`cxsd`/`ddr` stay at 0). Under investigation: [docs/power.md](docs/power.md). Shut down, or stay on the charger, when away for hours |
+| Suspend (s2idle): lid close/open, power key | **drains the battery on the Anatase kernel** | suspends and wakes with lid or power key on both kernels. Fedora kernel: 1 % in 3 h 04 min (about 0.2 W). Anatase kernel: a full battery was empty after one night. Cause not found yet (the `qcom_stats` counters read 0 on both kernels, so they prove nothing). Under investigation: [docs/power.md](docs/power.md). Shut down, or stay on the charger, when away for hours |
 | `deep` suspend | never resumes | do not use |
 | External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | works (KDE Plasma, Anatase kernel) | Goodix `27C6:0123` via `i2c_hid_of`: a direct-touch multitouch device (`INPUT_PROP_DIRECT`, MT slots), which KWin uses as touch. Our earlier "no touch input" came from reading the `mouse0` handler and the two "UNKNOWN" interfaces; GNOME and the Fedora kernel not re-checked |
