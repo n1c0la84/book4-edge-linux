@@ -77,6 +77,7 @@ TESTDTB=$(cat "${BOOK4_TESTFILE:-/etc/book4/test-dtb}" 2>/dev/null)
 # The kernel's own DTB stays reachable as "standard DT".
 read -r DEFKVER DEFDTB < "${BOOK4_DEFAULTFILE:-/etc/book4/default-dtb}" 2>/dev/null || true
 
+read -r SUBVOL2 TITLE2 < "${BOOK4_SECONDFILE:-/etc/book4/second-os}" 2>/dev/null || true
 [ -n "${DEFDTB:-}" ] && [ "${DEFKVER:-}" = "$default" ] && [ -e "$BOOT$DEFDTB" ] || DEFDTB=
 
 entry() {  # $1=kver $2=title suffix $3=extra args [$4=DTB path in /boot]
@@ -120,6 +121,20 @@ EOF
     for k in "${kernels[@]:1}"; do
         entry "$k" "Book4 Edge (other)" ""
     done
+    # A second distribution in another btrfs subvolume of the same root
+    # filesystem, sharing this kernel and DTB: /etc/book4/second-os holds
+    # "<subvolume> <title>", e.g. "arch Arch Linux". Its initramfs, built by
+    # that system for this kernel, is /initramfs-<kver>-<subvolume>.img.
+    if [ -n "$SUBVOL2" ] && [ -e "$BOOT/initramfs-$default-$SUBVOL2.img" ]; then
+        cat <<EOF
+
+menuentry "$TITLE2 ($default)" {
+    devicetree (\$bootdev)${DEFDTB:-/dtb-$default/$DTB}
+    linux  (\$bootdev)/vmlinuz-$default $(echo "$CMDLINE" | sed -E "s/rootflags=subvol=[^ ]+/rootflags=subvol=$SUBVOL2/; s/ selinux=0//")
+    initrd (\$bootdev)/initramfs-$default-$SUBVOL2.img
+}
+EOF
+    fi
     # Windows shares the ESP; chainload its boot manager when it is there.
     if [ -e /boot/efi/EFI/Microsoft/Boot/bootmgfw.efi ] || [ -n "$BOOK4_WINDOWS" ]; then
         cat <<EOF
