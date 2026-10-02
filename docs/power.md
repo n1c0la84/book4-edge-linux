@@ -46,9 +46,8 @@ all cleared. This is simply how far suspend gets on this machine today.
 - The RTC cannot wake this machine (`/dev/rtc0 not enabled for wakeup
   events`), so `rtcwake` cannot be used for tests.
 
-For comparison, X1E laptops that reach CX power collapse in s2idle are
-reported at well under 1 W; ~1.7 W suggests the SoC does not fully
-power-collapse. Something keeps a vote; candidates are the Wi-Fi (ath12k /
+Not yet compared with other X1E laptops' figures; if they do much better,
+the SoC here probably does not fully power-collapse. Something keeps a vote; candidates are the Wi-Fi (ath12k /
 PCIe), the USB controllers (three are wakeup-enabled), the display and the
 DSPs.
 
