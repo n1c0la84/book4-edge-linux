@@ -1,0 +1,125 @@
+From: book4-edge-linux
+Subject: [PATCH] platform: arm64: samsung-galaxybook-ec: display-off notification across sleep
+
+Unplugging the charger during s2idle resets the machine under Linux (both
+kernels, every wakeup source disabled, no pstore record); Windows survives.
+The firmware (DSDT PEP0 _DSM, Modern Standby UUID 11e00d56-...) clears
+ECTC.LDOS (EC 0x89 bit 1) and drives GPIO 44 (MODS) low at MS:DisplayOff,
+and sets both at MS:DisplayOn; Linux does neither. Clear LDOS on suspend
+and set it on resume. Adds an EC-space write (mailbox command 0x89).
+
+---
+--- a/samsung-galaxybook-ec.c
++++ b/samsung-galaxybook-ec.c
+@@ -20,6 +20,7 @@
+ #include <linux/of.h>
+ #include <linux/power_supply.h>
+ #include <linux/platform_profile.h>
++#include <linux/pm.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
+ 
+@@ -216,6 +217,36 @@ static int galaxybook_ec_read_byte(struct i2c_client *client, u8 reg, u8 *value)
+ 	return galaxybook_ec_read_mailbox(client, 0xf480, value);
+ }
+ 
++/* EC-space write through the mailbox: offset in 0xf480, value in 0xf481, command 0x89. */
++static int galaxybook_ec_write_byte(struct i2c_client *client, u8 reg, u8 value)
++{
++	u8 select[] = { 0x40, 0x00, 0xf4, 0x80, reg };
++	u8 execute[] = { 0x40, 0x00, 0xff, 0x10, 0x89 };
++	int ret;
++
++	ret = galaxybook_ec_wait_ready(client);
++	if (ret)
++		return ret;
++
++	ret = i2c_master_send(client, select, sizeof(select));
++	if (ret != sizeof(select))
++		return ret < 0 ? ret : -EIO;
++	usleep_range(5000, 6000);
++
++	select[3] = 0x81;
++	select[4] = value;
++	ret = i2c_master_send(client, select, sizeof(select));
++	if (ret != sizeof(select))
++		return ret < 0 ? ret : -EIO;
++	usleep_range(5000, 6000);
++
++	ret = i2c_master_send(client, execute, sizeof(execute));
++	if (ret != sizeof(execute))
++		return ret < 0 ? ret : -EIO;
++
++	return galaxybook_ec_wait_ready(client);
++}
++
+ static int galaxybook_ec_read_word(struct i2c_client *client, u8 reg,
+ 				   unsigned int offset, int *value)
+ {
+@@ -716,10 +747,66 @@ static const struct of_device_id samsung_galaxybook_ec_of_match[] = {
+ };
+ MODULE_DEVICE_TABLE(of, samsung_galaxybook_ec_of_match);
+ 
++/*
++ * Modern Standby display notification. On Windows the firmware's PEP0 _DSM
++ * clears ECTC.LDOS (EC offset 0x89, bit 1) at "MS:DisplayOff" and sets it at
++ * "MS:DisplayOn" (it also drives GPIO 44, MODS). Linux never did either. A
++ * charger unplugged while suspended resets the machine under Linux but not
++ * under Windows; tell the EC the display is off for the duration of sleep.
++ */
++#define GALAXYBOOK_EC_DISPLAY		0x89
++#define GALAXYBOOK_EC_DISPLAY_ON	BIT(1)
++
++static int galaxybook_ec_set_display(struct device *dev, bool on)
++{
++	struct samsung_galaxybook_ec *ec = dev_get_drvdata(dev);
++	u8 before, after;
++	int ret;
++
++	guard(mutex)(&ec->lock);
++
++	ret = galaxybook_ec_wait_ready(ec->client);
++	if (!ret)
++		ret = galaxybook_ec_read_byte(ec->client, GALAXYBOOK_EC_DISPLAY, &before);
++	if (ret)
++		goto out;
++
++	after = on ? before | GALAXYBOOK_EC_DISPLAY_ON :
++		     before & ~GALAXYBOOK_EC_DISPLAY_ON;
++	if (after != before)
++		ret = galaxybook_ec_write_byte(ec->client, GALAXYBOOK_EC_DISPLAY, after);
++	if (!ret)
++		ret = galaxybook_ec_read_byte(ec->client, GALAXYBOOK_EC_DISPLAY, &after);
++out:
++	if (ret)
++		dev_warn(dev, "display %s notification failed: %d\n",
++			 on ? "on" : "off", ret);
++	else
++		dev_info(dev, "display %s: EC 0x89 %#04x -> %#04x\n",
++			 on ? "on" : "off", before, after);
++	/* Never block suspend on this. */
++	return 0;
++}
++
++static int samsung_galaxybook_ec_suspend(struct device *dev)
++{
++	return galaxybook_ec_set_display(dev, false);
++}
++
++static int samsung_galaxybook_ec_resume(struct device *dev)
++{
++	return galaxybook_ec_set_display(dev, true);
++}
++
++static DEFINE_SIMPLE_DEV_PM_OPS(samsung_galaxybook_ec_pm_ops,
++				samsung_galaxybook_ec_suspend,
++				samsung_galaxybook_ec_resume);
++
+ static struct i2c_driver samsung_galaxybook_ec_driver = {
+ 	.driver = {
+ 		.name = "samsung-galaxybook-ec",
+ 		.of_match_table = samsung_galaxybook_ec_of_match,
++		.pm = pm_sleep_ptr(&samsung_galaxybook_ec_pm_ops),
+ 	},
+ 	.probe = samsung_galaxybook_ec_probe,
+ };
