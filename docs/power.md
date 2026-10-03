@@ -35,6 +35,27 @@ On 2 October a charger connected while the lid was closed did not charge for
 (five times): the S2MM006 interrupt arrives while the I2C controller is
 suspended, and no PD contract is made. Plug chargers in while awake.
 
+Cause, from the driver (3 October): `samsung-emuec` has no suspend/resume
+handling. The S2MM006 interrupt is level triggered and not a wake source, so
+the core holds it during s2idle and replays it early in resume, before the
+I2C controller is back; clearing it and the following sync both fail
+(-EACCES), the consumer path is never enabled, and nothing re-checks the port
+afterwards. Same on Fedora and Arch (same module).
+
+Fix, **untested and not yet compiled**:
+[`0002-samsung-emuec-resync-after-system-sleep.patch`](../drivers/anatase/patches/0002-samsung-emuec-resync-after-system-sleep.patch)
+masks the interrupt across sleep, arms it as a wake source (charger plug-in
+wakes the machine to negotiate; logind should suspend again with the lid
+closed) and resyncs the port on resume. For the Anatase kernel,
+[`install/update-emuec-module.sh`](../install/update-emuec-module.sh) on
+Fedora rebuilds only the module from `~/src/patchwork`, then
+`install/arch/sync-kernel.sh` carries it to Arch. Test: unplugged, lid
+closed, plug in; with the lid still closed it should charge, and on opening
+`status` should read Charging without a replug, with a new "PD contract" line
+and no `failed to clear interrupt`. Whether the masked interrupt can wake
+the system depends on the msm GPIO irqchip; if it cannot, the resume resync
+should still start charging when the lid is opened.
+
 ## How to measure
 
 - **UPower history** is the most reliable record: timestamped percentage, kept

@@ -1,0 +1,98 @@
+From: book4-edge-linux
+Subject: [PATCH] usb: typec: samsung-emuec: handle charger plug-in during system sleep
+
+A charger plugged in while the laptop is suspended (lid closed) is never
+used: the level-triggered S2MM006 interrupt is replayed early in resume,
+before the I2C controller is back, so clearing it and the following sync
+fail with -EACCES ("failed to clear interrupt: -13"). The consumer path is
+not enabled and no PD contract is made until the charger is replugged
+(seen on a 14" Galaxy Book4 Edge: 4 hours without charging).
+
+Mask the interrupt across system sleep, keep it as a wake source so a
+plug-in wakes the system to negotiate, and resync the port on resume.
+
+---
+--- a/samsung-emuec.c	2026-10-03 16:25:33.422585620 +0200
++++ b/samsung-emuec.c	2026-10-03 16:25:50.652109414 +0200
+@@ -16,6 +16,8 @@
+ #include <linux/module.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
++#include <linux/pm.h>
++#include <linux/pm_wakeup.h>
+ #include <linux/power_supply.h>
+ #include <linux/slab.h>
+ #include <linux/unaligned.h>
+@@ -1059,6 +1061,9 @@
+ 	if (ret)
+ 		goto err_pd;
+ 
++	/* A charger plugged in during sleep must be negotiated: wake for it. */
++	device_init_wakeup(dev, true);
++
+ 	mod_delayed_work(system_dfl_wq, &pdic->work, 0);
+ 	return 0;
+ 
+@@ -1082,6 +1087,7 @@
+ {
+ 	struct samsung_emuec *pdic = i2c_get_clientdata(client);
+ 
++	device_init_wakeup(&client->dev, false);
+ 	devm_free_irq(&client->dev, client->irq, pdic);
+ 	cancel_delayed_work_sync(&pdic->work);
+ 
+@@ -1098,6 +1104,46 @@
+ 	of_node_put(pdic->connector);
+ }
+ 
++/*
++ * The S2MM006 interrupt is level triggered and its status registers are on
++ * I2C. Left alone, an interrupt raised during system sleep (a charger plugged
++ * in with the lid closed) is replayed early in resume, before the I2C
++ * controller is back, so clearing it and the following sync both fail with
++ * -EACCES; the consumer path is never enabled, no PD contract is made and
++ * the charger stays unused until it is unplugged and plugged in again.
++ *
++ * Mask the interrupt while suspended, keep it as a wake source, and look at
++ * the port again on resume, when the bus is available.
++ */
++static int samsung_emuec_suspend(struct device *dev)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	struct samsung_emuec *pdic = i2c_get_clientdata(client);
++
++	disable_irq(client->irq);
++	cancel_delayed_work_sync(&pdic->work);
++	if (device_may_wakeup(dev))
++		enable_irq_wake(client->irq);
++
++	return 0;
++}
++
++static int samsung_emuec_resume(struct device *dev)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	struct samsung_emuec *pdic = i2c_get_clientdata(client);
++
++	if (device_may_wakeup(dev))
++		disable_irq_wake(client->irq);
++	enable_irq(client->irq);
++	mod_delayed_work(system_dfl_wq, &pdic->work, 0);
++
++	return 0;
++}
++
++static DEFINE_SIMPLE_DEV_PM_OPS(samsung_emuec_pm_ops, samsung_emuec_suspend,
++				samsung_emuec_resume);
++
+ static const struct of_device_id samsung_emuec_of_match[] = {
+ 	{ .compatible = "samsung,s2mm006" },
+ 	{ }
+@@ -1108,6 +1154,7 @@
+ 	.driver = {
+ 		.name = "samsung-emuec",
+ 		.of_match_table = samsung_emuec_of_match,
++		.pm = pm_sleep_ptr(&samsung_emuec_pm_ops),
+ 	},
+ 	.probe = samsung_emuec_probe,
+ 	.remove = samsung_emuec_remove,

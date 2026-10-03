@@ -12,3 +12,6 @@ Our changes are kept as separate patches in `patches/`, applied at install
 time, so the originals stay identifiable and the patches can be sent upstream:
 
 - `0001-samsung-emuec-retry-PD-request-after-hot-plug.patch`
+- `0002-samsung-emuec-resync-after-system-sleep.patch` — **untested, not yet
+  compiled** (3 October): handle a charger plugged in during system sleep
+  (see [docs/power.md](../../docs/power.md)).
