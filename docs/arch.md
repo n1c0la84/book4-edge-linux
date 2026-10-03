@@ -48,14 +48,27 @@ Lessons, in the order they bit:
 
 - Boot to a console, Wi-Fi via NetworkManager, internet.
 - SDDM greeter.
+- **Hyprland desktop** (3 October, after `linux-firmware-qcom`): eDP-1
+  2880x1800 @ 120 Hz; scale **2.0** chosen over 1.6 and 1.8 (now the stage 2
+  default).
+- Italian keyboard (Hyprland and console), touchpad, touchscreen (Goodix
+  `27c6:0123` as a touch device).
+- Fn keys: volume, mute, mic mute, screen brightness, keyboard backlight.
+- Speakers (left/right correct), internal microphones (signal recorded via
+  `pw-record`).
+- Bluetooth controller up with the address from Windows.
+- Camera: `ov02c10` via libcamera, ~40 fps at 1920x1092, listed in PipeWire;
+  privacy LED lit while streaming.
+- Battery and AC in sysfs (`samsung-galaxybook-battery`).
+- Suspend (s2idle) with the lid; Wi-Fi reconnects on resume.
+
+Not yet tested on Arch: headphones/headset mic, Bluetooth pairing, external
+monitor. Boot log shows `qcom_smd_qrtr`/`fastrpc` probe errors (-12) on the
+CDSP and a `qcom-apm` command timeout; not yet compared with Fedora.
 
 ## Where it stands / next steps
 
-1. **Verify the desktop** after `linux-firmware-qcom` (installed 2 October,
-   not yet booted): log in via SDDM to Hyprland; check scale, Italian
-   keyboard, touchpad, sound (speakers, mics), Bluetooth, camera
-   (`cam -l`, PipeWire "Built-in Front Camera"), keyboard backlight and
-   hotkeys, suspend, battery in the tray.
+1. ~~Verify the desktop~~ done 3 October, see above.
 2. **Omarchy's desktop from source** (step 2 in [omarchy.md](omarchy.md)):
    `omacom/omarchy`, branch `quattro`. Do **not** install the `omarchy`
    package: it depends on Limine, `limine-mkinitcpio-hook`,

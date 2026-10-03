@@ -11,7 +11,7 @@ R=$TOP/arch
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 U=${ARCH_USER:-$USER}
 KEYMAP=${ARCH_KEYMAP:-it}        # console keymap and XKB layout
-SCALE=${ARCH_SCALE:-1.6}
+SCALE=${ARCH_SCALE:-2.0}
 ns() { sudo systemd-nspawn -q -D "$R" --resolv-conf=replace-uplink "$@"; }
 
 sudo -v
