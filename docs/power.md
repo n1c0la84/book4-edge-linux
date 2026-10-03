@@ -43,7 +43,7 @@ I2C controller is back; clearing it and the following sync both fail
 afterwards. Same on Fedora and Arch (same module).
 
 Fix, **untested and not yet compiled**:
-[`0002-samsung-emuec-resync-after-system-sleep.patch`](../drivers/anatase/patches/0002-samsung-emuec-resync-after-system-sleep.patch)
+[`0002-samsung-emuec-resync-after-system-sleep.patch`](../drivers/anatase/patches-experimental/0002-samsung-emuec-resync-after-system-sleep.patch)
 masks the interrupt across sleep, arms it as a wake source (charger plug-in
 wakes the machine to negotiate; logind should suspend again with the lid
 closed) and resyncs the port on resume. For the Anatase kernel,
@@ -55,6 +55,21 @@ closed, plug in; with the lid still closed it should charge, and on opening
 and no `failed to clear interrupt`. Whether the masked interrupt can wake
 the system depends on the msm GPIO irqchip; if it cannot, the resume resync
 should still start charging when the lid is opened.
+
+### Test of 0002, 3 October (Fedora, Anatase kernel): crash in sleep
+
+Lid closed 16:51 on battery; charger plugged in with the lid closed. The
+patched driver **woke the system** (16:54:46), the port resynced (request 1
+-110, then 5 V, then **20 V**), no `failed to clear interrupt`, and KDE
+**suspended again by itself** (16:54:59) since the lid was closed. Nothing
+more was logged: the machine was found rebooting when the lid was opened at
+18:35, with no crash record. Suspend on the charger with the previous module
+had worked (2 October). Suspect: the 0002 sleep handling (wake-armed level
+interrupt) during the second sleep while charging. **0002 rolled back** on
+both systems (`.prev` module); the patched module is kept as
+`samsung-emuec.ko.0002` for debugging. Next: reproduce with
+`pm_debug_messages` and a short second sleep, or try 0002 without
+`enable_irq_wake` (resync on resume only).
 
 ## How to measure
 
