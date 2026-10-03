@@ -1,6 +1,6 @@
 # Carrying this to Arch / Omarchy Dragon
 
-> **Started 2 October 2026**: Arch Linux ARM runs next to Fedora on the
+> **Started 2 October 2026; Omarchy 4.0.4 running since 3 October**: Arch Linux ARM runs next to Fedora on the
 > reference machine. Working log and next steps: [arch.md](arch.md).
 
 This repository is Fedora-only. The hardware knowledge in it is not, and the

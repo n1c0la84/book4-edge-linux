@@ -1,6 +1,7 @@
 # Arch Linux ARM next to Fedora (toward Omarchy)
 
-Status on 2 October 2026, 14" NP940XMA. This is the working log for the Arch
+Status on 3 October 2026, 14" NP940XMA: **Omarchy 4.0.4 runs on Arch Linux
+ARM** with the shared Anatase kernel. This is the working log for the Arch
 side; [omarchy.md](omarchy.md) has the background and the two routes.
 
 ## Layout
@@ -44,6 +45,67 @@ Lessons, in the order they bit:
    (`MESA: get-param failed`, `failed to create dri2 screen`) and Hyprland
    aborts right after login, dropping back to SDDM.
 
+## Omarchy (stage 3, on Arch itself)
+
+| Script | What |
+|---|---|
+| [`install/arch/stage3-omarchy-build.sh`](../install/arch/stage3-omarchy-build.sh) | builds `omarchy`, `omarchy-settings` 4.0.4 and `omarchy-keyring` from Omarchy's own PKGBUILDs (`omacom/omarchy-pkgs`, pinned); lists which Omarchy default packages exist in Arch Linux ARM |
+| [`install/arch/stage3-omarchy-install.sh`](../install/arch/stage3-omarchy-install.sh) | snapshot of the `arch` subvolume, pacman `NoExtract` guards, the packages, `mise-bin`, `omarchy-apply-system` with the unsafe steps skipped, checks |
+| [`install/arch/stage3-omarchy-user.sh`](../install/arch/stage3-omarchy-user.sh) | moves the user onto Omarchy's configs (`/etc/skel`), scale and keyboard layout, `omarchy-provision-user` |
+
+Each step was run on 3 October; the `mise` parts were added afterwards, so
+`stage3-omarchy-install.sh` as a whole has not been run.
+
+**Why the real packages and not a checkout.** Omarchy's PKGBUILDs already
+build for aarch64 (the Apple Silicon path), and there they do **not** depend
+on Limine, `limine-mkinitcpio-hook`, `limine-snapper-sync` or snapper. With
+the packages, `omarchy-*` commands and `omarchy update` work as designed.
+Stable v4.0.4 rather than the `quattro` branch (641 commits ahead, the
+development line). Omarchy's aarch64 repository has no `omarchy`,
+`omarchy-settings` or `omarchy-keyring`, so they are built locally.
+
+What has to be kept out, and how:
+
+| Omarchy piece | Problem here | Fix |
+|---|---|---|
+| `/etc/mkinitcpio.conf.d/omarchy_hooks.conf` | replaces our HOOKS (brings back `autodetect`, adds `plymouth`, `encrypt`); the next initramfs could not boot | `NoExtract` |
+| `/etc/limine-entry-tool.d/*`, `thunderbolt_module.conf` | Limine / x86 only | `NoExtract` |
+| `00-omarchy-update-guard.hook` | aborts plain `pacman -Syu` in favour of `omarchy update`, not yet checked here | `NoExtract` |
+| `install/post-install/pacman.sh` | **overwrites `/etc/pacman.conf` and the mirrorlist** with Omarchy's (x86 mirrors, `[multilib]`): pacman breaks | skipped in a patched copy of the install tree |
+| `install/config/snapper.sh` | snapper + `limine-snapper-sync` | skipped |
+| `ufw-docker` in `firewall.sh` | not packaged for aarch64 | ufw rules kept, Docker part dropped |
+| `omarchy-reinstall-configs` | runs `omarchy-refresh-limine` (writes `/boot/limine.conf`, `limine-update`) | never run it; stage 3c copies `/etc/skel` itself |
+| `install/user/mise.sh` | run by `omarchy-refresh-applications`; writes `mise` stubs into `~/.local/bin`, one of them **over a native `claude`** | `NoExtract` + removed; `mise-bin` from Omarchy's aarch64 repo for the other stubs |
+
+Other notes:
+
+- 25 of Omarchy's 147 default packages are not in Arch Linux ARM: mostly
+  Omarchy's own apps (`aether`, `omacalc`, `omacut`, `omawrite`, `tensaku`,
+  `omarchy-nvim`), plus Obsidian, LocalSend, OBS, Pinta, `yay`, `tzupdate`,
+  `ufw-docker`. Some are in `pkgs.omarchy.org/stable/aarch64` (`aether`,
+  `mise-bin`); that repository is **not** added to pacman.conf because it
+  also carries its own `hyprland`, which would replace Arch's.
+- The default terminal in 4.0.4 is **foot** (`xdg-terminal-exec`).
+- `omarchy-settings` replaces `/etc/os-release` (NAME=Omarchy), enables ufw
+  (incoming denied except LocalSend), hands the power button to Omarchy and
+  themes SDDM. All of it lives in the `arch` subvolume; Fedora is untouched.
+- `/etc/skel` ships all migrations marked as done, so `omarchy update` does
+  not replay the old ones.
+- Hyprland 0.56 `hyprctl dispatch` takes Lua: log out with
+  `hyprctl dispatch 'hl.dsp.exit()'`.
+- Rollback: read-only snapshot `arch-pre-omarchy-<date>` at the top level of
+  `sda5`, plus `~/pre-omarchy-home-<date>.tar.gz`.
+
+Verified in the Omarchy session: Quickshell shell running, scale 2, Italian
+layout (Omarchy adds compose on Caps Lock), Tokyo Night, no failed units,
+`gh` login kept.
+
+**Open:** a keyring password prompt when an app first touches the Secret
+Service. Omarchy's `login/sddm.sh` removes the `pam_gnome_keyring` auth lines
+from `/etc/pam.d/sddm`, so the `login` keyring (Chromium Safe Storage, `gh`
+tokens) is no longer unlocked at login. Either give `login` an empty password
+(Seahorse) or put the PAM lines back. Same symptom on Fedora with KWallet.
+
 ## What works (verified)
 
 - Boot to a console, Wi-Fi via NetworkManager, internet.
@@ -69,16 +131,13 @@ CDSP and a `qcom-apm` command timeout; not yet compared with Fedora.
 ## Where it stands / next steps
 
 1. ~~Verify the desktop~~ done 3 October, see above.
-2. **Omarchy's desktop from source** (step 2 in [omarchy.md](omarchy.md)):
-   `omacom/omarchy`, branch `quattro`. Do **not** install the `omarchy`
-   package: it depends on Limine, `limine-mkinitcpio-hook`,
-   `limine-snapper-sync` and snapper, which would write boot entries to the
-   ESP shared with Windows and Fedora's GRUB. Omarchy's aarch64 repository
-   (`pkgs.omarchy.org/stable/aarch64`) has only 39 packages and no
-   `omarchy`, `omarchy-settings` or `quickshell`; Arch Linux ARM has
-   `hyprland` 0.56.2 and `quickshell` 0.3.1. omarchy-shell runs from
-   `$OMARCHY_PATH/shell` under Quickshell, launched by
-   `omarchy-launch-shell` from Hyprland autostart.
+2. ~~Omarchy's desktop~~ installed 3 October, see above. Still to check in
+   the Omarchy session: launcher, menus, Fn keys under Omarchy's bindings,
+   lock screen, suspend, battery in the bar; the keyring prompt; whether
+   `omarchy update` is safe here. It does not re-run `omarchy-apply-system`,
+   but it calls `omarchy-snapshot` (snapper), new migrations (`omarchy-migrate`,
+   some may assume Limine) and `omarchy-update-orphan-pkgs`. Until checked,
+   update with `sudo pacman -Syu`.
 3. Compare with `bprendie/omarchy-snapdragon` (Omarchy 4.0.3 on Arch Linux ARM
    userspace with an Ubuntu kernel) for the aarch64 packaging they had to do.
 4. Kernel updates: a new Anatase build on Fedora must also be copied into
