@@ -79,7 +79,14 @@ stays masked otherwise and the port is resynced on resume. It covers both
 suspects: the wake-armed level line while charging (no longer armed on the
 charger's port) and, if the crash repeats with v2, a sleep while charging at
 20 V as such (never tested for long before). Each port logs
-`suspend: attached=.. wake=..` (dynamic debug). Status: built, not yet run.
+`suspend: attached=.. wake=..` (dynamic debug). Tested 3 October, Fedora:
+plug-in during sleep woke the machine and negotiated 20 V, then it slept
+again (charger port `attached=1 wake=0`); one hour asleep while charging
+was fine. **Unplugging the charger during sleep crashed it again** (19:56,
+nothing logged after `suspend entry`), although no wake was armed on that
+port. During sleep v2 leaves the charger's port as the stock driver does
+(interrupt not serviced until resume), so the unplug crash may not be ours
+at all: next test is the same unplug with the original module.
 
 ## How to measure
 
