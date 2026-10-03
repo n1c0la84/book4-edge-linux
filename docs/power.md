@@ -165,6 +165,36 @@ Tests (Anatase kernel, original `samsung-emuec`):
 MODS is clearly the EC's "system in standby" input. The remaining reset looks
 like a resume problem after a power-source change during sleep.
 
+Narrowing it down (same evening, gpio44 DTB, original `samsung-emuec`):
+
+| during sleep | wake up on | result |
+|---|---|---|
+| nothing | battery | fine (every night) |
+| plug in | charger | fine (with 0002 v2) |
+| unplug, plug back in | charger | **fine** |
+| unplug | **battery** | **reset** |
+
+With journald syncing every second
+([tools/power/journal-sync.sh](../tools/power/journal-sync.sh)) and PM
+debug messages on, the last line on disk was systemd freezing the user
+slices before suspend; **nothing from the resume reached the disk**, not even
+`PM: suspend exit`. The reset happens during the kernel's own resume or
+within about a second of it, before userspace runs.
+
+Still open, two candidates: something in the early kernel resume (power
+domains, the first drivers) when the power source changed during sleep, or a
+hardware brownout at that moment. Next step: a kernel with
+`CONFIG_PSTORE_CONSOLE` and a DTB with a `ramoops` reserved-memory region
+(free RAM between `0xe36a0000` and `0xff800000` in the current map), so the
+last console lines survive a warm reset; an empty region would point to a
+power cut instead.
+
+Until then: **open the lid before unplugging the charger.**
+
+Test material: [install/gpio44-test.sh](../install/gpio44-test.sh) (separate
+GRUB entry with GPIO 44 freed + the sleep hook),
+[tools/power/allwake-off.sh](../tools/power/allwake-off.sh).
+
 ## How to measure
 
 - **UPower history** is the most reliable record: timestamped percentage, kept

@@ -17,6 +17,13 @@ order of everyday usefulness within each section.
 - [ ] **Suspend drain is about 1.7 W** (~6 %/h) on both kernels and both
       desktops; the 1 October "0.2 W" was a misreading. Find what keeps the
       SoC from power-collapsing: [power.md](power.md).
+- [ ] **Charger unplugged during sleep resets the machine** on resume (both
+      kernels; Windows fine). GPIO 44 (MODS) low in sleep makes the EC handle
+      the unplug (LED goes off) but the reset remains; next: ramoops console.
+      Workaround: open the lid before unplugging. See [power.md](power.md).
+- [ ] **samsung-emuec 0002 v2** (charger plugged in during sleep): tested OK
+      for plug-in and charging in sleep; move to `patches/` and send to
+      Anatase once the unplug reset is understood.
 - [ ] **Hibernation** as a workaround for the suspend drain. Both kernels have
       `CONFIG_HIBERNATION=y`, lockdown is off. Needs a ~20 GB btrfs swap file
       (current swap is zram), `resume=` + `resume_offset=` in the boot hook's
