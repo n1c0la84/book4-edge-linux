@@ -86,6 +86,9 @@ Other notes:
   `mise-bin`); that repository is **not** added to pacman.conf because it
   also carries its own `hyprland`, which would replace Arch's.
 - The default terminal in 4.0.4 is **foot** (`xdg-terminal-exec`).
+- fastfetch shows the channel as "unknown": `omarchy-version-channel` looks
+  for Omarchy's mirrors in pacman.conf and the mirrorlist, which we keep on
+  Arch Linux ARM on purpose. Cosmetic.
 - `omarchy-settings` replaces `/etc/os-release` (NAME=Omarchy), enables ufw
   (incoming denied except LocalSend), hands the power button to Omarchy and
   themes SDDM. All of it lives in the `arch` subvolume; Fedora is untouched.
@@ -123,6 +126,9 @@ tokens) is no longer unlocked at login. Either give `login` an empty password
   privacy LED lit while streaming.
 - Battery and AC in sysfs (`samsung-galaxybook-battery`).
 - Suspend (s2idle) with the lid; Wi-Fi reconnects on resume.
+- zram swap (3 October): 8 GB, zstd, like Fedora's default. Arch Linux ARM
+  has no swap out of the box, and `omarchy-settings` leaves its zram drop-in
+  out on aarch64. Set up by hand on the running system; now part of stage 2.
 
 Not yet tested on Arch: headphones/headset mic, Bluetooth pairing, external
 monitor. Boot log shows `qcom_smd_qrtr`/`fastrpc` probe errors (-12) on the

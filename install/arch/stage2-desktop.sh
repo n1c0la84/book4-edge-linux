@@ -37,7 +37,16 @@ ns pacman -Syu --noconfirm --needed linux-firmware-qcom \
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji \
     polkit gnome-keyring brightnessctl playerctl wl-clipboard grim slurp mako swayosd \
     network-manager-applet nm-connection-editor blueman pavucontrol xdg-user-dirs \
-    qt6-wayland qt5-wayland fuzzel wofi libcamera-tools
+    qt6-wayland qt5-wayland fuzzel wofi libcamera-tools zram-generator
+
+echo "== zram swap (Fedora's default size: min(RAM, 8 GB), zstd)"
+sudo tee "$R/etc/systemd/zram-generator.conf" >/dev/null <<'EOF'
+# book4: same size as Fedora's default (zram-generator-defaults)
+[zram0]
+zram-size = min(ram, 8192)
+compression-algorithm = zstd
+swap-priority = 100
+EOF
 
 echo "== audio: topology alias is already in firmware/updates; UCM profile"
 sudo install -m 644 $REPO/userspace/audio/ucm2/*.conf "$R/usr/share/alsa/ucm2/Qualcomm/x1e80100/"
