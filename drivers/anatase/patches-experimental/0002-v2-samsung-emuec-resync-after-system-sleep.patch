@@ -1,0 +1,122 @@
+From: book4-edge-linux
+Subject: [PATCH v2] usb: typec: samsung-emuec: handle charger plug-in during system sleep
+
+v2: arm the wake only on a port with nothing attached. v1 armed it on both
+ports; with a charger attached and charging, the machine did not come back
+from the following sleep (3 October). The level-triggered line can be raised
+during sleep with no way to clear it until I2C is back.
+
+A charger plugged in while the laptop is suspended (lid closed) is never
+used: the level-triggered S2MM006 interrupt is replayed early in resume,
+before the I2C controller is back, so clearing it and the following sync
+fail with -EACCES ("failed to clear interrupt: -13"). The consumer path is
+not enabled and no PD contract is made until the charger is replugged.
+
+Mask the interrupt across system sleep, keep it as a wake source on empty
+ports so a plug-in wakes the system to negotiate, and resync on resume.
+
+---
+--- a/samsung-emuec.c
++++ b/samsung-emuec.c
+@@ -16,6 +16,8 @@
+ #include <linux/module.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
++#include <linux/pm.h>
++#include <linux/pm_wakeup.h>
+ #include <linux/power_supply.h>
+ #include <linux/slab.h>
+ #include <linux/unaligned.h>
+@@ -98,6 +100,7 @@ struct samsung_emuec {
+ 	u32 voltage_uv;
+ 	u32 current_ua;
+ 	bool attached;
++	bool wake_armed;
+ 	bool usb_mux_active;
+ 	bool dp_active;
+ 	bool dp_enter_requested;
+@@ -1063,6 +1066,9 @@ static int samsung_emuec_probe(struct i2c_client *client)
+ 	if (ret)
+ 		goto err_pd;
+ 
++	/* A charger plugged in during sleep must be negotiated: wake for it. */
++	device_init_wakeup(dev, true);
++
+ 	mod_delayed_work(system_dfl_wq, &pdic->work, 0);
+ 	return 0;
+ 
+@@ -1086,6 +1092,7 @@ static void samsung_emuec_remove(struct i2c_client *client)
+ {
+ 	struct samsung_emuec *pdic = i2c_get_clientdata(client);
+ 
++	device_init_wakeup(&client->dev, false);
+ 	devm_free_irq(&client->dev, client->irq, pdic);
+ 	cancel_delayed_work_sync(&pdic->work);
+ 
+@@ -1102,6 +1109,58 @@ static void samsung_emuec_remove(struct i2c_client *client)
+ 	of_node_put(pdic->connector);
+ }
+ 
++/*
++ * The S2MM006 interrupt is level triggered and its status registers are on
++ * I2C. Left alone, an interrupt raised during system sleep (a charger plugged
++ * in with the lid closed) is replayed early in resume, before the I2C
++ * controller is back, so clearing it and the following sync both fail with
++ * -EACCES; the consumer path is never enabled, no PD contract is made and
++ * the charger stays unused until it is unplugged and plugged in again.
++ *
++ * Mask the interrupt while suspended, keep it as a wake source, and look at
++ * the port again on resume, when the bus is available.
++ */
++static int samsung_emuec_suspend(struct device *dev)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	struct samsung_emuec *pdic = i2c_get_clientdata(client);
++
++	disable_irq(client->irq);
++	cancel_delayed_work_sync(&pdic->work);
++
++	/*
++	 * Only wake for a plug-in: with something already attached (a charger
++	 * delivering power) the level-triggered line can be raised during
++	 * sleep with no way to clear it until I2C is back, and a sleep while
++	 * charging with the wake armed did not come back. Whatever happened
++	 * meanwhile is picked up by the resync on resume.
++	 */
++	pdic->wake_armed = false;
++	if (device_may_wakeup(dev) && !pdic->attached)
++		pdic->wake_armed = !enable_irq_wake(client->irq);
++	dev_dbg(dev, "suspend: attached=%d wake=%d\n", pdic->attached,
++		pdic->wake_armed);
++
++	return 0;
++}
++
++static int samsung_emuec_resume(struct device *dev)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	struct samsung_emuec *pdic = i2c_get_clientdata(client);
++
++	if (pdic->wake_armed)
++		disable_irq_wake(client->irq);
++	pdic->wake_armed = false;
++	enable_irq(client->irq);
++	mod_delayed_work(system_dfl_wq, &pdic->work, 0);
++
++	return 0;
++}
++
++static DEFINE_SIMPLE_DEV_PM_OPS(samsung_emuec_pm_ops, samsung_emuec_suspend,
++				samsung_emuec_resume);
++
+ static const struct of_device_id samsung_emuec_of_match[] = {
+ 	{ .compatible = "samsung,s2mm006" },
+ 	{ }
+@@ -1112,6 +1171,7 @@ static struct i2c_driver samsung_emuec_driver = {
+ 	.driver = {
+ 		.name = "samsung-emuec",
+ 		.of_match_table = samsung_emuec_of_match,
++		.pm = pm_sleep_ptr(&samsung_emuec_pm_ops),
+ 	},
+ 	.probe = samsung_emuec_probe,
+ 	.remove = samsung_emuec_remove,

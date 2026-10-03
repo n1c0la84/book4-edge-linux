@@ -71,6 +71,16 @@ both systems (`.prev` module); the patched module is kept as
 `pm_debug_messages` and a short second sleep, or try 0002 without
 `enable_irq_wake` (resync on resume only).
 
+### v2, 3 October: wake only on an empty port
+
+[`patches-experimental/0002-v2-...`](../drivers/anatase/patches-experimental/0002-v2-samsung-emuec-resync-after-system-sleep.patch)
+arms the wake only on a port with nothing attached at suspend; the interrupt
+stays masked otherwise and the port is resynced on resume. It covers both
+suspects: the wake-armed level line while charging (no longer armed on the
+charger's port) and, if the crash repeats with v2, a sleep while charging at
+20 V as such (never tested for long before). Each port logs
+`suspend: attached=.. wake=..` (dynamic debug). Status: built, not yet run.
+
 ## How to measure
 
 - **UPower history** is the most reliable record: timestamped percentage, kept
