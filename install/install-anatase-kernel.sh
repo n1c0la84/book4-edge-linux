@@ -52,3 +52,6 @@ sudo grep -c cutmem /boot/efi/EFI/fedora/grub.cfg
 sudo grep -E '^menuentry' /boot/efi/EFI/fedora/grub.cfg
 echo "default (pinned): $(cat /etc/book4/default-kernel)"
 echo "== done. Reboot and pick \"Fedora Linux ($KREL) - Book4 Edge (other)\". Output: $OUT"
+if [ -e /etc/book4/second-os ]; then
+    echo "Arch: bash $REPO/install/arch/sync-kernel.sh $KREL  (again after pinning $KREL)"
+fi
