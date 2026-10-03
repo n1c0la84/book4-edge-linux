@@ -88,6 +88,15 @@ port. During sleep v2 leaves the charger's port as the stock driver does
 (interrupt not serviced until resume), so the unplug crash may not be ours
 at all: next test is the same unplug with the original module.
 
+**Unplug during sleep crashes regardless of our patch** (3 October): same
+crash with the original `samsung-emuec` on the Anatase kernel (20:07) and on
+the Fedora fallback kernel with its DKMS drivers (`ene-kb9058-battery`
+instead of `samsung-galaxybook-ec`, 20:17). Plug-in and charging during
+sleep are fine. Not our patch, not the Anatase kernel, not the EC driver.
+Remaining suspects: the USB controllers' wake-up (`a600000.usb`,
+`a800000.usb` are wakeup-enabled) reacting to the detach, the USB-C side,
+or the hardware itself. Until resolved: **open the lid before unplugging.**
+
 ## How to measure
 
 - **UPower history** is the most reliable record: timestamped percentage, kept
