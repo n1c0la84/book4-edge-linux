@@ -1,0 +1,13 @@
+#!/bin/bash
+# systemd-sleep hook (test): Windows' firmware drives TLMM GPIO 44 (MODS) low
+# at Modern Standby "display off" and high at "display on". Do the same around
+# suspend. Only acts when GPIO 44 is usable (the gpio44 test DTB is booted).
+CHIP=$(for c in /sys/bus/gpio/devices/gpiochip*; do
+         [ -e "$c" ] && readlink -f "$c" | grep -q f100000.pinctrl && basename "$c"; done | head -1)
+[ -n "$CHIP" ] || exit 0
+gpioinfo -c "$CHIP" 44 >/dev/null 2>&1 || exit 0
+case "$1/$2" in
+    pre/*)  timeout 1 gpioset -c "$CHIP" 44=0; logger -t book4-mods "GPIO 44 low (pre $2)";;
+    post/*) timeout 1 gpioset -c "$CHIP" 44=1; logger -t book4-mods "GPIO 44 high (post $2)";;
+esac
+exit 0

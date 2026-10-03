@@ -133,6 +133,38 @@ the ACPI side (the LPS0/PEP Modern Standby notifications in the DSDT, which
 Linux on device tree never runs) or the Qualcomm PEP's PMIC configuration
 for sleep. Needs the DSDT (`acpidump` in Windows).
 
+### DSDT (3 October): what Windows does at Modern Standby
+
+`PEP0` (`QCOM0C17`) `_DSM` with the Microsoft Modern Standby UUID
+`11e00d56-ce64-47ce-837b-1f898f9aa461`:
+
+| notification | firmware action |
+|---|---|
+| 3 `MS:DisplayOff` | `ECTC.LDOS = 0` (EC 0x89 bit 1), `GIO0.MODS = 0` (**TLMM GPIO 44**) |
+| 4 `MS:DisplayOn` | `ECTC.LDOS = 1`, `GIO0.MODS = 1` |
+| 5 `MS:LPS+` | `GIO0.HPDC = 1` (TLMM GPIO 49) |
+| 7 / 8 `MS:MS+` / `MS:MS-` | `ECTC.RESP = 1 / 0` (logged only by EC2.sys) |
+
+Linux on device tree runs none of this. Anatase's DTS also reserves GPIOs
+44-47, so Linux cannot drive 44 at all.
+
+Tests (Anatase kernel, original `samsung-emuec`):
+
+1. **LDOS only** ([patches-experimental/0003](../drivers/anatase/patches-experimental/0003-samsung-galaxybook-ec-display-off-during-sleep.patch),
+   EC write 0x89 added to `samsung-galaxybook-ec`): the EC accepts the write,
+   but the bit was already 0 under Linux (never set), so nothing changed.
+   Still resets.
+2. **GPIO 44 freed** (DTB with `gpio-reserved-ranges = <35 1>, <45 3>`, boots
+   fine, so 44 is not secure-protected) and driven low before sleep / high
+   after by a systemd-sleep hook ([userspace/standby/book4-mods](../userspace/standby/book4-mods)).
+   **Behaviour changes**: after the unplug the blue charge LED goes **off**
+   (it stayed **on** in every earlier crash, so the EC had not handled the
+   unplug). The machine still reset, apparently **when the lid was opened**,
+   i.e. on resume rather than at the unplug.
+
+MODS is clearly the EC's "system in standby" input. The remaining reset looks
+like a resume problem after a power-source change during sleep.
+
 ## How to measure
 
 - **UPower history** is the most reliable record: timestamped percentage, kept
