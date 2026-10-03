@@ -50,8 +50,12 @@ ns depmod $K
 echo "== 3. Arch initramfs"
 ns mkinitcpio -k $K -g /boot/initramfs-$K-book4.img
 # Without the UFS modules the root filesystem is never found.
-ns lsinitcpio /boot/initramfs-$K-book4.img | grep -q '/ufs-qcom\.ko' ||
+# Capture the listing first: piping into grep -q closes the pipe early, the
+# container is killed by SIGPIPE and pipefail reports a false failure.
+LIST=$(ns lsinitcpio /boot/initramfs-$K-book4.img)
+grep -qE '/ufs-qcom\.ko(\.[gx]z|\.zst)?$' <<<"$LIST" ||
     { echo "ufs-qcom.ko missing from the new initramfs, not installing it." >&2; exit 1; }
+echo "   UFS driver present: $(grep -E '/ufs-qcom\.ko' <<<"$LIST")"
 
 echo "== 4. $IMG"
 [ -e "$IMG" ] && sudo cp -p "$IMG" "$IMG.prev"
