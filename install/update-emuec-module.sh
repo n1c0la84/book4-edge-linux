@@ -34,16 +34,23 @@ for p in "$REPO"/drivers/anatase/patches/*.patch; do
 done
 git status --short $DIR
 
-echo "== 2. build $DIR/samsung-emuec.ko"
-make -s LOCALVERSION= $DIR/samsung-emuec.ko
-modinfo -F vermagic $DIR/samsung-emuec.ko
-[ "$(modinfo -F vermagic $DIR/samsung-emuec.ko | cut -d' ' -f1)" = "$K" ] ||
+echo "== 2. build samsung-emuec.ko"
+# As an external module against the configured tree: a single in-tree target
+# (make $DIR/samsung-emuec.ko) only resolves symbols against vmlinux, and this
+# driver needs typec's exports (modpost: "typec_register_port" undefined).
+B=$(mktemp -d)
+trap 'rm -rf "$B"' EXIT
+cp $DIR/samsung-emuec.c "$B/"
+echo 'obj-m := samsung-emuec.o' > "$B/Makefile"
+make -s LOCALVERSION= M="$B" modules
+modinfo -F vermagic "$B/samsung-emuec.ko"
+[ "$(modinfo -F vermagic "$B/samsung-emuec.ko" | cut -d' ' -f1)" = "$K" ] ||
     { echo "vermagic does not match $K, not installing." >&2; exit 1; }
 
 echo "== 3. install (old module kept as .prev)"
 sudo -v
 sudo cp -p "$KO" "$KO.prev"
-sudo install -m 644 $DIR/samsung-emuec.ko "$KO"
+sudo install -m 644 "$B/samsung-emuec.ko" "$KO"
 sudo depmod "$K"
 
 echo "== 4. Fedora initramfs for $K (old one kept as .prev)"
