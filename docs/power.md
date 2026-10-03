@@ -114,6 +114,25 @@ it does, the firmware expects something from the OS before sleep (e.g. a
 regulator mode or a USB-C/charger setting); if it does not, it is a
 platform bug.
 
+**Windows survives it** (the owner never had the problem there). Looked at in
+`EC2.sys` on 3 October:
+
+- The `ResillencyPhase` ACPI operation region handler (Modern Standby
+  phases) only logs the value and stores it in the device context; nothing
+  reads it again and nothing is sent to the EC. Not the missing piece.
+- `CableDetect` and `BTPThreshold` handlers do send EC commands (0x0d and
+  0x06, value as two bytes).
+- `IOCTL_START_WAKEUP` / `_ONCE` / `IOCTL_STOP_WAKEUP` (from a Windows
+  service) send an EC command with a timeout (`"TimeOut %d"`): an **EC wake
+  timer**. Not related to the unplug crash, but it is how this machine could
+  wake itself up from sleep, which the RTC cannot (useful for
+  suspend-then-hibernate).
+
+So what Windows does differently is probably not in EC2.sys: candidates are
+the ACPI side (the LPS0/PEP Modern Standby notifications in the DSDT, which
+Linux on device tree never runs) or the Qualcomm PEP's PMIC configuration
+for sleep. Needs the DSDT (`acpidump` in Windows).
+
 ## How to measure
 
 - **UPower history** is the most reliable record: timestamped percentage, kept
