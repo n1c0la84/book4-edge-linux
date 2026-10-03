@@ -52,7 +52,8 @@ ns mkinitcpio -k $K -g /boot/initramfs-$K-book4.img
 # Without the UFS modules the root filesystem is never found.
 # Capture the listing first: piping into grep -q closes the pipe early, the
 # container is killed by SIGPIPE and pipefail reports a false failure.
-LIST=$(ns lsinitcpio /boot/initramfs-$K-book4.img)
+# --pipe: no pseudo-terminal, so no \r\n line endings in the captured output.
+LIST=$(ns --pipe lsinitcpio /boot/initramfs-$K-book4.img | tr -d '\r')
 grep -qE '/ufs-qcom\.ko(\.[gx]z|\.zst)?$' <<<"$LIST" ||
     { echo "ufs-qcom.ko missing from the new initramfs, not installing it." >&2; exit 1; }
 echo "   UFS driver present: $(grep -E '/ufs-qcom\.ko' <<<"$LIST")"
