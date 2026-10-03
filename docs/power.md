@@ -97,6 +97,23 @@ Remaining suspects: the USB controllers' wake-up (`a600000.usb`,
 `a800000.usb` are wakeup-enabled) reacting to the detach, the USB-C side,
 or the hardware itself. Until resolved: **open the lid before unplugging.**
 
+Narrowed further the same evening (Anatase kernel, original driver):
+
+- USB controllers' wakeup disabled (`a600000.usb`, `a800000.usb` and all USB
+  devices): still crashes.
+- **Every wakeup source disabled except the lid and the power key** (14:
+  thermal sensors, ADSP/CDSP, USB, Wi-Fi `mhi0`, keyboard `4-0005`, both
+  USB-C power supplies, EC battery/AC): still crashes.
+- Nothing in EFI pstore after any of these crashes (`efi_pstore` is loaded
+  and EFI variables work on this kernel), so no kernel panic was recorded.
+
+So nothing in Linux wakes up for it, and no panic is logged: the machine
+resets or loses power below Linux when the power source changes during
+s2idle. Next: does Windows survive a charger unplug in Modern Standby? If
+it does, the firmware expects something from the OS before sleep (e.g. a
+regulator mode or a USB-C/charger setting); if it does not, it is a
+platform bug.
+
 ## How to measure
 
 - **UPower history** is the most reliable record: timestamped percentage, kept
