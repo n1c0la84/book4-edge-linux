@@ -2,14 +2,17 @@
 
 Working notes, configuration and drivers for running a mainline-based Linux
 distribution on the **Samsung Galaxy Book4 Edge 14" (NP940XMA, X1E80100)**.
-**Currently Fedora only:** everything here was developed and tested on
+**Developed on Fedora:** everything here was first developed and tested on
 Fedora 45 (aarch64). Since 1 October it runs a kernel built from Anatase's
 `anatase-7.2` tree (7.2.7 plus our charger patch, see [docs/kernel.md](docs/kernel.md));
 it is the **default** boot entry, and the stock Fedora kernel 7.2.0-61 with the
 DKMS drivers stays in the menu as the fallback ("(other)"). The pieces are written so they can be
-carried to other distributions; an Arch Linux ARM install is in progress ([docs/arch.md](docs/arch.md)).
+carried to other distributions; since 3 October **Arch Linux ARM with Omarchy 4.0.4**
+runs next to Fedora on the same kernel ([docs/arch.md](docs/arch.md)).
 
 ![fastfetch on the Galaxy Book4 Edge 14": Fedora 45, kernel 7.2.7-book4, KDE Plasma 6.7.5 on Wayland, Snapdragon X Elite X1E-80-100, Adreno X1-85, 2880x1800 at 120 Hz](docs/images/fastfetch.png)
+
+![fastfetch on the Galaxy Book4 Edge 14": Omarchy 4.0.4 on Arch Linux ARM (aarch64), kernel 7.2.7-book4, Hyprland 0.56.2, foot, Tokyo Night theme, 8 GiB zram swap](docs/images/fastfetch-omarchy.png)
 
 This builds on the **[Anatase](https://github.com/anatase-org/patchwork)**
 project (branch `anatase-7.2`), whose device tree and EC/Type-C drivers we use,

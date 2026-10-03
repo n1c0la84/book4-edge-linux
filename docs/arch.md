@@ -109,6 +109,35 @@ from `/etc/pam.d/sddm`, so the `login` keyring (Chromium Safe Storage, `gh`
 tokens) is no longer unlocked at login. Either give `login` an empty password
 (Seahorse) or put the PAM lines back. Same symptom on Fedora with KWallet.
 
+![fastfetch in the Omarchy session: Omarchy 4.0.4 on Arch Linux ARM, kernel 7.2.7-book4, Hyprland 0.56.2, 8 GiB zram swap](images/fastfetch-omarchy.png)
+
+### Updating: `sudo pacman -Syu`, not `omarchy update`
+
+`omarchy update` was read step by step on 3 October. It leaves the boot
+setup alone: its package step is a plain `pacman -Syu` against Arch Linux ARM
+(no kernel package is installed, so no initramfs and nothing in `/boot`),
+`omarchy-snapshot` exits 127 without snapper (treated as "skip"), the Omarchy
+key is already in pacman's keyring, and no migrations are pending. But here:
+
+- **It aborts at the AUR step.** `omarchy`, `omarchy-settings`,
+  `omarchy-keyring` and `mise-bin` are local builds, so `pacman -Qem` lists
+  them and `omarchy-update-aur-pkgs` runs `yay -Sua`; `yay` is not installed,
+  the step fails and `set -e` stops the update after the system packages,
+  skipping mise, orphans, status and the restart prompts. Installing `yay`
+  would be worse: it would replace the local builds (`mise-bin` first) with
+  AUR ones.
+- **The orphan step offered to remove `mkinitcpio`.** It was a dependency of
+  `linux-aarch64`, which stage 1 removes. Fixed with
+  `pacman -D --asexplicit mkinitcpio` (now in stage 1).
+- **Omarchy itself never updates this way.** A new release means
+  `stage3-omarchy-build.sh` with a newer pin, then reviewing the new
+  migrations and the `NoExtract` list before installing.
+- `omarchy-update-restart` looks for a package-owned
+  `/usr/lib/modules/*/vmlinuz`; ours is a copied tree, so it would always
+  offer "Linux kernel has been updated. Reboot?".
+
+So: `sudo pacman -Syu` for packages, `mise up` for the mise tools.
+
 ## What works (verified)
 
 - Boot to a console, Wi-Fi via NetworkManager, internet.
@@ -139,11 +168,8 @@ CDSP and a `qcom-apm` command timeout; not yet compared with Fedora.
 1. ~~Verify the desktop~~ done 3 October, see above.
 2. ~~Omarchy's desktop~~ installed 3 October, see above. Still to check in
    the Omarchy session: launcher, menus, Fn keys under Omarchy's bindings,
-   lock screen, suspend, battery in the bar; the keyring prompt; whether
-   `omarchy update` is safe here. It does not re-run `omarchy-apply-system`,
-   but it calls `omarchy-snapshot` (snapper), new migrations (`omarchy-migrate`,
-   some may assume Limine) and `omarchy-update-orphan-pkgs`. Until checked,
-   update with `sudo pacman -Syu`.
+   lock screen, suspend, battery in the bar; the keyring prompt.
+   `omarchy update` checked: use `sudo pacman -Syu` instead (see Updating).
 3. Compare with `bprendie/omarchy-snapdragon` (Omarchy 4.0.3 on Arch Linux ARM
    userspace with an Ubuntu kernel) for the aarch64 packaging they had to do.
 4. Kernel updates: a new Anatase build on Fedora must also be copied into

@@ -80,6 +80,9 @@ cat /etc/pacman.d/mirrorlist
 pacman -Q linux-aarch64 >/dev/null 2>&1 && pacman -Rdd --noconfirm linux-aarch64
 pacman -Syu --noconfirm
 pacman -S --noconfirm --needed mkinitcpio networkmanager sudo btrfs-progs bluez bluez-utils nano vim linux-firmware linux-firmware-qcom alsa-ucm-conf
+# mkinitcpio came in as a dependency of linux-aarch64; without that package it
+# is an orphan, and orphan cleanup (pacman -Qtdq, omarchy update) would remove it
+pacman -D --asexplicit mkinitcpio
 # Fedora's tar dropped file capabilities (security.capability xattrs) when
 # unpacking; reinstalling every package restores them.
 pacman -S --noconfirm \$(pacman -Qqn)
