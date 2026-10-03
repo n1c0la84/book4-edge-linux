@@ -69,6 +69,12 @@ order of everyday usefulness within each section.
 - [ ] ~~**EC event queue** (0x62)~~ — Anatase now describes it in the device
       tree as `samsung,galaxybook4-edge-ec-events`, owned by the mailbox driver.
       Nothing for us to do; adopt their DTS.
+- [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
+      Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
+      create endpoint" (-12), at the same instant as a `qcom-apm` "CMD
+      timeout for [1001021] opcode" 5 s after the ADSP audio service comes
+      up. No visible effect so far (audio is on the ADSP). Table and details
+      in [arch.md](arch.md). Possibly worth reporting to Anatase.
 - [ ] `deep` suspend never resumes (s2idle works; probably leave it).
 - [ ] EC word at `0xb6` (37 on this unit): cycle-count candidate, watch whether
       it ever increments.

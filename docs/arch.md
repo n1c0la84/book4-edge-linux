@@ -161,8 +161,23 @@ So: `sudo pacman -Syu` for packages, `mise up` for the mise tools.
   out on aarch64. Set up by hand on the running system; now part of stage 2.
 
 Not yet tested on Arch: headphones/headset mic, Bluetooth pairing, external
-monitor. Boot log shows `qcom_smd_qrtr`/`fastrpc` probe errors (-12) on the
-CDSP and a `qcom-apm` command timeout; not yet compared with Fedora.
+monitor.
+
+Boot log: the CDSP's `fastrpc` and `qcom_smd_qrtr` channels fail to probe
+("failed to create endpoint", -12) at the same instant as a `qcom-apm` "CMD
+timeout for [1001021] opcode", 5 s after the ADSP's audio service registers.
+Compared with Fedora's journal on 3 October: **not Arch-specific**.
+
+| System, kernel | Boots | CDSP probe failures | APM timeout |
+|---|---|---|---|
+| Arch, 7.2.7-book4 | 5 | 2 every boot | every boot |
+| Fedora, 7.2.7-book4 | 9 | 1 or 2 | every boot |
+| Fedora, 7.2.0-61.fc45 | 1 | 2 | yes |
+
+So it lives in the shared kernel/firmware stack (X1E remoteproc/glink and
+Samsung's DSP firmware), not in the Arch setup or Anatase's patches. No
+visible effect: audio goes through the ADSP, whose `fastrpc` probes fine; the
+CDSP's `fastrpc` is only for compute offload. Tracked in [TODO.md](TODO.md).
 
 ## Where it stands / next steps
 
