@@ -17,7 +17,9 @@ order of everyday usefulness within each section.
 - [ ] **Suspend drain is about 1.7 W** (~6 %/h) on both kernels and both
       desktops; the 1 October "0.2 W" was a misreading. Find what keeps the
       SoC from power-collapsing: [power.md](power.md).
-- [ ] **Charger unplugged during sleep resets the machine** (both kernels;
+- [ ] **Charger unplugged during sleep resets the machine** — fix candidate
+      `patches-experimental/0004` passed devices-test and real s2idle unplug (4 Oct);
+      validation pending. (both kernels;
       Windows fine). `freezer` passes; `devices` resets even with `pm_async=0`.
       Unbinding the charging port's `samsung-emuec` avoids the reset in device
       tests and real s2idle on Arch. Next: separate IRQ/work handling from

@@ -350,3 +350,15 @@ event handling across sleep is sufficient in this mode; the detach that the
 unbind experiment also did is not needed. Next: real s2idle with the driver
 bound ([tools/power/s2idle-bound-test.sh](../tools/power/s2idle-bound-test.sh),
 control then unplug, power-button wake, 90 s watch).
+
+| Real s2idle, driver bound, 0004 | Result |
+|---|---|
+| control (charger connected) | success, 90 s watch clean |
+| **unplug during sleep** (asleep 13:52:45-13:55:12, wake by `pmic_pwrkey`) | **success**: resumed on battery, no reset in the 90 s watch, AC 0 / Discharging |
+
+**First real-sleep unplug survived with the driver bound and in normal
+operation.** Fix candidate: 0004. Still to do before calling it a fix:
+ordinary lid-close suspend through systemd/KDE, repeated cycles, the other
+USB-C port, charger plug-in during sleep (0004 does not wake for it; the
+port should be negotiated on resume), USB data and DisplayPort after resume,
+then the same on Arch.
