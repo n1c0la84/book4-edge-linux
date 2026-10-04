@@ -330,3 +330,23 @@ DSPs.
 
 In practice: closing the lid is fine for a few hours; for a night on battery,
 shut down.
+
+### 0004 on Fedora (4 October): event quiescing only, driver bound
+
+[patches-experimental/0004](../drivers/anatase/patches-experimental/0004-samsung-emuec-quiesce-events-across-sleep.patch)
+(PM notifier: interrupt masked and sync/HPD work stopped from
+`PM_SUSPEND_PREPARE` to `PM_POST_SUSPEND`, no detach, one resync after),
+Fedora `7.2.7-book4`, original `samsung-galaxybook-ec`, charging port
+`1-0033`, `pm-devices-test.sh`:
+
+| Test | Result |
+|---|---|
+| `pm_test=devices`, control | success |
+| `pm_test=devices`, unplug | **success**, resumed on battery (AC 0, Discharging), no delayed reset |
+
+Both ports logged `pm: quiesced` / `pm: resumed, resync`. The same test
+reset the machine with the stock driver on Arch. So stopping the driver's
+event handling across sleep is sufficient in this mode; the detach that the
+unbind experiment also did is not needed. Next: real s2idle with the driver
+bound ([tools/power/s2idle-bound-test.sh](../tools/power/s2idle-bound-test.sh),
+control then unplug, power-button wake, 90 s watch).
