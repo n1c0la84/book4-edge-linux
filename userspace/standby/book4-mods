@@ -19,6 +19,4 @@ if [ $rc = 124 ]; then
 else
     logger -t book4-mods "GPIO 44 not settable (reserved in this DTB?), rc=$rc"
 fi
-case x in
-esac
 exit 0
