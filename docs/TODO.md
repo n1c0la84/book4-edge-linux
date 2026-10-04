@@ -18,8 +18,9 @@ order of everyday usefulness within each section.
       desktops; the 1 October "0.2 W" was a misreading. Find what keeps the
       SoC from power-collapsing: [power.md](power.md).
 - [x] **Charger unplugged during sleep reset the machine**: fixed 4 Oct by
-      `drivers/anatase/patches/0002` (quiesce samsung-emuec across sleep). Open:
-      external display over USB-C after resume, long-term use, Arch, send to Anatase.
+      `drivers/anatase/patches/0002` (quiesce samsung-emuec across sleep). Sent to Anatase:
+      https://github.com/anatase-org/kernel-anatase/issues/3 . Open: external
+      display over USB-C after resume, long-term use.
 - [ ] **samsung-emuec 0002 v2** (charger plugged in during sleep): tested OK
       for plug-in and charging in sleep; move to `patches/` and send to
       Anatase once the unplug reset is understood.
