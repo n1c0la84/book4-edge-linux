@@ -1,149 +1,125 @@
 # Open points
 
-State on 1 October 2026 (14" NP940XMA, Fedora 45, kernel 7.2.0-61). Roughly in
-order of everyday usefulness within each section.
+State on 4 October 2026 (14" NP940XMA; Fedora 45 and Arch Linux ARM with
+Omarchy, both on the Anatase kernel `7.2.7-book4`). Roughly in order of
+everyday usefulness within each section. What is already done is listed at
+the end.
 
 ## To test (should work, never verified)
 
-- [x] **Full `dnf update`** done 1 Oct with `kernel*` and `*firmware*` excluded (rebooted fine afterwards). Was: (963 packages pending, incl. kernel 7.2.8,
-      linux-firmware, systemd, PipeWire, Mesa). Follow [updates.md](updates.md);
-      check `cutmem` in the ESP grub.cfg before rebooting.
-- [ ] **Kernel 7.2.8** from the "(other)" menu entry after the update: DKMS
-      modules built, display/battery/Wi-Fi/audio fine; then pin it
-      (`/etc/book4/default-kernel`).
-- [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
-      and HDMI (`rtd2171` bridge, `simple_bridge`).
 - [ ] **Headphones and headset microphone** (UCM devices exist, jack untested).
-- [ ] **Suspend drain is about 1.7 W** (~6 %/h) on both kernels and both
-      desktops; the 1 October "0.2 W" was a misreading. Find what keeps the
-      SoC from power-collapsing: [power.md](power.md).
-- [x] **Charger unplugged during sleep reset the machine**: fixed 4 Oct by
-      `drivers/anatase/patches/0002` (quiesce samsung-emuec across sleep). Sent to Anatase:
-      https://github.com/anatase-org/kernel-anatase/issues/3 . Open: external
-      display over USB-C after resume, long-term use.
-- [ ] **samsung-emuec 0002 v2** (charger plugged in during sleep): tested OK
-      for plug-in and charging in sleep; move to `patches/` and send to
-      Anatase once the unplug reset is understood.
-- [ ] **Hibernation** as a workaround for the suspend drain. Both kernels have
-      `CONFIG_HIBERNATION=y`, lockdown is off. Needs a ~20 GB btrfs swap file
-      (current swap is zram), `resume=` + `resume_offset=` in the boot hook's
-      command line, and dracut's resume module. Unknown: whether ADSP/CDSP,
-      GPU and ath12k come back after restore on X1E. Suspend-then-hibernate
-      may not work because the RTC cannot wake this machine; try plain
-      hibernate first.
-- [ ] **GRUB guard on a future GRUB update**, including the `chain.mod` copy for
-      the Windows entry (the guard was tested before the Windows entry existed).
+- [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
+      and HDMI (`rtd2171` bridge, `simple_bridge`). Also the last open check
+      for the sleep fix (`patches/0002`): a display still works after resume.
+- [ ] **The sleep fix in long-term use** (installed 4 Oct, Fedora and Arch):
+      repeated cycles, plug-in and unplug during sleep, over days.
+- [ ] **Fedora kernel update** (7.2.8 and later): only affects the fallback
+      "(other)" entry, kernel packages are held back. When taken: DKMS modules
+      built, display/battery/Wi-Fi/audio fine on that entry. See
+      [updates.md](updates.md).
+- [ ] **GRUB guard on a future GRUB update**, including the `chain.mod` copy
+      for the Windows entry (the guard was tested before that entry existed).
+- [ ] **Wi-Fi after a firmware update** (`linux-firmware`/`atheros-firmware`):
+      a new `board-2.bin` could change which board data ath12k uses.
 - [ ] **`install/install-fedora.sh` end to end** on a fresh install (each step
       was tested on its own, the script as a whole never).
-- [ ] Wi-Fi after a `linux-firmware`/`atheros-firmware` update: a new
-      `board-2.bin` could change which board data ath12k uses.
+- [ ] **Touchscreen** on GNOME and on the Fedora kernel (works under KDE and
+      Hyprland on the Anatase kernel); what its two "UNKNOWN" HID interfaces
+      are (pen? gestures?).
 
-## Not working (needs investigation)
+## Open problems
 
-- [x] ~~**Keyboard backlight**~~ works on the Anatase kernel, hotkey too (1 Oct). — **solved upstream 30 Sept.** Anatase's new
-      `samsung-galaxybook-ec` drives it through the `0xFF10` mailbox on `0x64`
-      (write `{0x40, 0x00, 0xff, 0x10, 0xfd}`, read `0xfc`), with the hotkey.
-      Our `0x62` command is a different mechanism and still unexplained, but
-      there is nothing left to build. Take theirs.
-      Old notes, if the `0x62` path is ever worth understanding: command known, driver blinks. Ideas in
-      [keyboard-backlight.md](keyboard-backlight.md). **Lead:** ciscobugger's
-      `EC2.sys` command descriptor table (payload lengths per command) may
-      explain the blinking. Note their table covers only commands `>= 0x80`,
-      while ours is `0x10` at address `0x62` — the dispatcher branches elsewhere
-      below `0x80` and nobody has followed it. This is still the most clearly
-      new thing we have.
-- [x] **Touchscreen** works (found 1 Oct under KDE Plasma on the Anatase
-      kernel): Goodix `27C6:0123` is a multitouch direct-touch device; the
-      "mouse" and two "UNKNOWN" interfaces misled us. Still to check: GNOME,
-      the Fedora kernel, and what the "UNKNOWN" interfaces are (pen? gestures?).
-- [x] **Webcam** works with the experimental camera DTB (2 Oct): OV02C10 via
-      CAMSS + libcamera software ISP; privacy LED on TLMM 110 lit while
-      streaming. Chrome works via PipeWire (2 Oct). Open: libcamera tuning (washed-out colours),
-      power cost of the always-on GPIO hogs. Sent to Anatase:
-      https://github.com/anatase-org/kernel-anatase/issues/2
-- [ ] **Fingerprint reader**: not visible to Linux at all.
-- [x] **EFI variables / NVRAM boot entries** work on the Anatase kernel (1 Oct); **RTC** set in UTC and verified across a reboot (1 Oct). Was: **EFI variables / NVRAM boot entries and the RTC** (clock resets each
-      boot): one cause, the missing QSEECOM allowlist entry. The RTC dependency
-      is not a guess — the DT node carries `qcom,uefi-rtc-info`, so the clock
-      offset is stored in an EFI variable. Decision and method in
-      [kernel.md](kernel.md): **do not rebuild, use Anatase's kernel RPMs**, but
-      send them our PD retry patch first or it is lost. The UFS quirk is
-      cosmetic and the HID keyboard quirk is marginal; neither justifies
-      anything on its own.
+- [ ] **Suspend drain is about 1.7 W** (~6 %/h, ~16 h from full) on both
+      kernels and desktops. The SoC does not seem to power-collapse.
+      [power.md](power.md).
+- [ ] **Hibernation** as a workaround for the drain. Both kernels have
+      `CONFIG_HIBERNATION=y`, lockdown is off. Needs a ~20 GB btrfs swap file
+      (current swap is zram), `resume=` + `resume_offset=` in the boot hook's
+      command line, and the resume module in the initramfs. Unknown: whether
+      ADSP/CDSP, GPU and ath12k survive a restore on X1E. The RTC cannot wake
+      this machine, but the EC has a wake timer (`EC2.sys`
+      `IOCTL_START_WAKEUP`, see [power.md](power.md)) that could make
+      suspend-then-hibernate possible.
+- [ ] **Charger plugged in during sleep charges only once the lid opens**
+      (`patches/0002` does not wake for it; the older experimental
+      `patches-experimental/0002-v2` did, but armed the wake in a way that is
+      not validated). A wake on plug-in only, done after the 0002 approach, is
+      a possible follow-up.
+- [ ] **Camera**: libcamera tuning (washed-out colours; ciscobugger has an
+      OV02C10 sensor helper), and the power cost of the always-on GPIO hogs.
 - [ ] **Possibly four speakers**: each speaker bus also enumerates a second
       WSA883x at SoundWire address 1 that no device tree describes
       ([audio.md](audio.md)).
-- [ ] ~~**EC event queue** (0x62)~~ — Anatase now describes it in the device
-      tree as `samsung,galaxybook4-edge-ec-events`, owned by the mailbox driver.
-      Nothing for us to do; adopt their DTS.
+- [ ] **Fingerprint reader**: not visible to Linux at all.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
-      create endpoint" (-12), at the same instant as a `qcom-apm` "CMD
-      timeout for [1001021] opcode" 5 s after the ADSP audio service comes
-      up. No visible effect so far (audio is on the ADSP). Table and details
-      in [arch.md](arch.md). Possibly worth reporting to Anatase.
+      create endpoint" (-12), together with a `qcom-apm` "CMD timeout". No
+      visible effect so far. Details in [arch.md](arch.md).
+- [ ] **GPIO 44 (MODS)**: the firmware's Modern Standby "display off/on"
+      signal to the EC, reserved in the DTS. Not needed for the unplug fix,
+      but it changes how the EC handles power events in sleep; worth
+      revisiting together with the drain. [power.md](power.md).
 - [ ] `deep` suspend never resumes (s2idle works; probably leave it).
-- [ ] EC word at `0xb6` (37 on this unit): cycle-count candidate, watch whether
-      it ever increments.
+- [ ] EC word at `0xb6` (37 on this unit): cycle-count candidate, watch
+      whether it ever increments.
 
-## To report upstream
+## Upstream
 
-Details in [upstream.md](upstream.md):
+Details in [upstream.md](upstream.md).
 
-- [x] **Talk to ciscobugger**: issue opened 1 Oct, ciscobugger/book4-edge-linux#3 (15.6" NP750XQA) — highest value per minute of
-      anything on this list; complementary gaps both ways. See
-      [related-work.md](related-work.md) and the last section of
-      [upstream.md](upstream.md).
-- [x] Anatase: PD request retry after hot plug, and the cycle-count note:
-      reported in https://github.com/anatase-org/kernel-anatase/issues/1
-      (patch ready — note they are not
-      the first to find it), cycle count register (`0xd0` is the state of charge
-      here), and `CAPACITY` which could come from the gauge's own `0xa0`.
-- [ ] Saddytech driver: design/last-full swapped, rate sign.
+Waiting for a reply (Anatase, `anatase-org/kernel-anatase`):
+
+- [ ] #1 PD request retry after hot plug (+ cycle-count register note).
+- [ ] #2 Front camera and privacy LED, device tree.
+- [ ] #3 Machine reset when the charger is unplugged during sleep.
+
+Not yet reported:
+
 - [ ] ath12k / linux-firmware: WCN7850 firmware c7-00108 regression on this card.
 - [ ] systemd/libinput: keyboard tagged as tablet pad.
-- [ ] linux-arm-msm DTS thread: `pmic-glink` cannot work on this machine (and,
-      if wanted, a tester's report on the v6 series).
-
-## Carrying this elsewhere
-
-- [ ] **Omarchy Dragon** — the clearest unoccupied space: nobody on that team
-      owns a Samsung. Plan in [omarchy.md](omarchy.md). An issue on
-      `omacom/omarchy` offering a working 14" and test cycles costs ten minutes
-      and is the highest-leverage unspent thing here.
+- [ ] Saddytech driver: design/last-full swapped, rate sign.
+- [ ] linux-arm-msm DTS thread: `pmic-glink` cannot work with this firmware
+      image (and, if wanted, a tester's report on the v6 series).
 - [ ] Help get `samsung-galaxybook-ec` and `samsung-emuec` to mainline, even
       only as a tester. Until they land, every distribution needs a patched
       kernel for this laptop.
 
-## Stale artefacts (30 September restructure)
+## Arch and Omarchy
 
-- [ ] `dts/x1e80100-samsung-galaxy-book4-edge-14.anatase.dtb` predates the
-      compatible change (`ene,kb9058-battery` -> `samsung,galaxybook4-edge-ec`).
-      Rebuild from their current tree.
-- [ ] `drivers/anatase/` carries `ene-kb9058-battery.c`, which no longer exists
-      upstream. Replace with `samsung-galaxybook-ec.c` or drop it in favour of
-      a local kernel build ([kernel.md](kernel.md)).
-- [ ] `userspace/boot/99-book4-devicetree.install` takes the DTB from
-      `/usr/lib/firmware/book4/`; with a locally built kernel it must take the
-      one the build produced.
+- [ ] **Make the Arch/Omarchy setup reproducible end to end**: stage 1-2 and
+      the Omarchy stage 3 scripts exist in `install/arch/`, but
+      `stage3-omarchy-install.sh` as a whole has not been run. [arch.md](arch.md).
+- [ ] **Omarchy Dragon**: offer the working 14" and test cycles to the
+      official effort (`omacom/omarchy#8672`); nobody there owns a Samsung.
+      Plan in [omarchy.md](omarchy.md).
 
 ## Repository
 
-- [x] Licence chosen 1 Oct: our code GPL-2.0-only, docs CC BY 4.0 (LICENSE, LICENSES/). Was: Choose a licence for our own files (drivers are GPL-2.0-only, the UCM
-      profile BSD-3-Clause; scripts and docs have none yet).
-- [x] Reviewed and published: the repository is public since 1 October 2026.
-      Shared 1 Oct: zensanp/linux-book4-edge #3 (Wi-Fi), #4 (battery), #8
-      (audio); ciscobugger/book4-edge-linux#3; a link on anatase-org/kernel-anatase#1.
-      Fedora Discussion, 2 Oct:
-      https://discussion.fedoraproject.org/t/fedora-45-on-the-samsung-galaxy-book4-edge-14-snapdragon-x-elite-what-works-and-how/203466
-- [ ] Import the device tree **sources** (only compiled DTBs are here; the
-      sources are on the workstation / in Anatase's tree).
-- [~] **Arch Linux ARM** in a btrfs subvolume next to Fedora (2 Oct): boots,
-      Wi-Fi works, desktop being set up. Log and next steps: [arch.md](arch.md).
-- [ ] Try another distribution (the repo is Fedora-only so far). The hardware
-      layer (`dts/`, `firmware/`, `userspace/audio`, `userspace/keyboard`,
-      `userspace/modprobe`) is already distribution-neutral; only the glue
-      (`userspace/dnf`, `userspace/dracut`, `userspace/boot`, `install/`) is
-      Fedora. An `install/install-omarchy.sh` beside the Fedora one is the
-      shape. Omarchy Dragon has nobody on a Samsung — see
-      [related-work.md](related-work.md).
+- [ ] Device tree **sources**: only the camera DTS (`dts/src/`) and the
+      patches sent to Anatase (`dts/patches/`) are here. The compiled
+      `dts/*.anatase.dtb` (1 Oct, `ene,kb9058-battery` compatible) is what the
+      **Fedora fallback kernel** boots with the DKMS drivers in
+      `drivers/anatase/` (`ene-kb9058-battery.c`, `samsung-emuec.c`); keep the
+      three in step. The Anatase kernel uses the DTB built with it.
+
+## Done
+
+- Boot, display/GPU, keyboard and backlight, touchpad, touchscreen, Wi-Fi,
+  Bluetooth, battery and charging (incl. hot replug, `patches/0001`), USB-C,
+  speakers and microphones, suspend/resume, EFI variables, RTC, Windows from
+  GRUB, GRUB update guard (1-2 Oct).
+- Anatase kernel built locally and default (1 Oct); camera with privacy LED
+  as default DTB (2 Oct, `/etc/book4/default-dtb`).
+- Full `dnf update` with kernel and firmware held back (1 Oct).
+- **Charger unplugged during sleep reset the machine**: fixed 4 Oct by
+  `drivers/anatase/patches/0002` (quiesce `samsung-emuec` across sleep);
+  tested on both ports, lid-close and direct s2idle, plug-in during sleep.
+- Boot hook prefers the DTB built with each kernel; falls back to
+  `/usr/lib/firmware/book4/` (Fedora kernel).
+- Arch Linux ARM in a second btrfs subvolume with Omarchy 4.0.4 (2-3 Oct).
+- Licence (GPL-2.0-only code, CC BY 4.0 docs); repository public and shared
+  (zensanp/linux-book4-edge #3 #4 #8, ciscobugger/book4-edge-linux#3, Fedora
+  Discussion) (1-2 Oct).
+- Superseded: our own keyboard backlight driver (`0x62`; Anatase's mailbox
+  driver does it), the EC event queue (in Anatase's DTS), the experimental
+  sleep patches v1/v2 and the EC display-bit test (`patches-experimental/`).
