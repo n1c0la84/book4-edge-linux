@@ -1,5 +1,11 @@
 # Power: suspend drain
 
+**Latest reset investigation (3 October evening):** unbinding only the
+charging port's `samsung-emuec` before sleep avoids the unplug reset in both
+`pm_test=devices` and real s2idle. The tests implicate driver activity or the
+USB state it manages, without identifying a faulty function. See
+[the test matrix and reproduction scripts](#further-isolation-3-october-evening-charging-port-driver-unbind-succeeds).
+
 ## Result (2 October 2026)
 
 **s2idle draws about 1.7 W on this machine, about 6 % of the battery per
@@ -42,7 +48,7 @@ I2C controller is back; clearing it and the following sync both fail
 (-EACCES), the consumer path is never enabled, and nothing re-checks the port
 afterwards. Same on Fedora and Arch (same module).
 
-Fix, **untested and not yet compiled**:
+Initial experimental patch (subsequently tested and superseded by v2 below):
 [`0002-samsung-emuec-resync-after-system-sleep.patch`](../drivers/anatase/patches-experimental/0002-samsung-emuec-resync-after-system-sleep.patch)
 masks the interrupt across sleep, arms it as a wake source (charger plug-in
 wakes the machine to negotiate; logind should suspend again with the lid
@@ -194,6 +200,93 @@ Until then: **open the lid before unplugging the charger.**
 Test material: [install/gpio44-test.sh](../install/gpio44-test.sh) (separate
 GRUB entry with GPIO 44 freed + the sleep hook),
 [tools/power/allwake-off.sh](../tools/power/allwake-off.sh).
+
+## Further isolation, 3 October evening: charging-port driver unbind succeeds
+
+On Arch, `7.2.7-book4`, installed `samsung-emuec` without suspend/resume
+callbacks, and no `book4-mods` hook:
+
+| test | charger action | result |
+|---|---|---|
+| Real s2idle, lid open, power-button wake | unplug during sleep | automatic reset |
+| Real s2idle | unplug, reconnect before wake | resumes (owner report) |
+| `pm_test=freezer`, 30 s | unplug | passes, resumes on battery |
+| `pm_test=devices`, 30 s | stay connected / unplug | passes / resets |
+| `pm_test=devices`, `pm_async=0` | stay connected / unplug | passes / resets |
+| `pm_test=devices`, charging port `1-0033` unbound | stay connected / unplug | both pass |
+| Real s2idle, charging port `1-0033` unbound | stay connected / unplug | both pass |
+
+The PM tests and final real-sleep tests write `mem` directly to
+`/sys/power/state`, bypassing systemd sleep hooks. The unbind scripts first
+negotiate charging normally, unbind only the charging port, wait 10 s and
+check that the separate EC driver still reports AC online and Charging.
+The other USB-C port stays bound. The driver is rebound after each successful
+test. No automatic sleep workaround is installed.
+
+Real-sleep control: 22:40:25 to 22:41:37. Unplug: 22:42:10 to 22:44:34.
+Both logs show `pm_test=none`, `suspend-to-idle`, wake from IRQ 225
+(`pmic_pwrkey`), successful resume and rebind. The unplug run's immediate EC
+snapshot still said Charging and resume logged an EC read error `-13`;
+later checks showed AC and USB-C offline and battery Discharging. An EC
+read error therefore does not by itself explain the reset.
+
+This supersedes the earlier inference that absent journal/pstore records
+locate the reset below Linux. Lid movement, actual s2idle entry and parallel
+PM callbacks are not required for the device-test failure. Reset timing is
+uncertain: the delay observed by the owner cannot establish whether the
+initial fault happens at unplug or during resume.
+
+**Strong suspect: `samsung-emuec` activity or the USB state it establishes.**
+Unbinding removes its IRQ handler and cancels work, but also calls
+`samsung_emuec_detach()` while hardware is awake. That changes USB role,
+orientation, retimer and mux and unregisters the partner. The tests do not
+separate those effects or identify a faulty function. The real-sleep result
+is one successful unplug run; lid-driven systemd suspend and other ports or
+peripherals remain to be checked with any eventual workaround.
+
+Next: separate event quiescing from pre-suspend USB detach with a targeted
+`samsung-emuec` module experiment. A full kernel rebuild for persistent
+console logging is deferred.
+
+### Reproducing the isolation tests
+
+The tested scripts are now under `tools/power/`. These are interactive
+hardware diagnostics, not an installed fix: save work first because the
+failing variants can reset the machine. Use the built-in display, keep the
+lid open, and connect the charger before each run. Avoid docks or external
+displays for the unbind experiments, which temporarily detach that port's
+USB role and mux as well as its driver.
+
+| script | difference from the baseline |
+|---|---|
+| [pm-freezer-test.sh](../tools/power/pm-freezer-test.sh) | freezes processes, leaves devices operational |
+| [pm-devices-test.sh](../tools/power/pm-devices-test.sh) | suspends devices, pauses 30 s, resumes automatically |
+| [pm-devices-serial-test.sh](../tools/power/pm-devices-serial-test.sh) | devices test with `pm_async=0` |
+| [pm-devices-no-pdic-test.sh](../tools/power/pm-devices-no-pdic-test.sh) | devices test with charging-port driver unbound |
+| [s2idle-no-pdic-test.sh](../tools/power/s2idle-no-pdic-test.sh) | real sleep with charging-port driver unbound |
+
+Each accepts `control` (leave charger connected) or `unplug`. For example,
+from the repository root:
+
+```sh
+sudo bash tools/power/s2idle-no-pdic-test.sh control
+# Only after the control returns normally:
+sudo bash tools/power/s2idle-no-pdic-test.sh unplug
+```
+
+Follow the script's timing instructions. The `pm-*` tests return
+automatically; the real-sleep test requires a brief power-button press to
+wake. If a control fails, stop before the unplug run. Scripts check s2idle
+and the initial charging state, record before/after state, and restore
+changed PM settings and driver bindings on normal return or a handled
+error. A reset bypasses cleanup; a normal reboot binds the driver again.
+They call the kernel directly and do not run systemd sleep/lock hooks.
+
+Logs are written beside the scripts and ignored by Git; inspect/redact
+kernel logs before sharing because they can contain network identifiers.
+The original local captures from this investigation remain in
+`~/book4-power-tests/`. Scripts were exercised on the hardware as recorded
+above; no permanent sleep configuration or kernel/module change was made.
 
 ## How to measure
 

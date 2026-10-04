@@ -17,10 +17,13 @@ order of everyday usefulness within each section.
 - [ ] **Suspend drain is about 1.7 W** (~6 %/h) on both kernels and both
       desktops; the 1 October "0.2 W" was a misreading. Find what keeps the
       SoC from power-collapsing: [power.md](power.md).
-- [ ] **Charger unplugged during sleep resets the machine** on resume (both
-      kernels; Windows fine). GPIO 44 (MODS) low in sleep makes the EC handle
-      the unplug (LED goes off) but the reset remains; next: ramoops console.
-      Workaround: open the lid before unplugging. See [power.md](power.md).
+- [ ] **Charger unplugged during sleep resets the machine** (both kernels;
+      Windows fine). `freezer` passes; `devices` resets even with `pm_async=0`.
+      Unbinding the charging port's `samsung-emuec` avoids the reset in device
+      tests and real s2idle on Arch. Next: separate IRQ/work handling from
+      the USB detach performed by unbind, then test a targeted module change.
+      No automatic workaround installed. Everyday workaround: open the lid
+      before unplugging. See [power.md](power.md).
 - [ ] **samsung-emuec 0002 v2** (charger plugged in during sleep): tested OK
       for plug-in and charging in sleep; move to `patches/` and send to
       Anatase once the unplug reset is understood.
