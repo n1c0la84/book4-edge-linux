@@ -23,7 +23,8 @@ order of everyday usefulness within each section.
       tests and real s2idle on Arch. Next: separate IRQ/work handling from
       the USB detach performed by unbind, then test a targeted module change.
       No automatic workaround installed. Everyday workaround: open the lid
-      before unplugging. See [power.md](power.md).
+      before unplugging. See [power.md](power.md) and the
+      [Fedora handoff](handoff-fedora-suspend.md).
 - [ ] **samsung-emuec 0002 v2** (charger plugged in during sleep): tested OK
       for plug-in and charging in sleep; move to `patches/` and send to
       Anatase once the unplug reset is understood.

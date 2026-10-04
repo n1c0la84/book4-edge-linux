@@ -246,7 +246,8 @@ peripherals remain to be checked with any eventual workaround.
 
 Next: separate event quiescing from pre-suspend USB detach with a targeted
 `samsung-emuec` module experiment. A full kernel rebuild for persistent
-console logging is deferred.
+console logging is deferred. See the [Fedora handoff](handoff-fedora-suspend.md)
+for the build baseline, proposed experiment and test sequence.
 
 ### Reproducing the isolation tests
 
