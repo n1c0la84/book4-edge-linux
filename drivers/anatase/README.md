@@ -12,6 +12,11 @@ Our changes are kept as separate patches in `patches/`, applied at install
 time, so the originals stay identifiable and the patches can be sent upstream:
 
 - `0001-samsung-emuec-retry-PD-request-after-hot-plug.patch`
+- `0002-samsung-emuec-quiesce-events-across-sleep.patch` (4 October): stops
+  the interrupt and sync/HPD work from `PM_SUSPEND_PREPARE` to
+  `PM_POST_SUSPEND`, then resyncs. Fixes the machine resetting when a
+  charger is unplugged during sleep, and negotiates a charger plugged in
+  during sleep on resume (see [docs/power.md](../../docs/power.md)).
 
 `patches-experimental/` is **not** applied by any script:
 
@@ -32,9 +37,4 @@ port's `samsung-emuec` before device suspend or real s2idle avoided the
 reset. This implicates driver activity or the USB state established by
 its detach path; it does not yet identify a faulty operation. No new driver
 fix is applied here. See the [test matrix and scripts](../../docs/power.md#further-isolation-3-october-evening-charging-port-driver-unbind-succeeds).
-- `0004-samsung-emuec-quiesce-events-across-sleep.patch` (4 October): the
-  event-quiescing-only experiment from
-  [docs/handoff-fedora-suspend.md](../../docs/handoff-fedora-suspend.md): PM
-  notifier masks the interrupt and stops sync/HPD work from
-  `PM_SUSPEND_PREPARE` to `PM_POST_SUSPEND`, no detach, one resync after.
-  Built for 7.2.7-book4, not yet tested.
+- 0004 was promoted to `patches/0002` on 4 October.

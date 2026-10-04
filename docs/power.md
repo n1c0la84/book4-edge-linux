@@ -376,5 +376,12 @@ enumerate, `Cannot enable`, and worked on replug; not reproduced after a
 real sleep. The `book4-mods` hook logged GPIO 44 changes in these runs but
 GPIO 44 was still reserved in the booted DTB, so it had no effect: 0004 alone.)
 
-Still to check: the other USB-C port, an external display over USB-C,
-repeated cycles over days, then Arch.
+Other USB-C port (`3-0033`), lid-close unplug: **success** (14:12:07-14:14:30).
+
+**Result: fixed by 0004**, now `drivers/anatase/patches/0002`. The reset needs
+the charging driver's event handling to run across the sleep transition
+while the power source changes; keeping it quiet from `PM_SUSPEND_PREPARE`
+to `PM_POST_SUSPEND` avoids it. Exactly which call in that path brings the
+machine down (an I2C access to the S2MM006, a typec/mux/role call, or the
+EC side reacting to it) is not identified. Not yet tested: an external
+display over USB-C after resume, many cycles over days, Arch.
