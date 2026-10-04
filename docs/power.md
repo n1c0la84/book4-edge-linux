@@ -362,3 +362,19 @@ ordinary lid-close suspend through systemd/KDE, repeated cycles, the other
 USB-C port, charger plug-in during sleep (0004 does not wake for it; the
 port should be negotiated on resume), USB data and DisplayPort after resume,
 then the same on Arch.
+
+Everyday checks with 0004 (Fedora, KDE, 4 October):
+
+| Check | Result |
+|---|---|
+| Lid-close suspend via systemd/KDE, charger unplugged during sleep (14:02:40-14:05:08) | **success**, no reset |
+| USB stick plugged in after that resume | enumerated first time (high-speed, `sdb`) |
+| On battery, charger plugged in during sleep (14:07:20-14:09:46) | negotiated **20 V on resume, first attempt**, no `failed to clear interrupt`; charges from the lid opening (0004 does not wake for a plug-in) |
+
+(One earlier first plug of the stick after the devices-mode tests failed to
+enumerate, `Cannot enable`, and worked on replug; not reproduced after a
+real sleep. The `book4-mods` hook logged GPIO 44 changes in these runs but
+GPIO 44 was still reserved in the booted DTB, so it had no effect: 0004 alone.)
+
+Still to check: the other USB-C port, an external display over USB-C,
+repeated cycles over days, then Arch.

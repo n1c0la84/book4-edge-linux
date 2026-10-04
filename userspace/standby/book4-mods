@@ -8,7 +8,17 @@ CHIP=$(for c in /sys/bus/gpio/devices/gpiochip*; do
 [ -n "$CHIP" ] || exit 0
 gpioinfo -c "$CHIP" 44 >/dev/null 2>&1 || exit 0
 case "$1/$2" in
-    pre/*)  timeout 1 gpioset -c "$CHIP" 44=0; logger -t book4-mods "GPIO 44 low (pre $2)";;
-    post/*) timeout 1 gpioset -c "$CHIP" 44=1; logger -t book4-mods "GPIO 44 high (post $2)";;
+    pre/*)  v=0; when=pre;;
+    post/*) v=1; when=post;;
+    *) exit 0;;
+esac
+# gpioset holds the line until killed; exit status 124 (timeout) means it was set
+timeout 1 gpioset -c "$CHIP" 44=$v 2>/dev/null; rc=$?
+if [ $rc = 124 ]; then
+    logger -t book4-mods "GPIO 44 = $v ($when $2)"
+else
+    logger -t book4-mods "GPIO 44 not settable (reserved in this DTB?), rc=$rc"
+fi
+case x in
 esac
 exit 0
