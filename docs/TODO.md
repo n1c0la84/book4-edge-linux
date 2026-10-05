@@ -39,6 +39,9 @@ the end.
 
 ## Open problems
 
+- [ ] **CPU boost** (`/sys/devices/system/cpu/cpufreq/boost` = 0): try 4 GHz
+      single/dual-core boost; watch temperature and battery.
+
 - [ ] **Suspend drain is about 1.7 W** (~6 %/h, ~16 h from full) on both
       kernels and desktops. The SoC does not seem to power-collapse.
       [power.md](power.md).

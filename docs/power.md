@@ -454,3 +454,13 @@ a wake source; attached ports stay unarmed. Lid-close suspend via KDE:
 With 0001+0002+0003, a charger plugged in with the lid closed now charges
 during sleep. Still to test: Arch/Hyprland re-suspending after the
 charger wake (logind instead of KDE).
+
+### CPU frequency scaling on Fedora (5 October)
+
+Same as on Arch: no `cpufreq` until `scmi-cpufreq` was loaded
+(`userspace/modules-load/book4-cpufreq.conf` in `/etc/modules-load.d/`).
+Then three policies (`policy0/4/8`, 4 cores each), driver `scmi`, governor
+`schedutil`, 710-3417 MHz. `openssl speed -seconds 3 sha256`, 16 KB blocks:
+**2 435 106k** (about 850 000k without the driver). The fallback kernel
+7.2.0-61 ships `scmi-cpufreq.ko.xz` too. `boost` is 0 (the X1E-80-100 can
+boost one or two cores to about 4 GHz); left off, an option to try.
