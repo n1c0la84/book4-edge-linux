@@ -101,6 +101,11 @@ Not yet reported:
 - [ ] **Make the Arch/Omarchy setup reproducible end to end**: stage 1-2 and
       the Omarchy stage 3 scripts exist in `install/arch/`, but
       `stage3-omarchy-install.sh` as a whole has not been run. [arch.md](arch.md).
+- [ ] **Rescue USB stick** (`install/arch/rescue-usb.sh`, written 5 Oct,
+      **untested**): a generic live USB cannot boot this machine (no
+      `cutmem`, no device tree, no Anatase drivers). Build it on the 64 GB
+      stick, boot it from the firmware menu, check Wi-Fi, the internal disk
+      (UFS) and a backup onto its `BOOK4-BACKUP` partition.
 - [ ] **`install/arch/fedora-shell.sh`** (Fedora container from Arch, incl.
       `--sync-modules`): written 5 Oct, not yet run. Test in three steps
       (read-only command, interactive shell, `--sync-modules` + reboot).
