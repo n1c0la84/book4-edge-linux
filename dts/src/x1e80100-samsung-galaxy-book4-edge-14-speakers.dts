@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * EXPERIMENTAL: Galaxy Book4 Edge 14" with all four speaker amplifiers.
+ *
+ * Each speaker SoundWire bus has two WSA883x (0217:0202) that enumerate, at
+ * addresses 1 and 2; the 14" DTS describes only address 2. Add address 1 on
+ * both buses with the second port set of the WSA macro master (4 5 6, shared
+ * 7, as the X1E CRD maps its second amplifier) and route the free macro
+ * outputs to them. Which pair is woofer and which tweeter is not known yet:
+ * test at low volume.
+ */
+
+#include "x1e80100-samsung-galaxy-book4-edge-14-camera.dts"
+
+&{/sound} {
+	audio-routing = "SpkrLeft IN", "WSA WSA_SPK1 OUT",
+			"SpkrLeft2 IN", "WSA WSA_SPK2 OUT",
+			"SpkrRight IN", "WSA2 WSA_SPK2 OUT",
+			"SpkrRight2 IN", "WSA2 WSA_SPK1 OUT",
+			"IN1_HPHL", "HPHL_OUT",
+			"IN2_HPHR", "HPHR_OUT",
+			"AMIC2", "MIC BIAS2",
+			"VA DMIC0", "MIC BIAS3",
+			"VA DMIC1", "MIC BIAS3",
+			"VA DMIC2", "MIC BIAS1",
+			"VA DMIC3", "MIC BIAS1",
+			"TX SWR_INPUT1", "ADC2_OUTPUT";
+};
+
+&{/sound/wsa-dai-link/codec} {
+	sound-dai = <&left_spkr>, <&left_spkr2>, <&swr0 0>, <&lpass_wsamacro 0>,
+		    <&right_spkr>, <&right_spkr2>, <&swr3 0>, <&lpass_wsa2macro 0>;
+};
+
+&swr0 {
+	left_spkr2: speaker@0,1 {
+		compatible = "sdw10217020200";
+		reg = <0 1>;
+		reset-gpios = <&lpass_tlmm 12 GPIO_ACTIVE_LOW>;
+		#sound-dai-cells = <0>;
+		#thermal-sensor-cells = <0>;
+		sound-name-prefix = "SpkrLeft2";
+		vdd-supply = <&vreg_l15b_1p8>;
+		qcom,port-mapping = <4 5 6 7>;
+	};
+};
+
+&swr3 {
+	right_spkr2: speaker@0,1 {
+		compatible = "sdw10217020200";
+		reg = <0 1>;
+		reset-gpios = <&lpass_tlmm 13 GPIO_ACTIVE_LOW>;
+		#sound-dai-cells = <0>;
+		#thermal-sensor-cells = <0>;
+		sound-name-prefix = "SpkrRight2";
+		vdd-supply = <&vreg_l15b_1p8>;
+		qcom,port-mapping = <4 5 6 7>;
+	};
+};
