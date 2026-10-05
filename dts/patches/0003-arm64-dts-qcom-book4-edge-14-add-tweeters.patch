@@ -1,0 +1,107 @@
+From 3f9097b9e4f9258b484bb5dc2b54e294093c3981 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Mon, 5 Oct 2026 16:04:53 +0200
+Subject: [PATCH] arm64: dts: qcom: x1e80100-samsung-galaxy-book4-edge-14: add
+ tweeters
+
+The 14" (NP940XMA) has four speakers, two woofers and two tweeters. Each
+speaker SoundWire bus has a second WSA8835 at address 1 (0217:0202) that
+enumerates but is not described, so only the woofers play.
+
+Describe both tweeters on the WSA macros' second output (SPK2 / RX1), on
+master ports 4-6 and the shared 7, as the X1E CRD maps its tweeters, and
+route each woofer from SPK1, whose data it actually plays (port 1). PCM
+channels 3/4 of the WSA codec DMA then reach the left/right tweeter.
+
+Woofer and tweeter were told apart by a tone sweep (woofers heard from
+300 Hz, tweeters from 600 Hz). The tweeters are named after the side they
+are on, and their prefixes are among those the X1E80100 machine driver caps
+the PA and digital gain for.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01VZvhNtszdDfmc8XTwbYbqN
+Signed-off-by: Nicola Nicodemo <nicola084@gmail.com>
+---
+ .../qcom/x1e-samsung-galaxy-book4-edge.dtsi   |  2 +-
+ .../x1e80100-samsung-galaxy-book4-edge-14.dts | 48 +++++++++++++++++++
+ 2 files changed, 49 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi b/arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi
+index 34feba350..2521ddcc2 100644
+--- a/arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi
++++ b/arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi
+@@ -365,7 +365,7 @@ &swr0 {
+ 	pinctrl-0 = <&wsa_swr_active>, <&spkr_01_sd_n_active>;
+ 	pinctrl-names = "default";
+ 
+-	/* The NP940XMA has one WSA8835 on each speaker bus. */
++	/* Address 2; the 14" (NP940XMA) also has a tweeter at address 1. */
+ 	left_spkr: speaker@0,2 {
+ 		compatible = "sdw10217020200";
+ 		reg = <0 2>;
+diff --git a/arch/arm64/boot/dts/qcom/x1e80100-samsung-galaxy-book4-edge-14.dts b/arch/arm64/boot/dts/qcom/x1e80100-samsung-galaxy-book4-edge-14.dts
+index ba674ab27..0cefe0d78 100644
+--- a/arch/arm64/boot/dts/qcom/x1e80100-samsung-galaxy-book4-edge-14.dts
++++ b/arch/arm64/boot/dts/qcom/x1e80100-samsung-galaxy-book4-edge-14.dts
+@@ -10,6 +10,26 @@ / {
+ 		     "qcom,x1e80100";
+ };
+ 
++&{/sound} {
++	audio-routing = "SpkrLeft IN", "WSA WSA_SPK1 OUT",
++			"TweeterRight IN", "WSA WSA_SPK2 OUT",
++			"SpkrRight IN", "WSA2 WSA_SPK1 OUT",
++			"TweeterLeft IN", "WSA2 WSA_SPK2 OUT",
++			"IN1_HPHL", "HPHL_OUT",
++			"IN2_HPHR", "HPHR_OUT",
++			"AMIC2", "MIC BIAS2",
++			"VA DMIC0", "MIC BIAS3",
++			"VA DMIC1", "MIC BIAS3",
++			"VA DMIC2", "MIC BIAS1",
++			"VA DMIC3", "MIC BIAS1",
++			"TX SWR_INPUT1", "ADC2_OUTPUT";
++};
++
++&{/sound/wsa-dai-link/codec} {
++	sound-dai = <&left_spkr>, <&right_tweeter>, <&swr0 0>, <&lpass_wsamacro 0>,
++		    <&right_spkr>, <&left_tweeter>, <&swr3 0>, <&lpass_wsa2macro 0>;
++};
++
+ &i2c13 {
+ 	touchpad@40 {
+ 		compatible = "hid-over-i2c";
+@@ -26,3 +46,31 @@ touchpad@40 {
+ &panel {
+ 	compatible = "samsung,atna40cu07", "samsung,atna33xc20";
+ };
++
++&swr0 {
++	/* WSA8835 tweeter, right side; macro output SPK2 (RX1) */
++	right_tweeter: speaker@0,1 {
++		compatible = "sdw10217020200";
++		reg = <0 1>;
++		reset-gpios = <&lpass_tlmm 12 GPIO_ACTIVE_LOW>;
++		#sound-dai-cells = <0>;
++		#thermal-sensor-cells = <0>;
++		sound-name-prefix = "TweeterRight";
++		vdd-supply = <&vreg_l15b_1p8>;
++		qcom,port-mapping = <4 5 6 7>;
++	};
++};
++
++&swr3 {
++	/* WSA8835 tweeter, left side; macro output SPK2 (RX1) */
++	left_tweeter: speaker@0,1 {
++		compatible = "sdw10217020200";
++		reg = <0 1>;
++		reset-gpios = <&lpass_tlmm 13 GPIO_ACTIVE_LOW>;
++		#sound-dai-cells = <0>;
++		#thermal-sensor-cells = <0>;
++		sound-name-prefix = "TweeterLeft";
++		vdd-supply = <&vreg_l15b_1p8>;
++		qcom,port-mapping = <4 5 6 7>;
++	};
++};
+-- 
+2.55.0
+

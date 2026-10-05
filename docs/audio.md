@@ -48,7 +48,7 @@ The address-1 amplifiers are the **tweeters**, and Linux used to drive only
 the **woofers** (a tone ladder: woofers heard from 300 Hz, tweeters from
 600 Hz). The device tree
 [`-14-speakers.dts`](../dts/src/x1e80100-samsung-galaxy-book4-edge-14-speakers.dts)
-adds them as `SpkrLeft2`/`SpkrRight2` on SoundWire ports `<4 5 6 7>`, fed by
+(the first test version) adds them as `SpkrLeft2`/`SpkrRight2` on SoundWire ports `<4 5 6 7>`, fed by
 the WSA macros' second output (RX1), exactly as on the CRD. It works; no driver
 changes are needed. Install it with `install/speakers-dtb.sh` (test entry).
 
@@ -56,11 +56,16 @@ changes are needed. Install it with `install/speakers-dtb.sh` (test entry).
 |---|---|---|---|
 | 1 (FL) | WSA2 RX0 | `SpkrRight` (bus 4, addr 2) | left woofer |
 | 2 (FR) | WSA RX0 | `SpkrLeft` (bus 1, addr 2) | right woofer |
-| 3 (RL) | WSA2 RX1 | `SpkrRight2` (bus 4, addr 1) | left tweeter |
-| 4 (RR) | WSA RX1 | `SpkrLeft2` (bus 1, addr 1) | right tweeter |
+| 3 (RL) | WSA2 RX1 | `TweeterLeft` (bus 4, addr 1) | left tweeter |
+| 4 (RR) | WSA RX1 | `TweeterRight` (bus 1, addr 1) | right tweeter |
 
-The DT names are left/right swapped (inherited); the UCM volume remap uses the
-physical order.
+The woofers' DT names are left/right swapped (inherited); the tweeters are
+named by side. The default DTB (since 5 Oct) is the camera DTS built on
+[`dts/patches/0003`](../dts/patches) (tweeters, woofers routed from SPK1),
+which is what went to Anatase. Machine-driver caps: the tweeter prefixes are
+in its list; the earlier `SpkrLeft2`/`SpkrRight2` were capped only because
+`snd_soc_limit_volume()` writes `platform_max` into the WSA883x driver's
+static control template, shared by every instance.
 
 Software: the UCM profile switches the tweeters with the woofers when their
 controls exist (same profile for both DTBs), sets their PA like the woofers',

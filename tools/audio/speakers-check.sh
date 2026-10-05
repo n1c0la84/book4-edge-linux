@@ -24,7 +24,7 @@ echo "== sinks"; wpctl status | sed -n '/Sinks:/,/Sources:/p' | head -8
 pw-play --target book4_speakers "$T/ladder.wav" &
 sleep 2
 echo "== amplifiers while playing (DAC / PA)"
-for a in SpkrRight SpkrLeft SpkrRight2 SpkrLeft2; do
+for a in SpkrRight SpkrLeft TweeterLeft TweeterRight; do
     printf '  %-11s DAC=%-4s PA=%s\n' "$a" "$(G "$a DAC Switch")" "$(G "$a PA Volume")"
 done
 wait
