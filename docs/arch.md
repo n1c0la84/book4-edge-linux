@@ -231,3 +231,26 @@ CDSP's `fastrpc` is only for compute offload. Tracked in [TODO.md](TODO.md).
   for kernel packages.
 - Never `modprobe -r ath12k` or rescan PCI. Keep `cutmem` and `cma=256M`
   (they live in Fedora's GRUB config).
+
+## Working from Arch without rebooting into Fedora (5 October)
+
+[`install/arch/fedora-shell.sh`](../install/arch/fedora-shell.sh), run as
+your user on Arch, mounts Fedora's root and home subvolumes, `/boot` and the
+ESP under `/mnt/fedora/` and opens a Fedora container (`systemd-nspawn`) in
+which Fedora's own tools run unchanged: the kernel tree in `~/src/patchwork`,
+`install/update-emuec-module.sh`, dracut, the GRUB boot hook, device tree
+builds. Use Fedora's clone of this repo there (`git pull` it first).
+
+- `fedora-shell.sh` - interactive Fedora shell (sudo asks the Fedora password).
+- `fedora-shell.sh CMD ...` - one command, e.g.
+  `fedora-shell.sh bash book4-edge-linux/install/update-emuec-module.sh`.
+- `fedora-shell.sh --sync-modules [KVER]` - the Arch-side replacement for
+  `sync-kernel.sh` (which must not run while Arch is up): copies the modules
+  from Fedora into the running Arch, rebuilds Arch's initramfs with
+  mkinitcpio (UFS check, `.prev` kept) and regenerates GRUB through Fedora's
+  hook in the container.
+
+Caveats: a Fedora initramfs rebuilt in the container keeps its `.prev`
+copy; boot Fedora once after such a change to confirm it. Same ESP rule as
+everywhere: add or overwrite our own files only, never delete. Not yet
+tested.
