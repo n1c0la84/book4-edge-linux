@@ -7,12 +7,9 @@ the end.
 
 ## To test (should work, never verified)
 
-- [ ] **CPU frequency scaling on Fedora**: install
-      `userspace/modules-load/book4-cpufreq.conf` to `/etc/modules-load.d/`
-      (`sudo modprobe scmi-cpufreq` for the current boot), then check
-      `/sys/devices/system/cpu/cpufreq/policy*` and the sha256 numbers in
-      [power.md](power.md). Without it the cores sit at 1.19 GHz (Arch, 5 Oct).
-      Steps: [handoff-fedora-next.md](handoff-fedora-next.md).
+- [x] **CPU frequency scaling on Fedora** (5 Oct): `scmi-cpufreq` via
+      `/etc/modules-load.d/book4-cpufreq.conf`, 710-3417 MHz, sha256 x2.9
+      ([power.md](power.md)).
 - [x] **Power profiles do nothing**: `power-profiles-daemon` has only its
       placeholder backend. The Samsung EC profiles were measured by hand
       (5 Oct, [power.md](power.md)): no difference in a 60 s all-core load.
