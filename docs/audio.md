@@ -42,35 +42,48 @@ SoundWire address 1 that no device tree describes (checked 5 October:
 Samsung lists **2 × 4 W woofers + 2 × 2.7 W tweeters**, behind one long slit
 at each end of the base.
 
-## Four speakers: what is known (5 October)
+## Four speakers (5 October)
 
-Test DTBs (not default): [`-14-speakers.dts`](../dts/src/x1e80100-samsung-galaxy-book4-edge-14-speakers.dts)
-adds the address-1 amplifiers as `SpkrLeft2`/`SpkrRight2` on their own ports
-(`<4 5 6 7>`, driven by the macros' second output, as on the CRD);
-[`-14-speakers-shared.dts`](../dts/src/x1e80100-samsung-galaxy-book4-edge-14-speakers-shared.dts)
-gives them the same ports as their partner (`<1 2 3 7>`). Install either with
-`install/speakers-dtb.sh` (`SPEAKERS_DTB=...`); scripts in
-[`tools/audio`](../tools/audio).
+The address-1 amplifiers are the **tweeters**, and Linux used to drive only
+the **woofers** (a tone ladder: woofers heard from 300 Hz, tweeters from
+600 Hz). The device tree
+[`-14-speakers.dts`](../dts/src/x1e80100-samsung-galaxy-book4-edge-14-speakers.dts)
+adds them as `SpkrLeft2`/`SpkrRight2` on SoundWire ports `<4 5 6 7>`, fed by
+the WSA macros' second output (RX1), exactly as on the CRD. It works; no driver
+changes are needed. Install it with `install/speakers-dtb.sh` (test entry).
 
-- **Mapping.** Raw PCM channel 1 → WSA2 RX0 → `SpkrRight` (bus 4, addr 2) →
-  **left** side; channel 2 → WSA RX0 → `SpkrLeft` (bus 1, addr 2) → **right**
-  side. The DT names are swapped. Channels 3/4 reach the macros' RX1
-  (proved by routing RX1 into RX0).
-- **Which is which.** With shared ports, a tone ladder (150 Hz–8 kHz) per pair:
-  the original pair is heard from 300 Hz, the new pair only from 600 Hz. So
-  Linux has always driven the **woofers**; the address-1 amps are the
-  **tweeters**.
-- **Shared ports work** (all four play) but each tweeter gets the woofer's
-  full-range signal, bass included. Not safe as a default at high volume.
-- **Own ports (`<4 5 6 7>`) do not work yet**: amps bind, DAPM is fully up,
-  master port 4 and the amps' DP1/DP2 are enabled, yet the tweeters only hiss.
-  The macros' SPK2 output (RX1) appears to carry no data on the bus.
-- Windows (`qcaudminiportnx_extension8380.inf`): `MapSpkrStereoChToQuadDevices=1`,
-  `SpeakerInternalChannelMapping` with 4 channels; i.e. stereo is fanned out
-  to the four amps, probably with crossover/EQ in the DSP (Dolby).
+| PCM channel | Macro path | Amplifier | Speaker |
+|---|---|---|---|
+| 1 (FL) | WSA2 RX0 | `SpkrRight` (bus 4, addr 2) | left woofer |
+| 2 (FR) | WSA RX0 | `SpkrLeft` (bus 1, addr 2) | right woofer |
+| 3 (RL) | WSA2 RX1 | `SpkrRight2` (bus 4, addr 1) | left tweeter |
+| 4 (RR) | WSA RX1 | `SpkrLeft2` (bus 1, addr 1) | right tweeter |
 
-Next: find why RX1 → SPK2 on port 4 is silent, then a 4-amp UCM profile with
-a PipeWire crossover (highs only to the tweeters).
+The DT names are left/right swapped (inherited); the UCM volume remap uses the
+physical order.
+
+Software: the UCM profile switches the tweeters with the woofers when their
+controls exist (same profile for both DTBs), and `Speakers Volume` covers all
+four PAs. A PipeWire filter-chain,
+[`pipewire/book4-speakers.conf`](../userspace/audio/pipewire/book4-speakers.conf),
+is a WirePlumber *smart filter* on the Speaker sink: woofers get full-range
+stereo, tweeters a 2 kHz 4th-order Linkwitz-Riley high-pass. A WirePlumber
+rule disables up-mixing on the raw 4-channel sink so nothing full-range
+reaches the tweeters by accident. `install/update-audio.sh` installs all of it.
+Windows does the same fan-out (`MapSpkrStereoChToQuadDevices=1`, a
+4-channel `SpeakerInternalChannelMapping`), with its own (unknown) tuning.
+
+Pitfalls met on the way: a quiet 1 kHz test tone is near the bottom of the
+tweeters' range and disappears in the amplifiers' hiss when the woofers are
+muted, which first looked like "the tweeters' ports carry no audio" (test
+with 3 kHz or more). The variant with shared ports
+([`-14-speakers-shared.dts`](../dts/src/x1e80100-samsung-galaxy-book4-edge-14-speakers-shared.dts),
+both amps on `<1 2 3 7>`) also plays, but sends the woofer's full-range
+signal to the tweeter: test only. A filter-chain output port cannot be both
+linked inside the graph and a graph output (`use copy`).
+
+Test scripts: [`tools/audio`](../tools/audio) (`speakers-voices.sh`,
+`speakers-check.sh`; the rest are the investigation's raw tests).
 
 Testing a profile without installing it:
 

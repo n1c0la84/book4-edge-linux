@@ -4,6 +4,7 @@
 # but only one amplifier's DAC is on. Tells which amplifiers make sound and
 # where each one physically is. Raw (no PipeWire). Run as your user.
 set -u
+# COMP=0 BOOST=0 bash speakers-amps.sh: plain DAC ports only (no compander/boost data)
 CARD=$(aplay -l 2>/dev/null | awk -F'[ :]' '/GalaxyBook4Edge/{print $2; exit}')
 T=$(mktemp -d)
 python3 - "$T" <<'PYEOF'
@@ -27,7 +28,7 @@ for m in WSA WSA2; do
 done
 AMPS="SpkrLeft SpkrLeft2 SpkrRight SpkrRight2"
 for a in $AMPS; do
-    A "$a COMP Switch" 1; A "$a BOOST Switch" 1; A "$a DAC Switch" 0
+    A "$a COMP Switch" ${COMP:-1}; A "$a BOOST Switch" ${BOOST:-1}; A "$a DAC Switch" 0
     A "$a VISENSE Switch" 0; A "$a WSA MODE" 0; A "$a PA Volume" 3
 done
 : > ~/speakers-amps-result.txt
@@ -42,4 +43,4 @@ done
 for a in $AMPS; do A "$a DAC Switch" 1; done
 rm -rf "$T"
 systemctl --user start pipewire.socket pipewire-pulse.socket wireplumber pipewire pipewire-pulse
-echo; cat ~/speakers-amps-result.txt
+echo "(COMP=${COMP:-1} BOOST=${BOOST:-1})" >> ~/speakers-amps-result.txt; echo; cat ~/speakers-amps-result.txt

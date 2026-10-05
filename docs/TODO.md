@@ -56,10 +56,10 @@ the end.
       Sent to Anatase as a follow-up on #3.
 - [ ] **Camera**: libcamera tuning (washed-out colours; ciscobugger has an
       OV02C10 sensor helper), and the power cost of the always-on GPIO hogs.
-- [ ] **Four speakers, two driven**: Linux drives the woofers; the tweeters
-      (WSA883x at SoundWire address 1) play with the shared-ports test DTB but
-      get full-range audio. Own-port path (macro RX1 → SPK2) still silent.
-      Status and next steps: [audio.md](audio.md#four-speakers-what-is-known-5-october).
+- [ ] **Four speakers**: work with the test DTB (`-14-speakers`), UCM and
+      PipeWire crossover (5 Oct, [audio.md](audio.md#four-speakers-5-october)).
+      Left: listening check with music, crossover/tweeter level tuning, then
+      make it the default DTB.
 - [ ] **Fingerprint reader**: not visible to Linux at all.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
