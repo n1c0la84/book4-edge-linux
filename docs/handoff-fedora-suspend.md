@@ -4,7 +4,11 @@
 
 > **Done on Fedora, 5 October:** tests 1-4 passed; the patch is now
 > `patches/0003` (applied by default, no `EMUEC_EXTRA_PATCHES` needed).
-> Remaining: `install/arch/sync-kernel.sh`, then test 5 on Arch/Omarchy.
+> **Test 5 passed on Arch/Omarchy, 5 October:** lid closed 12:01:24 with both
+> ports empty (`attached=0 wake=1`); charger plugged in, the machine woke
+> (~12:02:39), negotiated `PD contract 20000 mV 3250 mA` at once, and logind
+> suspended it again by itself at 12:03:08 (29 s, hold-off, no lid event),
+> charger port `attached=1 wake=0`. Charging, no replug. All five tests done.
 
 The unplug reset below is fixed (`patches/0002`, quiesce). What remains: a
 charger plugged in **after** the lid is closed is not negotiated until the
@@ -43,7 +47,7 @@ journal checked afterwards for `pm: quiesced (attached=.. wake=..)`:
 | 2 | on battery | plug charger in | wakes, `PD contract` 20 V, suspends again within ~30 s; charging (blue LED, `status` Charging on opening) |
 | 3 | on charger | unplug | no reset, resumes on battery (0002 behaviour kept: charger port `wake=0`) |
 | 4 | on battery | plug in, wait 2 min, unplug | no reset |
-| 5 | as 2, on **Arch/Omarchy** | plug charger in | logind (not KDE) suspends again with the lid closed |
+| 5 | as 2, on **Arch/Omarchy** | plug charger in | logind (not KDE) suspends again with the lid closed: **passed** 5 Oct |
 
 If 2 wakes but the desktop does not suspend again, the lid state after a
 non-lid wake is the session's job (logind `HandleLidSwitch`, holdoff ~30 s;

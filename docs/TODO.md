@@ -41,8 +41,9 @@ the end.
       `IOCTL_START_WAKEUP`, see [power.md](power.md)) that could make
       suspend-then-hibernate possible.
 - [x] **Charger plugged in during sleep now charges** (`patches/0003`,
-      5 Oct, Fedora): wakes, negotiates, sleeps again. Open: the same on
-      Arch/Hyprland (logind re-suspend). Sent to Anatase as a follow-up on #3.
+      5 Oct, Fedora): wakes, negotiates, sleeps again. Same on
+      Arch/Omarchy (5 Oct): logind re-suspends 29 s after the wake.
+      Sent to Anatase as a follow-up on #3.
 - [ ] **Camera**: libcamera tuning (washed-out colours; ciscobugger has an
       OV02C10 sensor helper), and the power cost of the always-on GPIO hogs.
 - [ ] **Possibly four speakers**: each speaker bus also enumerates a second
