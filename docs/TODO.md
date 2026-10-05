@@ -59,7 +59,7 @@ the end.
 - [x] **Four speakers** (5 Oct): default DTB `four-speakers.dtb`
       (`install/speakers-default.sh`), UCM + PipeWire crossover and limiter
       ([audio.md](audio.md#four-speakers-5-october)). Still to do: carry the
-      audio config to Arch; upstream the DT (tweeters, fixed names).
+      audio config to Arch; DT sent to Anatase as #4 (5 Oct).
 - [ ] **Fingerprint reader**: not visible to Linux at all.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
