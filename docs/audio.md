@@ -36,8 +36,12 @@ speech clipped (407 samples in 5 s) and sounded distorted, so the profile uses
 `EnableSequence` placed after an `Include` of the stock one does not override
 it.
 
-Open question: each speaker bus also enumerates a second WSA883x at SoundWire
-address 1 that no device tree describes. The machine may have four speakers.
+Each speaker bus also enumerates a second WSA883x (part `0x0202`) at
+SoundWire address 1 that no device tree describes (checked 5 October:
+`sdw:1:0:0217:0202:00:1` and `sdw:4:0:0217:0202:00:1`, no driver bound).
+So the machine very likely has four speakers and Linux drives two; the CRD
+topology already sends 4 channels to them (3-4 silent in our profile).
+Plan in [handoff-fedora-next.md](handoff-fedora-next.md).
 
 Testing a profile without installing it:
 

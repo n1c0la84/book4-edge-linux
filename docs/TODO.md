@@ -12,6 +12,7 @@ the end.
       (`sudo modprobe scmi-cpufreq` for the current boot), then check
       `/sys/devices/system/cpu/cpufreq/policy*` and the sha256 numbers in
       [power.md](power.md). Without it the cores sit at 1.19 GHz (Arch, 5 Oct).
+      Steps: [handoff-fedora-next.md](handoff-fedora-next.md).
 - [x] **Power profiles do nothing**: `power-profiles-daemon` has only its
       placeholder backend. The Samsung EC profiles were measured by hand
       (5 Oct, [power.md](power.md)): no difference in a 60 s all-core load.
@@ -55,9 +56,10 @@ the end.
       Sent to Anatase as a follow-up on #3.
 - [ ] **Camera**: libcamera tuning (washed-out colours; ciscobugger has an
       OV02C10 sensor helper), and the power cost of the always-on GPIO hogs.
-- [ ] **Possibly four speakers**: each speaker bus also enumerates a second
-      WSA883x at SoundWire address 1 that no device tree describes
-      ([audio.md](audio.md)).
+- [ ] **Four speakers, two driven** (confirmed 5 Oct): each speaker bus has
+      a second WSA883x at SoundWire address 1, enumerated but not in the
+      device tree, so audio is quiet and thin. Plan (DTB + 4-channel UCM, and
+      tweeter caution): [handoff-fedora-next.md](handoff-fedora-next.md).
 - [ ] **Fingerprint reader**: not visible to Linux at all.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
