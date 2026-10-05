@@ -20,6 +20,8 @@
 1c. **Charger unplugged during sleep resets the machine.** Patch sent
    4 October: https://github.com/anatase-org/kernel-anatase/issues/3
    (applies to `anatase-7.2` on its own; ours is `drivers/anatase/patches/0002`).
+   Follow-up 5 October, wake for a charger plugged in during sleep (ours:
+   `patches/0003`): https://github.com/anatase-org/kernel-anatase/issues/3#issuecomment-5992214169
 2. **Cycle count reads the wrong register.** `KB9058_CYCLES` is `0xd0`, but on
    this 14" unit EC space `0xd0..0xd1` holds the state of charge (`00 62` = 98
    while the gauge at `0xa0` read 98 %). The BIX-style block at `0xb0..0xb7` is
