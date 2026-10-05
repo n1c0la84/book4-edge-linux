@@ -38,7 +38,25 @@ backend here (no `intel_pstate`/`amd_pstate`, no ACPI platform profile), so
 switching profiles (Omarchy menu, `powerprofilesctl`) changes nothing. The
 Samsung EC does register a platform profile, `samsung-galaxybook`
 (`quiet balanced performance`, `/sys/class/platform-profile/platform-profile-0`),
-that nothing uses yet; what it changes (fan, power limits) is untested.
+that nothing uses yet.
+
+Tested 5 October (Arch, on battery, `scmi-cpufreq` loaded): 60 s of
+`openssl speed -bytes 16384 -multi 12 sha256` per profile, 60 s rest between.
+
+| profile | MB/s | clocks under load | power under load | CPU temp start -> peak |
+|---|---|---|---|---|
+| quiet | 29 019 | 3417 MHz, all clusters, whole minute | ~37-40 W | 42 -> 85 C |
+| balanced | 29 030 | same | ~37-40 W | 46 -> 91 C |
+| performance | 28 942 | same | ~39-44 W | 53 -> 96 C |
+
+No measurable difference: same throughput, no throttling in any profile,
+the same temperature rise during each run (+23 C in 50 s); the rising peaks
+follow the starting temperature (60 s rest was not enough). The battery
+current refreshes only every 10-20 s, so the power column is coarse. The fan
+was a little louder at the end, consistent with the accumulated heat.
+**Left as is**: not wired to the profile switch. A longer run (minutes per
+profile, full cool-down) could still show a difference near the thermal
+limit or in the fan curve.
 
 ## Result (2 October 2026)
 
