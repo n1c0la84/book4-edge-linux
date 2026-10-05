@@ -32,6 +32,8 @@ step "DSP firmware into the initramfs, keyboard fix, no ghost battery"
 sudo install -D -m 644 "$REPO/userspace/dracut/book4-fw.conf"            /etc/dracut.conf.d/book4-fw.conf
 sudo install -D -m 644 "$REPO/userspace/keyboard/99-book4-keyboard.rules" /etc/udev/rules.d/99-book4-keyboard.rules
 sudo install -D -m 644 "$REPO/userspace/modprobe/book4-no-battmgr.conf"   /etc/modprobe.d/book4-no-battmgr.conf
+# CPU frequency scaling (scmi-cpufreq has no autoload alias; see docs/power.md)
+sudo install -D -m 644 "$REPO/userspace/modules-load/book4-cpufreq.conf" /etc/modules-load.d/book4-cpufreq.conf
 
 step "device tree + boot hook (keeps the static grub.cfg in sync with installed kernels)"
 sudo install -D -m 644 "$REPO/dts/x1e80100-samsung-galaxy-book4-edge-14.anatase.dtb" /usr/lib/firmware/book4/$DTB

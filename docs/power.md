@@ -6,6 +6,40 @@ charging port's `samsung-emuec` before sleep avoids the unplug reset in both
 USB state it manages, without identifying a faulty function. See
 [the test matrix and reproduction scripts](#further-isolation-3-october-evening-charging-port-driver-unbind-succeeds).
 
+## CPU frequency scaling was off (5 October 2026)
+
+There was **no cpufreq at all** (no `/sys/devices/system/cpu/cpufreq/policy*`):
+on X1E the CPU clocks are set by firmware over the SCMI perf protocol, and
+the kernel's `scmi-cpufreq.ko` (present in the Anatase build) **has no
+autoload alias**, so nothing ever loaded it. Without it the firmware keeps
+the cores at its **1.19 GHz** step under any load.
+
+Loaded by hand on Arch (`7.2.7-book4`): three policies (CPUs 0-3, 4-7,
+8-11), `scmi` driver, `schedutil`, 710-3417.6 MHz in 13 steps, `boost` 0.
+Under load the busy clusters go to 3417.6 MHz and back down when idle.
+The boot log's `[Firmware Bug]: Failed to add opps_by_lvl at 3417600 for
+NCC1/NCC2` and the `EM: OPP ... is inefficient` lines did not stop it.
+
+| `openssl speed sha256`, 16 KB blocks | with `scmi-cpufreq` | without | |
+|---|---|---|---|
+| 1 thread | 2 430 MB/s | 846 MB/s | ×2.9 |
+| 12 threads (`-multi 12`) | 28 631 MB/s | 11 423 MB/s | ×2.5 |
+| idle battery power, 30 s | 5.68 W | 5.68 W | same |
+
+(846/2430 × 3417.6 MHz ≈ 1190 MHz: exactly the firmware's 1190.4 MHz step.)
+
+Fix: [`userspace/modules-load/book4-cpufreq.conf`](../userspace/modules-load/book4-cpufreq.conf)
+in `/etc/modules-load.d/`, installed by `install-fedora.sh` and Arch stage 1.
+In place on Arch since 5 October; **Fedora still needs it** (same kernel and
+modules, so almost certainly also stuck at 1.19 GHz until then).
+
+Power profiles: `power-profiles-daemon` 0.30 has only its `placeholder`
+backend here (no `intel_pstate`/`amd_pstate`, no ACPI platform profile), so
+switching profiles (Omarchy menu, `powerprofilesctl`) changes nothing. The
+Samsung EC does register a platform profile, `samsung-galaxybook`
+(`quiet balanced performance`, `/sys/class/platform-profile/platform-profile-0`),
+that nothing uses yet; what it changes (fan, power limits) is untested.
+
 ## Result (2 October 2026)
 
 **s2idle draws about 1.7 W on this machine, about 6 % of the battery per

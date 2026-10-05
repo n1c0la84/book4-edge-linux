@@ -7,6 +7,15 @@ the end.
 
 ## To test (should work, never verified)
 
+- [ ] **CPU frequency scaling on Fedora**: install
+      `userspace/modules-load/book4-cpufreq.conf` to `/etc/modules-load.d/`
+      (`sudo modprobe scmi-cpufreq` for the current boot), then check
+      `/sys/devices/system/cpu/cpufreq/policy*` and the sha256 numbers in
+      [power.md](power.md). Without it the cores sit at 1.19 GHz (Arch, 5 Oct).
+- [ ] **Power profiles do nothing**: `power-profiles-daemon` has only its
+      placeholder backend. Try the Samsung EC platform profile
+      (`quiet`/`balanced`/`performance`) by hand and measure; if it matters,
+      wire it to the profile switch.
 - [ ] **Headphones and headset microphone** (UCM devices exist, jack untested).
 - [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
       and HDMI (`rtd2171` bridge, `simple_bridge`). Also the last open check

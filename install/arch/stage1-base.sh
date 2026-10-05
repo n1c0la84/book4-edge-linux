@@ -58,6 +58,7 @@ sudo sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' "$R/etc/locale.gen"
 echo LANG=en_US.UTF-8 | sudo tee "$R/etc/locale.conf" >/dev/null
 sudo install -D -m 644 $REPO/userspace/keyboard/99-book4-keyboard.rules "$R/etc/udev/rules.d/99-book4-keyboard.rules"
 sudo install -D -m 644 $REPO/userspace/modprobe/book4-no-battmgr.conf "$R/etc/modprobe.d/book4-no-battmgr.conf"
+sudo install -D -m 644 $REPO/userspace/modules-load/book4-cpufreq.conf "$R/etc/modules-load.d/book4-cpufreq.conf"
 sudo install -D -m 644 /dev/stdin "$R/etc/mkinitcpio.conf.d/book4.conf" <<'EOF'
 # Galaxy Book4 Edge: UFS is modular in the Anatase kernel; no autodetect
 # (the image is built in a container on Fedora).
