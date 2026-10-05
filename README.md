@@ -34,7 +34,7 @@ and adds what we found and fixed independently.
 | Battery / AC | works, incl. charging confirmed | Anatase `samsung-galaxybook-ec` (built into the Anatase kernel); `ene-kb9058-battery` via DKMS on the Fedora kernel |
 | USB-C data, hot-plug | works | Anatase `samsung-emuec` |
 | Charging, incl. hot replug at 20 V | works | `samsung-emuec` + [our retry patch](drivers/anatase/patches) |
-| Speakers (stereo) | works | topology alias + UCM profile: [docs/audio.md](docs/audio.md) |
+| Speakers, all four (2 woofers + 2 tweeters) | works | default DTB with the tweeters ([sent to Anatase](https://github.com/anatase-org/kernel-anatase/issues/4)), UCM profile, PipeWire crossover (tweeters get highs only) + limiter; quieter than Windows by design (no speaker protection on Linux): [docs/audio.md](docs/audio.md) |
 | Internal microphones | works | DMIC0/1, gain raised in the UCM profile |
 | Headphones, headset mic | profile present, untested | |
 | Suspend (s2idle): lid close/open, power key | works, but **about 1.7 W** (~6 %/h, a full battery lasts ~16 h) | `mem_sleep_default=s2idle`; lid and power key suspend and wake, on both kernels. The earlier "0.2 W" was a misreading; measured from UPower's history in [docs/power.md](docs/power.md). Shut down for a night on battery. Plugging in or unplugging the charger during sleep is fine since 4 October with [our patch 0002](drivers/anatase/patches) (it reset the machine before); a charger plugged in during sleep starts charging when the lid opens |

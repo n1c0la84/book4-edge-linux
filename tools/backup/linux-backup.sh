@@ -6,6 +6,11 @@
 #
 #   bash tools/backup/linux-backup.sh /path/to/mounted/external/drive
 #
+# A network share works too, mounted as a real directory your user can write
+# to (not a file manager's smb:// view), e.g. SMB:
+#   sudo mount -t cifs //SERVER/SHARE ~/mnt/backup -o username=NAME,uid=$(id -u),gid=$(id -g)
+# Keep the laptop plugged in and awake while it runs (~30 GB, compressed).
+#
 # On a btrfs destination the subvolumes are received as browsable read-only
 # subvolumes; on any other filesystem they are saved as `btrfs send` stream
 # files (restore with `btrfs receive`). See RESTORE.md written next to them.
