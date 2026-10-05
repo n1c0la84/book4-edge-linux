@@ -1,8 +1,8 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
 # Rebuild only samsung-emuec.ko for an installed Anatase kernel, with our
-# patches from drivers/anatase/patches/ that the kernel tree does not have
-# yet, and install it (previous module kept as .prev). Then regenerate
+# patches from drivers/anatase/patches/ that the kernel tree (HEAD) does not
+# have yet, applied to a temporary copy, and install it (previous module kept as .prev). Then regenerate
 # Fedora's initramfs for that kernel (keeps .prev) and remind to sync Arch.
 # Run as your user on Fedora:
 #
@@ -25,25 +25,29 @@ IMG=/boot/initramfs-$K.img
 [ -e "$KO" ] || { echo "No $KO: is $K (from $TREE) installed?" >&2; exit 1; }
 [ "$K" = "$(uname -r)" ] && echo "Note: $K is running; the new module is used from the next boot."
 
-echo "== 1. patches into $TREE/$DIR"
+echo "== 1. patches (on a copy of the committed driver; the tree is not modified)"
+# Start from the driver as committed in the tree (HEAD), so reruns always
+# begin from the same source: patches already committed there are detected
+# and skipped, the others applied in order to the copy.
+B=$(mktemp -d)
+trap 'rm -rf "$B"' EXIT
+git show HEAD:$DIR/samsung-emuec.c > "$B/samsung-emuec.c"
 for p in "$REPO"/drivers/anatase/patches/*.patch ${EMUEC_EXTRA_PATCHES:-}; do
-    if git apply -p1 --directory=$DIR --reverse --check "$p" 2>/dev/null; then
-        echo "   already in tree: ${p##*/}"
+    if patch -s -p1 -d "$B" --dry-run -R -f -i "$p" >/dev/null 2>&1; then
+        echo "   already in the tree's HEAD: ${p##*/}"
     else
-        git apply -p1 --directory=$DIR --check "$p"
-        git apply -p1 --directory=$DIR "$p"
+        patch -s -p1 -d "$B" --dry-run -f -i "$p" >/dev/null ||
+            { echo "   does not apply: ${p##*/}" >&2; exit 1; }
+        patch -s -p1 -d "$B" -f -i "$p"
         echo "   applied: ${p##*/}"
     fi
 done
-git status --short $DIR
+rm -f "$B"/*.orig
 
 echo "== 2. build samsung-emuec.ko"
 # As an external module against the configured tree: a single in-tree target
 # (make $DIR/samsung-emuec.ko) only resolves symbols against vmlinux, and this
 # driver needs typec's exports (modpost: "typec_register_port" undefined).
-B=$(mktemp -d)
-trap 'rm -rf "$B"' EXIT
-cp $DIR/samsung-emuec.c "$B/"
 echo 'obj-m := samsung-emuec.o' > "$B/Makefile"
 make -s LOCALVERSION= M="$B" modules
 modinfo -F vermagic "$B/samsung-emuec.ko"
