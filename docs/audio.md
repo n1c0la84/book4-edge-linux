@@ -39,9 +39,38 @@ it.
 Each speaker bus also enumerates a second WSA883x (part `0x0202`) at
 SoundWire address 1 that no device tree describes (checked 5 October:
 `sdw:1:0:0217:0202:00:1` and `sdw:4:0:0217:0202:00:1`, no driver bound).
-So the machine very likely has four speakers and Linux drives two; the CRD
-topology already sends 4 channels to them (3-4 silent in our profile).
-Plan in [handoff-fedora-next.md](handoff-fedora-next.md).
+Samsung lists **2 × 4 W woofers + 2 × 2.7 W tweeters**, behind one long slit
+at each end of the base.
+
+## Four speakers: what is known (5 October)
+
+Test DTBs (not default): [`-14-speakers.dts`](../dts/src/x1e80100-samsung-galaxy-book4-edge-14-speakers.dts)
+adds the address-1 amplifiers as `SpkrLeft2`/`SpkrRight2` on their own ports
+(`<4 5 6 7>`, driven by the macros' second output, as on the CRD);
+[`-14-speakers-shared.dts`](../dts/src/x1e80100-samsung-galaxy-book4-edge-14-speakers-shared.dts)
+gives them the same ports as their partner (`<1 2 3 7>`). Install either with
+`install/speakers-dtb.sh` (`SPEAKERS_DTB=...`); scripts in
+[`tools/audio`](../tools/audio).
+
+- **Mapping.** Raw PCM channel 1 → WSA2 RX0 → `SpkrRight` (bus 4, addr 2) →
+  **left** side; channel 2 → WSA RX0 → `SpkrLeft` (bus 1, addr 2) → **right**
+  side. The DT names are swapped. Channels 3/4 reach the macros' RX1
+  (proved by routing RX1 into RX0).
+- **Which is which.** With shared ports, a tone ladder (150 Hz–8 kHz) per pair:
+  the original pair is heard from 300 Hz, the new pair only from 600 Hz. So
+  Linux has always driven the **woofers**; the address-1 amps are the
+  **tweeters**.
+- **Shared ports work** (all four play) but each tweeter gets the woofer's
+  full-range signal, bass included. Not safe as a default at high volume.
+- **Own ports (`<4 5 6 7>`) do not work yet**: amps bind, DAPM is fully up,
+  master port 4 and the amps' DP1/DP2 are enabled, yet the tweeters only hiss.
+  The macros' SPK2 output (RX1) appears to carry no data on the bus.
+- Windows (`qcaudminiportnx_extension8380.inf`): `MapSpkrStereoChToQuadDevices=1`,
+  `SpeakerInternalChannelMapping` with 4 channels; i.e. stereo is fanned out
+  to the four amps, probably with crossover/EQ in the DSP (Dolby).
+
+Next: find why RX1 → SPK2 on port 4 is silent, then a 4-amp UCM profile with
+a PipeWire crossover (highs only to the tweeters).
 
 Testing a profile without installing it:
 
