@@ -22,7 +22,7 @@
    (applies to `anatase-7.2` on its own; ours is `drivers/anatase/patches/0002`).
    Follow-up 5 October, wake for a charger plugged in during sleep (ours:
    `patches/0003`): https://github.com/anatase-org/kernel-anatase/issues/3#issuecomment-5992214169
-- **Tweeters (four speakers), device tree**: sent 5 October:
+1d. **Tweeters (four speakers), device tree.** Sent 5 October:
    https://github.com/anatase-org/kernel-anatase/issues/4
    ([dts/patches/0003](../dts/patches)). Offered: a follow-up renaming the
    swapped woofer prefixes to `WooferLeft`/`WooferRight`.
