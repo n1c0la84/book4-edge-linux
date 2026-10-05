@@ -27,6 +27,7 @@ side; [omarchy.md](omarchy.md) has the background and the two routes.
 | [`install/arch/stage1-base.sh`](../install/arch/stage1-base.sh) | subvolume, Arch Linux ARM tarball (signature checked by hand first), modules + firmware, locale/timezone, keyboard udev rule, mkinitcpio (UFS modules, no autodetect), pacman keys, fast mirrors (`dk`, `de4`), update, base packages, user with sudo, initramfs into Fedora's `/boot`, GRUB entry |
 | [`install/arch/stage2-desktop.sh`](../install/arch/stage2-desktop.sh) | keyboard layout, Hyprland + Quickshell + uwsm + SDDM, PipeWire + our UCM profile, Bluetooth address service, `pipewire-libcamera`, Chromium, fonts, tray tools, starter `~/.config/hypr/hyprland.lua` |
 | [`install/arch/sync-kernel.sh`](../install/arch/sync-kernel.sh) | from Fedora: a kernel installed there (modules, Arch initramfs, GRUB entry) given to Arch; see kernel updates below |
+| [`install/arch/sync-audio.sh`](../install/arch/sync-audio.sh) | from Fedora: the four-speaker audio setup (UCM, PipeWire crossover + limiter, `swh-plugins`) given to Arch; rerun after audio changes |
 | [`install/arch/collect-logs.sh`](../install/arch/collect-logs.sh) | from Fedora: the last Arch boot's journal, SDDM and Hyprland logs to `~/arch-logs.txt` |
 
 Lessons, in the order they bit:
