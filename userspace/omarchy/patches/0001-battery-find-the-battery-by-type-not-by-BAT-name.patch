@@ -1,0 +1,95 @@
+From: book4-edge-linux
+Subject: [PATCH] battery: find the system battery by type, not by a BAT* name
+
+omarchy-battery-status (power panel: percentage, time, rate, size, cycles)
+and omarchy-battery-present only look for a battery named BAT*, which is
+what ACPI laptops have. Device-tree laptops name it after the driver: on a
+Samsung Galaxy Book4 Edge (Snapdragon X Elite) it is
+samsung-galaxybook-battery, UPower path battery_samsung_galaxybook_battery,
+so the panel shows "-" everywhere and battery-present says there is none.
+
+Find the UPower battery_* device that is a power supply, read cycles and
+thresholds from that device's own sysfs path, and detect presence from any
+power_supply of type Battery that is not a peripheral (scope Device).
+Also take the size of the rate: this driver reports a discharging current
+as negative, which the sysfs ABI allows, and gave "-11.2W".
+
+Against Omarchy v4.0.4 (c668141e).
+
+---
+diff --git i/bin/omarchy-battery-present w/bin/omarchy-battery-present
+index fb221e8c..4766cce1 100755
+--- i/bin/omarchy-battery-present
++++ w/bin/omarchy-battery-present
+@@ -2,11 +2,13 @@
+ 
+ # omarchy:summary=Returns true if a battery is present on the system.
+ 
+-for bat in /sys/class/power_supply/BAT*; do
+-  [[ -r $bat/present ]] &&
+-  [[ $(cat $bat/present) == "1" ]] &&
+-  [[ $(cat $bat/type) == "Battery" ]] &&
+-  exit 0
++# Any system battery, whatever the driver named it (BAT0 on ACPI laptops,
++# samsung-galaxybook-battery on a device-tree Galaxy Book4 Edge). Peripheral
++# batteries (mice, headsets) report scope "Device" and do not count.
++for bat in /sys/class/power_supply/*; do
++  [[ -r $bat/type && $(cat $bat/type) == "Battery" ]] || continue
++  [[ -r $bat/scope && $(cat $bat/scope) == "Device" ]] && continue
++  [[ -r $bat/present && $(cat $bat/present) == "1" ]] && exit 0
+ done
+ 
+ exit 1
+diff --git i/bin/omarchy-battery-status w/bin/omarchy-battery-status
+index cc0a6024..80e9728d 100755
+--- i/bin/omarchy-battery-status
++++ w/bin/omarchy-battery-status
+@@ -18,7 +18,17 @@ case "${1:-}" in
+     ;;
+ esac
+ 
+-battery=$(upower -e 2>/dev/null | grep BAT | head -n 1)
++# The system battery, whatever the driver named it (BAT0 on ACPI laptops,
++# samsung_galaxybook_battery on a device-tree Galaxy Book4 Edge): UPower
++# lists it as battery_<name> and marks it as a power supply; peripheral
++# batteries are not.
++battery=""
++for device in $(upower -e 2>/dev/null | grep '/battery_'); do
++  if upower -i "$device" | grep -qE '^[[:space:]]*power supply:[[:space:]]*yes'; then
++    battery=$device
++    break
++  fi
++done
+ [[ -z $battery ]] && exit 0
+ 
+ battery_info=$(upower -i "$battery")
+@@ -55,6 +65,9 @@ elif [[ -r $battery_path/current_now && -r $battery_path/voltage_now ]]; then
+     -v microvolts="$(<"$battery_path/voltage_now")" \
+     'BEGIN { print microamps * microvolts / 1000000000000 }')
+ fi
++# Drivers may report a discharging current or power as negative (the sysfs
++# ABI allows a signed value); the rate shown and the idle check need its size.
++power_rate_raw=${power_rate_raw#-}
+ 
+ power_rate=$(awk -v rate="${power_rate_raw:-0}" 'BEGIN {
+   rounded = sprintf("%.1f", rate)
+@@ -65,8 +78,8 @@ state=$(awk '/state/ { print $2; exit }' <<<"$battery_info")
+ threshold_start=$(awk '/charge-start-threshold:/ { gsub(/%/, "", $2); print int($2); exit }' <<<"$battery_info")
+ threshold_end=$(awk '/charge-end-threshold:/ { gsub(/%/, "", $2); print int($2); exit }' <<<"$battery_info")
+ 
+-[[ -z $threshold_end ]] && threshold_end=$(cat "$power_supply_path"/BAT*/charge_control_end_threshold 2>/dev/null | head -1)
+-[[ -z $threshold_start ]] && threshold_start=$(cat "$power_supply_path"/BAT*/charge_control_start_threshold 2>/dev/null | head -1)
++[[ -z $threshold_end ]] && threshold_end=$(cat "$battery_path"/charge_control_end_threshold 2>/dev/null | head -1)
++[[ -z $threshold_start ]] && threshold_start=$(cat "$battery_path"/charge_control_start_threshold 2>/dev/null | head -1)
+ 
+ ac_online=false
+ for supply in "$power_supply_path"/*; do
+@@ -107,7 +120,7 @@ if [[ $shell_output == "true" ]]; then
+   printf 'size\t%s\n' "${capacity}Wh"
+   printf 'time\t%s\n' "$time_remaining"
+ 
+-  cycles=$(cat "$power_supply_path"/BAT*/cycle_count 2>/dev/null | head -1)
++  cycles=$(cat "$battery_path"/cycle_count 2>/dev/null | head -1)
+ 
+   [[ -n $cycles ]] && printf 'cycles\t%s\n' "$cycles"
+ 

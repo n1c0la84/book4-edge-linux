@@ -8,6 +8,9 @@
 #
 #   bash install/update-emuec-module.sh [TREE]     (default TREE: ~/src/patchwork)
 #
+# Experiments: EMUEC_EXTRA_PATCHES="path/to/a.patch ..." applies those after
+# patches/ (e.g. drivers/anatase/patches-experimental/0004-*.patch).
+#
 # Rollback: copy the .prev files back, or boot the "(other)" Fedora kernel.
 set -euo pipefail
 REPO=$(cd "$(dirname "$0")/.." && pwd)
@@ -23,7 +26,7 @@ IMG=/boot/initramfs-$K.img
 [ "$K" = "$(uname -r)" ] && echo "Note: $K is running; the new module is used from the next boot."
 
 echo "== 1. patches into $TREE/$DIR"
-for p in "$REPO"/drivers/anatase/patches/*.patch; do
+for p in "$REPO"/drivers/anatase/patches/*.patch ${EMUEC_EXTRA_PATCHES:-}; do
     if git apply -p1 --directory=$DIR --reverse --check "$p" 2>/dev/null; then
         echo "   already in tree: ${p##*/}"
     else

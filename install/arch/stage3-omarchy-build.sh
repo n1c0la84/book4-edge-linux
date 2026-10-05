@@ -29,12 +29,31 @@ sed -i "s/'ttf-jetbrains-mono-nerd-basic'/'ttf-jetbrains-mono-nerd' # book4: -ba
   "$BUILD/omarchy/PKGBUILD"
 grep -q "'ttf-jetbrains-mono-nerd' # book4" "$BUILD/omarchy/PKGBUILD"
 
+# The omarchy package is built from the same pinned commit plus our patches
+# (userspace/omarchy/patches/, e.g. battery detection), through the
+# PKGBUILD's OMARCHY_SRC hook; pkgrel 2 so it replaces a stock 4.0.4-1.
+REPO=$(cd "$(dirname "$0")/../.." && pwd)
+COMMIT=$(sed -n "s/^_commit='\(.*\)'/\1/p" "$BUILD/omarchy/PKGBUILD")
+PATCHED=$SRC/omarchy-book4
+echo "== Omarchy source ${COMMIT:0:7} + our patches -> $PATCHED"
+[[ -d $PATCHED/.git ]] || git clone -q --filter=blob:none https://github.com/basecamp/omarchy.git "$PATCHED"
+git -C "$PATCHED" fetch -q origin "$COMMIT"
+git -C "$PATCHED" checkout -q --force --detach "$COMMIT"
+git -C "$PATCHED" clean -qfd
+for patch in "$REPO"/userspace/omarchy/patches/*.patch; do
+  git -C "$PATCHED" apply "$patch"
+  echo "   applied ${patch##*/}"
+done
+sed -i 's/^pkgrel=1$/pkgrel=2/' "$BUILD/omarchy/PKGBUILD"
+
 # -d: runtime dependencies (gum, plymouth, quickshell, ...) are resolved by
 # pacman at install time, not needed to build.
-for p in omarchy-keyring omarchy-settings omarchy; do
+for p in omarchy-keyring omarchy-settings; do
   echo "== makepkg $p"
   (cd "$BUILD/$p" && makepkg -fd)
 done
+echo "== makepkg omarchy (patched source)"
+(cd "$BUILD/omarchy" && OMARCHY_SRC=$PATCHED makepkg -fd)
 
 echo "== Omarchy default packages available in Arch Linux ARM"
 base=$BUILD/omarchy/src/omarchy/install/omarchy-base.packages

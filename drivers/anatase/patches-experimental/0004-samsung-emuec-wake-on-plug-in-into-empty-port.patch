@@ -1,0 +1,65 @@
+From: book4-edge-linux
+Subject: [PATCH] usb: typec: samsung-emuec: wake for a charger plugged into an empty port during sleep (experiment)
+
+On top of patches/0001 and patches/0002 (quiesce across sleep). With
+0002 a charger plugged in during sleep is negotiated only at the next
+resume, so with the lid closed the battery runs down although a charger
+is connected (5 October, Arch: plugged in after closing the lid, found
+off and fully charged by the firmware in the morning).
+
+While quiesced, arm the masked interrupt as a wake source on a port that
+had nothing attached at suspend. A plug-in wakes the system, PM_POST_SUSPEND
+re-enables the interrupt and resyncs (PD contract), and the session
+suspends again with the lid closed. Attached ports stay unarmed, so a
+charger unplugged during sleep is still left alone until resume.
+
+Untested, not compiled.
+
+---
+--- a/samsung-emuec.c	2026-10-05 11:09:02.043231176 +0200
++++ b/samsung-emuec.c	2026-10-05 11:09:26.805694081 +0200
+@@ -108,6 +108,7 @@
+ 	u8 caps_retries;
+ 	struct notifier_block pm_nb;
+ 	bool quiesced;
++	bool wake_armed;
+ };
+ 
+ static int samsung_emuec_pm_notify(struct notifier_block *nb,
+@@ -1115,11 +1116,26 @@
+ 		disable_irq(pdic->client->irq);	/* waits for a running handler */
+ 		cancel_delayed_work_sync(&pdic->work);
+ 		flush_work(&pdic->hpd_work);
+-		dev_info(dev, "pm: quiesced (attached=%d)\n", pdic->attached);
++		/*
++		 * A charger plugged into an empty port during sleep is otherwise
++		 * negotiated only after the next resume: wake for it. The wake
++		 * stays off on an attached port, so an unplug during sleep is
++		 * still left alone until resume (the reset this quiescing fixes).
++		 * The masked interrupt still wakes: the msm GPIO irqchip enables
++		 * wake-armed lines on suspend.
++		 */
++		if (!pdic->attached && !enable_irq_wake(pdic->client->irq))
++			pdic->wake_armed = true;
++		dev_info(dev, "pm: quiesced (attached=%d wake=%d)\n",
++			 pdic->attached, pdic->wake_armed);
+ 		break;
+ 	case PM_POST_SUSPEND:
+ 		if (!pdic->quiesced)
+ 			break;
++		if (pdic->wake_armed) {
++			disable_irq_wake(pdic->client->irq);
++			pdic->wake_armed = false;
++		}
+ 		scoped_guard(mutex, &pdic->lock)
+ 			pdic->quiesced = false;
+ 		enable_irq(pdic->client->irq);
+@@ -1136,6 +1152,8 @@
+ 	struct samsung_emuec *pdic = i2c_get_clientdata(client);
+ 
+ 	unregister_pm_notifier(&pdic->pm_nb);
++	if (pdic->wake_armed)
++		disable_irq_wake(client->irq);
+ 	if (pdic->quiesced)
+ 		enable_irq(client->irq);
+ 

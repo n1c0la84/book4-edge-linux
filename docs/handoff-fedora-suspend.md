@@ -1,4 +1,55 @@
-# Fedora handoff: charger-unplug suspend reset
+# Fedora handoff: charger and suspend
+
+## Next session (written 5 October on Arch): wake for a charger plugged in during sleep
+
+The unplug reset below is fixed (`patches/0002`, quiesce). What remains: a
+charger plugged in **after** the lid is closed is not negotiated until the
+next resume. On 4-5 October (Arch, 0002 installed) the lid was closed at
+15:06, the charger plugged in, and the machine was found off in the morning
+with a full battery: no charging in sleep, the battery ran down at ~6 %/h,
+and the firmware charged it while off.
+
+Experiment: [`patches-experimental/0004`](../drivers/anatase/patches-experimental/0004-samsung-emuec-wake-on-plug-in-into-empty-port.patch),
+on top of `patches/0001` and `0002`. While quiesced it arms the masked
+interrupt as a wake source **only on a port that was empty at suspend**; a
+plug-in wakes the system, `PM_POST_SUSPEND` resyncs (PD contract), and the
+session should suspend again with the lid closed. Attached ports stay
+unarmed, so an unplug during sleep is still left alone (the 0002 fix).
+Basis: the old 0002 v1 test showed that a masked, wake-armed S2MM006
+interrupt does wake this machine, and v2 (wake on empty port only) woke,
+negotiated 20 V and slept for an hour while charging; v2's crash was the
+unplug reset that 0002 now fixes. **Not compiled yet.**
+
+Build and install (Fedora, Anatase kernel tree in `~/src/patchwork`; use an
+absolute path, the script changes into the tree):
+
+```sh
+cd ~/book4-edge-linux && git pull --ff-only
+EMUEC_EXTRA_PATCHES=$HOME/book4-edge-linux/drivers/anatase/patches-experimental/0004-samsung-emuec-wake-on-plug-in-into-empty-port.patch \
+  bash install/update-emuec-module.sh
+bash install/arch/sync-kernel.sh      # same module for Arch
+```
+
+Tests, each with the lid closed through the normal desktop suspend, and the
+journal checked afterwards for `pm: quiesced (attached=.. wake=..)`:
+
+| # | Setup | Action during sleep | Expect |
+|---|---|---|---|
+| 1 | on battery | nothing, 10 min | stays asleep (no spurious wake from the armed empty ports) |
+| 2 | on battery | plug charger in | wakes, `PD contract` 20 V, suspends again within ~30 s; charging (blue LED, `status` Charging on opening) |
+| 3 | on charger | unplug | no reset, resumes on battery (0002 behaviour kept: charger port `wake=0`) |
+| 4 | on battery | plug in, wait 2 min, unplug | no reset |
+| 5 | as 2, on **Arch/Omarchy** | plug charger in | logind (not KDE) suspends again with the lid closed |
+
+If 2 wakes but the desktop does not suspend again, the lid state after a
+non-lid wake is the session's job (logind `HandleLidSwitch`, holdoff ~30 s;
+KDE did re-suspend in the v1 test). If 1 shows spurious wakes, arm only the
+charging port (`1-0033`). Rollback: the `.prev` files the script prints, or
+`samsung-emuec.ko.known-good-0001`.
+
+---
+
+# Earlier: charger-unplug suspend reset (fixed 4 October)
 
 Updated 4 October 2026. Resume here after switching from Arch to Fedora.
 The diagnostic scripts and latest results were committed as `485d5de`.

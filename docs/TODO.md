@@ -44,7 +44,10 @@ the end.
       (`patches/0002` does not wake for it; the older experimental
       `patches-experimental/0002-v2` did, but armed the wake in a way that is
       not validated). A wake on plug-in only, done after the 0002 approach, is
-      a possible follow-up.
+      a possible follow-up. 5 Oct: it ran the battery flat overnight on Arch
+      (charger plugged in after closing the lid). Experiment drafted:
+      `patches-experimental/0004`, test plan at the top of
+      [handoff-fedora-suspend.md](handoff-fedora-suspend.md).
 - [ ] **Camera**: libcamera tuning (washed-out colours; ciscobugger has an
       OV02C10 sensor helper), and the power cost of the always-on GPIO hogs.
 - [ ] **Possibly four speakers**: each speaker bus also enumerates a second

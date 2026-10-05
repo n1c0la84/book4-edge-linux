@@ -99,6 +99,15 @@ Other notes:
   (`omarchy-pkg-aur-add`); without `stage3-yay.sh` they fail. Many AUR
   packages have no aarch64 build.
 - The default terminal in 4.0.4 is **foot** (`xdg-terminal-exec`).
+- **Battery details in the power panel** (percentage, time, rate, size,
+  cycles) were all "—": `omarchy-battery-status` and
+  `omarchy-battery-present` only look for a battery named `BAT*` (ACPI);
+  ours is `samsung-galaxybook-battery`. Our build patches both to find the
+  battery by type ([userspace/omarchy/patches/0001](../userspace/omarchy/patches/0001-battery-find-the-battery-by-type-not-by-BAT-name.patch)),
+  and takes the size of the rate (this driver reports discharge current as
+  negative). `stage3-omarchy-build.sh` builds `omarchy` from the pinned
+  commit plus `userspace/omarchy/patches/` (`OMARCHY_SRC`, `pkgrel` 2).
+  Worth offering upstream.
 - fastfetch shows the channel as "unknown": `omarchy-version-channel` looks
   for Omarchy's mirrors in pacman.conf and the mirrorlist, which we keep on
   Arch Linux ARM on purpose. Cosmetic.
