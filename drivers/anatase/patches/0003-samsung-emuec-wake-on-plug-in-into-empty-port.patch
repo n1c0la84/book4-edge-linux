@@ -13,7 +13,7 @@ re-enables the interrupt and resyncs (PD contract), and the session
 suspends again with the lid closed. Attached ports stay unarmed, so a
 charger unplugged during sleep is still left alone until resume.
 
-Untested, not compiled.
+Tested 5 October on Fedora 7.2.7-book4 (see docs/power.md).
 
 ---
 --- a/samsung-emuec.c	2026-10-05 11:09:02.043231176 +0200

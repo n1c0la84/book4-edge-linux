@@ -12,6 +12,10 @@ Our changes are kept as separate patches in `patches/`, applied at install
 time, so the originals stay identifiable and the patches can be sent upstream:
 
 - `0001-samsung-emuec-retry-PD-request-after-hot-plug.patch`
+- `0003-samsung-emuec-wake-on-plug-in-into-empty-port.patch` (5 October):
+  arms a wake on empty ports while quiesced, so a charger plugged in during
+  sleep wakes the machine, is negotiated and charges; attached ports stay
+  unarmed (unplug during sleep still safe). Tested on Fedora.
 - `0002-samsung-emuec-quiesce-events-across-sleep.patch` (4 October): stops
   the interrupt and sync/HPD work from `PM_SUSPEND_PREPARE` to
   `PM_POST_SUSPEND`, then resyncs. Fixes the machine resetting when a

@@ -40,14 +40,9 @@ the end.
       this machine, but the EC has a wake timer (`EC2.sys`
       `IOCTL_START_WAKEUP`, see [power.md](power.md)) that could make
       suspend-then-hibernate possible.
-- [ ] **Charger plugged in during sleep charges only once the lid opens**
-      (`patches/0002` does not wake for it; the older experimental
-      `patches-experimental/0002-v2` did, but armed the wake in a way that is
-      not validated). A wake on plug-in only, done after the 0002 approach, is
-      a possible follow-up. 5 Oct: it ran the battery flat overnight on Arch
-      (charger plugged in after closing the lid). Experiment drafted:
-      `patches-experimental/0004`, test plan at the top of
-      [handoff-fedora-suspend.md](handoff-fedora-suspend.md).
+- [x] **Charger plugged in during sleep now charges** (`patches/0003`,
+      5 Oct, Fedora): wakes, negotiates, sleeps again. Open: the same on
+      Arch/Hyprland (logind re-suspend), then send to Anatase.
 - [ ] **Camera**: libcamera tuning (washed-out colours; ciscobugger has an
       OV02C10 sensor helper), and the power cost of the always-on GPIO hogs.
 - [ ] **Possibly four speakers**: each speaker bus also enumerates a second

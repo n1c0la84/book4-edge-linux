@@ -385,3 +385,20 @@ to `PM_POST_SUSPEND` avoids it. Exactly which call in that path brings the
 machine down (an I2C access to the S2MM006, a typec/mux/role call, or the
 EC side reacting to it) is not identified. Not yet tested: an external
 display over USB-C after resume, many cycles over days, Arch.
+
+### Wake for a charger plugged in during sleep (5 October, Fedora)
+
+`patches/0003` (from `patches-experimental/0004`, written on Arch): while
+quiesced, the interrupt of a port that was **empty** at suspend is armed as
+a wake source; attached ports stay unarmed. Lid-close suspend via KDE:
+
+| # | Setup / action during sleep | Result |
+|---|---|---|
+| 1 | battery, nothing, 11:30:50-11:41:05 | no spurious wake (both ports `wake=1`) |
+| 2 | battery, plug in | woke 11:43:17, 20 V (request 1 -110, retried), KDE re-suspended 11:43:30; Charging on opening |
+| 3 | charger, unplug | no wake, no reset; on battery after resume (EC status lags ~20 s) |
+| 4 | battery, plug in then unplug | woke for the plug-in (20 V first try), slept again with the charger port `wake=0`; unplug left alone, no reset |
+
+With 0001+0002+0003, a charger plugged in with the lid closed now charges
+during sleep. Still to test: Arch/Hyprland re-suspending after the
+charger wake (logind instead of KDE).
