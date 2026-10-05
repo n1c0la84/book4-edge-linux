@@ -96,6 +96,17 @@ picked, select Headphones once with them plugged in and Speakers once
 without. Also: the raw sink's volume is software gain only (no mixer
 element since the gain is fixed at the kernel caps); a leftover 50 % there
 was -18 dB of silent loss.
+
+**USB-C earphones** (5 October, Arch). Digital ones, with their own DAC,
+work on either port as a USB sound card (`snd-usb-audio`; tested with an
+`AB13X USB Audio` pair); they bypass the speaker crossover. The first time,
+select them by hand: WirePlumber does not switch to a new device while the
+chosen output is available. After that they are in its history, so it
+switches to them when plugged in and back to Speakers when unplugged.
+Unplugging during playback pauses the video in Chrome, by design (as on a
+phone). Passive USB-C earphones (analog, no DAC; USB-C Audio Accessory
+Mode) are not supported: `samsung-emuec` does not route analog audio to the
+connector.
 Windows does the same fan-out (`MapSpkrStereoChToQuadDevices=1`, a
 4-channel `SpeakerInternalChannelMapping`), with its own (unknown) tuning.
 
