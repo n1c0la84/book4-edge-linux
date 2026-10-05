@@ -14,7 +14,9 @@ the end.
       placeholder backend. The Samsung EC profiles were measured by hand
       (5 Oct, [power.md](power.md)): no difference in a 60 s all-core load.
       Left as is.
-- [ ] **Headphones and headset microphone** (UCM devices exist, jack untested).
+- [ ] **Headset microphone** on the jack. Headphone playback works with
+      automatic switching (5 Oct, Arch), as do digital USB-C earphones and
+      Bluetooth earbuds (A2DP AAC); see [audio.md](audio.md).
 - [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
       and HDMI (`rtd2171` bridge, `simple_bridge`). Also the last open check
       for the sleep fix (`patches/0002`): a display still works after resume.
@@ -58,8 +60,8 @@ the end.
       OV02C10 sensor helper), and the power cost of the always-on GPIO hogs.
 - [x] **Four speakers** (5 Oct): default DTB `four-speakers.dtb`
       (`install/speakers-default.sh`), UCM + PipeWire crossover and limiter
-      ([audio.md](audio.md#four-speakers-5-october)). Still to do: carry the
-      audio config to Arch; DT sent to Anatase as #4 (5 Oct).
+      ([audio.md](audio.md#four-speakers-5-october)). On Arch too
+      (`install/arch/sync-audio.sh`, checked 5 Oct). DT sent to Anatase as #4.
 - [ ] **Fingerprint reader**: not visible to Linux at all.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
@@ -99,6 +101,9 @@ Not yet reported:
 - [ ] **Make the Arch/Omarchy setup reproducible end to end**: stage 1-2 and
       the Omarchy stage 3 scripts exist in `install/arch/`, but
       `stage3-omarchy-install.sh` as a whole has not been run. [arch.md](arch.md).
+- [ ] **`install/arch/fedora-shell.sh`** (Fedora container from Arch, incl.
+      `--sync-modules`): written 5 Oct, not yet run. Test in three steps
+      (read-only command, interactive shell, `--sync-modules` + reboot).
 - [ ] **Omarchy Dragon**: offer the working 14" and test cycles to the
       official effort (`omacom/omarchy#8672`); nobody there owns a Samsung.
       Plan in [omarchy.md](omarchy.md).

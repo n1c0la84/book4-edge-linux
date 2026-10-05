@@ -184,8 +184,17 @@ and `mise up`) does the same job.
   has no swap out of the box, and `omarchy-settings` leaves its zram drop-in
   out on aarch64. Set up by hand on the running system; now part of stage 2.
 
-Not yet tested on Arch: headphones/headset mic, Bluetooth pairing, external
-monitor.
+- Audio outputs (5 October): four speakers through the crossover (set up by
+  `sync-audio.sh`); headphone jack with automatic switching both ways;
+  digital USB-C earphones (select once); Bluetooth earbuds (pairing, A2DP
+  AAC via `libfdk-aac`, automatic switch and fall-back). Which output to pick
+  and why: [audio.md](audio.md).
+- Caps Lock and its LED: Omarchy maps Caps Lock to Compose (`compose:caps`);
+  our `input.lua` override keeps a real Caps Lock
+  (`kb_options = "shift:both_capslock_cancel"`).
+
+Not yet tested on Arch: headset microphone on the jack, external monitor
+(and a display across suspend/resume), `install/arch/fedora-shell.sh`.
 
 Boot log: the CDSP's `fastrpc` and `qcom_smd_qrtr` channels fail to probe
 ("failed to create endpoint", -12) at the same instant as a `qcom-apm` "CMD
