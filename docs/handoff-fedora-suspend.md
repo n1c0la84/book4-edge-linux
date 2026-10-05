@@ -2,6 +2,10 @@
 
 ## Next session (written 5 October on Arch): wake for a charger plugged in during sleep
 
+> **Done on Fedora, 5 October:** tests 1-4 passed; the patch is now
+> `patches/0003` (applied by default, no `EMUEC_EXTRA_PATCHES` needed).
+> Remaining: `install/arch/sync-kernel.sh`, then test 5 on Arch/Omarchy.
+
 The unplug reset below is fixed (`patches/0002`, quiesce). What remains: a
 charger plugged in **after** the lid is closed is not negotiated until the
 next resume. On 4-5 October (Arch, 0002 installed) the lid was closed at
