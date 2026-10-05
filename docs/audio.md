@@ -81,6 +81,21 @@ is a WirePlumber *smart filter* on the Speaker sink: woofers get full-range
 stereo, tweeters a 2 kHz 4th-order Linkwitz-Riley high-pass. A WirePlumber
 rule disables up-mixing on the raw 4-channel sink so nothing full-range
 reaches the tweeters by accident. `install/update-audio.sh` installs all of it.
+
+**Which output to pick** (5 October, Arch/Omarchy). Select the hardware
+Speaker sink, labelled **"Speakers"** by the WirePlumber rule; the crossover
+is inserted in front of it automatically and its volume is the one to use.
+The crossover's own sink ("Speaker crossover (automatic)") and output stream
+("Speaker crossover (keep at 100%)") appear in volume panels too; leave both
+at 100 % and never pick the crossover as the output. Chosen as the default,
+it stayed the default when headphones were plugged in (it is always
+"available") and kept sending audio to the switched-off speakers: silence.
+WirePlumber falls back through its history of chosen defaults
+(`~/.local/state/wireplumber/default-nodes`), so once the crossover has been
+picked, select Headphones once with them plugged in and Speakers once
+without. Also: the raw sink's volume is software gain only (no mixer
+element since the gain is fixed at the kernel caps); a leftover 50 % there
+was -18 dB of silent loss.
 Windows does the same fan-out (`MapSpkrStereoChToQuadDevices=1`, a
 4-channel `SpeakerInternalChannelMapping`), with its own (unknown) tuning.
 
