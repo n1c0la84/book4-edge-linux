@@ -68,7 +68,9 @@ and puts the macros' digital gain at the kernel's cap (81 = -3 dB; test
 scripts had left it at 72 = -12 dB, which alsactl kept: "very low volume").
 The kernel also caps PA Volume at 6, a flat -3 dB in the driver's TLV, so
 loudness is limited on purpose until Linux has speaker protection; Windows
-is louder (smart-amp protection and Dolby processing). A PipeWire filter-chain,
+is louder (smart-amp protection and Dolby processing). To make up some of it, the
+speaker filter starts with a look-ahead limiter (`ladspa-swh-plugins`,
++6 dB, peaks held at -1 dBFS): louder on average, same peaks. A PipeWire filter-chain,
 [`pipewire/book4-speakers.conf`](../userspace/audio/pipewire/book4-speakers.conf),
 is a WirePlumber *smart filter* on the Speaker sink: woofers get full-range
 stereo, tweeters a 2 kHz 4th-order Linkwitz-Riley high-pass. A WirePlumber

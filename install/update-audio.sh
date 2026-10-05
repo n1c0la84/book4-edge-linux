@@ -5,6 +5,8 @@
 set -eu
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 sudo -v
+# Limiter used by the speaker filter (Fedora; on Arch: pacman -S swh-plugins)
+rpm -q ladspa-swh-plugins >/dev/null 2>&1 || sudo dnf install -y ladspa-swh-plugins
 sudo install -m 644 "$REPO"/userspace/audio/ucm2/*.conf /usr/share/alsa/ucm2/Qualcomm/x1e80100/
 # Stereo "Speakers" sink with a crossover (tweeters get highs only), and no
 # up-mixing on the raw four-channel sink. Per user.
