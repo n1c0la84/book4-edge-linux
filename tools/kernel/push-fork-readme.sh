@@ -27,5 +27,6 @@ else
         -m "What this fork is, its patches and their upstream status, how to build it. GitHub shows .github/README.md in place of the kernel's README."
     echo "committed: $(git log -1 --format='%h %s')"
 fi
-git push book4 "$BRANCH"
+# Through gh: in the container git has no usable credential helper of its own.
+git -c credential.helper= -c credential.helper="!gh auth git-credential" push book4 "$BRANCH"
 git log --oneline -3

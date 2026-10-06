@@ -105,7 +105,8 @@ if (( PUSH )); then
         gh repo fork anatase-org/patchwork --clone=false --fork-name "$FORK_NAME"
     fi
     git remote get-url book4 >/dev/null 2>&1 || git remote add book4 "https://github.com/$me/$FORK_NAME.git"
-    git push book4 "$BRANCH"
+    # Through gh: in the container git has no usable credential helper of its own.
+    git -c credential.helper= -c credential.helper="!gh auth git-credential" push book4 "$BRANCH"
     gh repo edit "$me/$FORK_NAME" --default-branch "$BRANCH" \
         --description "Anatase kernel + Samsung Galaxy Book4 Edge 14\" patches (see n1c0la84/book4-edge-linux)"
     echo "   https://github.com/$me/$FORK_NAME/tree/$BRANCH"
