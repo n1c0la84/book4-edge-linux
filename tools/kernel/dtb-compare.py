@@ -118,6 +118,10 @@ def render(nodes):
         if kind:
             out, i = [], 0
             while i < len(cells):
+                if cells[i] == 0:                    # empty entry, no arguments
+                    out.append("0x0")
+                    i += 1
+                    continue
                 prov = phandles.get(cells[i])
                 n = nodes.get(prov, {}).get(kind) if prov else None
                 if n is None or len(n) != 4:
