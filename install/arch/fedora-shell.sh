@@ -42,7 +42,12 @@ unmounts() {
     for d in esp boot home root; do mountpoint -q $M/$d && sudo umount $M/$d || true; done
 }
 fedora() {  # run "$@" in the Fedora container, as root unless -u is given first
-    sudo systemd-nspawn -q -D $M/root \
+    # Output to a file or pipe: --pipe passes stdin/stdout/stderr straight
+    # through (no pseudo-terminal, so no pager, no CR line endings, and
+    # stderr stays apart from stdout).
+    local pipe=()
+    [ -t 1 ] || pipe=(--pipe)
+    sudo systemd-nspawn -q "${pipe[@]}" -D $M/root \
         --bind=$M/home:/home --bind=$M/boot:/boot --bind=$M/esp:/boot/efi \
         --resolv-conf=replace-uplink --setenv=BOOK4_FROM_ARCH=1 "$@"
 }
