@@ -15,6 +15,7 @@
 # TREE defaults to ~/src/patchwork. BASE (default: the Anatase commit the
 # running 7.2.7-book4 was built from) can be overridden: BASE=<commit>.
 set -euo pipefail
+export GIT_PAGER=cat     # no pager inside the container
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 TREE=$HOME/src/patchwork
 PUSH=0

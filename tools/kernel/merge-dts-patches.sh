@@ -10,6 +10,7 @@
 #
 #   bash install/arch/fedora-shell.sh bash book4-edge-linux/tools/kernel/merge-dts-patches.sh > new-0003.patch
 set -euo pipefail
+export GIT_PAGER=cat     # no pager inside the container
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 TREE=${TREE:-$HOME/src/patchwork}
 BASE=${BASE:-2ad788424}
@@ -39,5 +40,5 @@ else
 fi
 make -s LOCALVERSION= qcom/x1e80100-samsung-galaxy-book4-edge-14.dtb
 echo "DTB compiles"
-git log --oneline "$BASE"..HEAD
+git --no-pager log --oneline "$BASE"..HEAD
 git --no-pager format-patch -1 --stdout HEAD >&3
