@@ -131,9 +131,10 @@ Not yet reported:
       (the Arch Linux ARM base enables it next to NetworkManager; fixed in the
       script). No restore script yet: each backup writes `RESTORE.md` with the
       manual steps.
-- [ ] **`install/arch/fedora-shell.sh`** (Fedora container from Arch, incl.
-      `--sync-modules`): written 5 Oct, not yet run. Test in three steps
-      (read-only command, interactive shell, `--sync-modules` + reboot).
+- [ ] **`install/arch/fedora-shell.sh`**: works (6 Oct): read-only command,
+      running Fedora's tools in the container, redirected output (`--pipe`);
+      used to build and publish the kernel branch. Not yet run:
+      `--sync-modules` + reboot.
 - [ ] **Omarchy Dragon**: offer the working 14" and test cycles to the
       official effort (`omacom/omarchy#8672`); nobody there owns a Samsung.
       Plan in [omarchy.md](omarchy.md).
