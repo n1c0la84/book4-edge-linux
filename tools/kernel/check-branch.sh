@@ -49,21 +49,23 @@ echo "   default: $kver $dtbpath"
 # New Kconfig symbols would make the build stop and ask: take the defaults.
 make -s LOCALVERSION= olddefconfig >/dev/null
 make -s LOCALVERSION= "qcom/$DTBNAME"
-cp "arch/arm64/boot/dts/qcom/$DTBNAME" "$T/branch.dtb"
+# The kernel build compiles with dtc -@ (overlay symbols), which also gives
+# every labelled node a phandle and so renumbers all references. The /boot
+# DTB was compiled without -@ (and re-padded with -p 8192 by
+# install/speakers-default.sh): compile the build's preprocessed source the
+# same way, so equal sources give equal bytes.
+cp "arch/arm64/boot/dts/qcom/.$DTBNAME.dts.tmp" "$T/branch.dts.tmp"
 [ "$start" = "$BRANCH" ] || git switch -q "$start"
-# The kernel build adds a __symbols__ node (dtc -@, for overlays) that the
-# /boot DTB (re-padded with dtc -p 8192 by install/speakers-default.sh) does
-# not have: remove it, re-pad both the same way, compare the bytes.
-fdtput -r "$T/branch.dtb" /__symbols__ 2>/dev/null || true
+dtc -q -I dts -O dtb -o "$T/branch.dtb" "$T/branch.dts.tmp"
 dtc -q -I dtb -O dtb -p 8192 -o "$T/branch.p.dtb" "$T/branch.dtb"
 dtc -q -I dtb -O dtb -p 8192 -o "$T/boot.p.dtb" "/boot$dtbpath"
 if cmp -s "$T/branch.p.dtb" "$T/boot.p.dtb"; then
-    echo "   IDENTICAL (byte for byte, after removing __symbols__)"
+    echo "   IDENTICAL (byte for byte; both compiled without -@)"
 else
     dtc -q -I dtb -O dts -s "$T/boot.p.dtb" > "$T/boot.dts"
     dtc -q -I dtb -O dts -s "$T/branch.p.dtb" > "$T/branch.dts"
     diff -u "$T/boot.dts" "$T/branch.dts" > "$T/dtb.diff" || true
-    echo "   DIFFERENT ($(grep -c '^[-+][^-+]' "$T/dtb.diff") changed lines; phandle numbers may account for some):"
+    echo "   DIFFERENT ($(grep -c '^[-+][^-+]' "$T/dtb.diff") changed lines):"
     sed -n 1,80p "$T/dtb.diff"; rc=1
 fi
 exit $rc
