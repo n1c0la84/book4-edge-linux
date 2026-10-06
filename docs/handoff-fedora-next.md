@@ -78,6 +78,12 @@ live in `userspace/audio/` and are only installed by hand.
 
 ## 3. Our kernel branch, public (written 6 October on Arch)
 
+> **Done 6 October** from Arch through the Fedora container:
+> https://github.com/n1c0la84/linux-book4-edge/tree/book4/7.2, checked
+> against what runs (see [kernel.md](kernel.md)). The tweeter patch had to be
+> rebased onto the camera patch first (`tools/kernel/merge-dts-patches.sh`).
+> Remaining: the Arch `linux-book4` PKGBUILD.
+
 Decision (6 October): the samsung EC and USB-C drivers exist only in
 Anatase's tree and may not reach mainline soon, so this machine needs a
 custom kernel for the foreseeable future. Not an independent kernel, but a

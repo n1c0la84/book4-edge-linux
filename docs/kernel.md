@@ -153,15 +153,35 @@ security update becomes our work rather than someone else's. We are already
 running a kernel-install hook and pinning a default kernel, so this is not a new
 kind of burden — but it is more of it.
 
-## Our branch (planned 6 October)
+## Our branch: n1c0la84/linux-book4-edge (6 October)
 
-The kernel stays Anatase's tree plus our patches, but as a public branch
-instead of a local one: `book4/<series>` in a GitHub fork of
-`anatase-org/patchwork`, created by
-[`install/kernel-branch.sh`](../install/kernel-branch.sh) from the patch
-files in this repo (`dts/patches/`, `drivers/anatase/patches/`) and the
-running config (`book4_edge_defconfig`). Steps:
-[handoff-fedora-next.md](handoff-fedora-next.md).
+The kernel stays Anatase's tree plus our patches, now as a public branch:
+**https://github.com/n1c0la84/linux-book4-edge/tree/book4/7.2**, a fork of
+`anatase-org/patchwork`. `book4/7.2` is Anatase `2ad788424` plus seven
+commits, made by [`install/kernel-branch.sh`](../install/kernel-branch.sh)
+from the patch files in this repo:
+
+| commit | from |
+|---|---|
+| hamoa: add CCI0 and CAMSS; enable the front camera; add tweeters | `dts/patches/0001-0003` |
+| samsung-emuec: PD retry; quiesce across sleep; wake on plug-in | `drivers/anatase/patches/0001-0003` |
+| `arch/arm64/configs/book4_edge_defconfig` | the running 7.2.7-book4 config |
+
+Build: `git switch book4/7.2 && make LOCALVERSION= book4_edge_defconfig`.
+
+Checked against what runs ([`tools/kernel/check-branch.sh`](../tools/kernel/check-branch.sh),
+6 October): `samsung-emuec.c` identical to the installed module's source;
+the device tree identical in content to the default four-speaker DTB
+([`tools/kernel/dtb-compare.py`](../tools/kernel/dtb-compare.py) compares by
+content, since dtc -@ and source order change the bytes and phandle numbers)
+except three empty CAMSS ports (`port@1-3`), which the CAMSS patch as sent to
+Anatase describes and the separately built DTB omitted.
+
+Rules: one branch per series, rebased when Anatase moves; every patch also
+goes to Anatase, so the branch only carries what they have not taken; the
+patch files here stay the source. Built from Arch through the Fedora
+container (`install/arch/fedora-shell.sh`), which this was the first real
+use of.
 
 ## Done: 1 October 2026
 

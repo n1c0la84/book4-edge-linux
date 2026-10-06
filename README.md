@@ -4,7 +4,9 @@ Working notes, configuration and drivers for running a mainline-based Linux
 distribution on the **Samsung Galaxy Book4 Edge 14" (NP940XMA, X1E80100)**.
 **Developed on Fedora:** everything here was first developed and tested on
 Fedora 45 (aarch64). Since 1 October it runs a kernel built from Anatase's
-`anatase-7.2` tree (7.2.7 plus our charger patch, see [docs/kernel.md](docs/kernel.md));
+`anatase-7.2` tree plus our patches, published as the branch
+[`book4/7.2` of n1c0la84/linux-book4-edge](https://github.com/n1c0la84/linux-book4-edge/tree/book4/7.2)
+(see [docs/kernel.md](docs/kernel.md));
 it is the **default** boot entry, and the stock Fedora kernel 7.2.0-61 with the
 DKMS drivers stays in the menu as the fallback ("(other)"). The pieces are written so they can be
 carried to other distributions; since 3 October **Arch Linux ARM with Omarchy 4.0.4**

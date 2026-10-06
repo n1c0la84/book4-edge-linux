@@ -87,12 +87,12 @@ the end.
 
 ## Kernel
 
-- [ ] **Public kernel branch** (decided 6 Oct): `book4/7.2` = Anatase base +
-      our device tree and samsung-emuec patches + `book4_edge_defconfig`, in a
-      GitHub fork of `anatase-org/patchwork`. Script
-      `install/kernel-branch.sh`, steps in
-      [handoff-fedora-next.md](handoff-fedora-next.md#3-our-kernel-branch-public-written-6-october-on-arch).
-      Then an Arch `linux-book4` PKGBUILD from it.
+- [x] **Public kernel branch** (6 Oct):
+      https://github.com/n1c0la84/linux-book4-edge/tree/book4/7.2 (Anatase
+      base + our device tree and samsung-emuec patches + `book4_edge_defconfig`),
+      checked against what runs ([kernel.md](kernel.md#our-branch-n1c0la84linux-book4-edge-6-october)).
+- [ ] **Arch `linux-book4` PKGBUILD** from that branch, so Arch gets a real
+      kernel package instead of modules copied from Fedora.
 
 ## Upstream
 
