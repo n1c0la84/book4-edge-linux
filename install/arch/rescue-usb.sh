@@ -10,6 +10,9 @@
 #   bash install/arch/rescue-usb.sh /dev/sdX      (run as your user on Arch)
 #
 # WIPES /dev/sdX. Refuses the internal disk, non-USB disks and mounted ones.
+# Resumable: on a stick that already has the three BOOK4 partitions it offers
+# to continue (reusing the filesystems, skipping the finished steps) instead
+# of wiping. sudo is kept alive in the background for the whole run.
 # Nothing is written to the internal disk, its ESP or the firmware's boot
 # entries: GRUB is built with grub-mkstandalone inside the stick's own system
 # and copied to the stick's EFI/BOOT/BOOTAA64.EFI (the removable-media path).
@@ -43,20 +46,34 @@ if lsblk -no MOUNTPOINTS "$DEV" | grep -q .; then
     echo "$DEV has mounted partitions; unmount them first:" >&2; lsblk "$DEV" >&2; exit 1
 fi
 lsblk -o NAME,SIZE,MODEL,TRAN,LABEL "$DEV"
-read -r -p "Wipe $DEV ($(lsblk -dno SIZE "$DEV") $(lsblk -dno MODEL "$DEV")) and build the rescue stick? Type YES: " ok
-[ "$ok" = YES ] || { echo "Aborted."; exit 1; }
+RESUME=0
+if [ "$(lsblk -lno LABEL "$DEV" | tr '\n' ' ')" = " BOOK4ESP BOOK4-RESCUE BOOK4-BACKUP " ]; then
+    read -r -p "$DEV already has the rescue partitions. Resume that build (no wipe)? Type YES: " ok
+    [ "$ok" = YES ] || { echo "Aborted (to start over, wipe it first: sudo wipefs -a $DEV)."; exit 1; }
+    RESUME=1
+else
+    read -r -p "Wipe $DEV ($(lsblk -dno SIZE "$DEV") $(lsblk -dno MODEL "$DEV")) and build the rescue stick? Type YES: " ok
+    [ "$ok" = YES ] || { echo "Aborted."; exit 1; }
+fi
 sudo -v
+# Keep sudo's timestamp fresh: long downloads and package updates outlast it,
+# and an unanswered prompt mid-run is how the first build died.
+( while sleep 50; do sudo -n -v 2>/dev/null || exit; done ) &
+KEEPALIVE=$!
 cleanup() {
+    kill "$KEEPALIVE" 2>/dev/null || true
     sync
     for d in "$R/boot/efi" "$R" "$M/fboot" "$M/fesp"; do mountpoint -q "$d" && sudo umount "$d" || true; done
 }
 trap cleanup EXIT
 
+if (( ! RESUME )); then
 echo "== 1. Arch Linux ARM tarball (signature checked)"
 mkdir -p "$CACHE"
 curl -fL -o "$CACHE/$TARBALL" -z "$CACHE/$TARBALL" "$MIRROR/$TARBALL"
 curl -fsL -o "$CACHE/$TARBALL.sig" "$MIRROR/$TARBALL.sig"
 sudo pacman-key --verify "$CACHE/$TARBALL.sig" "$CACHE/$TARBALL"
+fi
 
 echo "== 2. kernel, device tree and command line of the running Arch"
 mkdir -p "$M/fboot" "$M/fesp"
@@ -70,6 +87,14 @@ CMDLINE=$(sed -E 's/^BOOT_IMAGE=[^ ]+ //; s/(^| )root=[^ ]+//; s/(^| )rootflags=
 echo "   kernel $K, DTB $DTB"
 echo "   cmdline:$CMDLINE"
 
+mapfile -t P < <(lsblk -lnpo NAME "$DEV" | tail -n +2)
+if (( RESUME )); then
+echo "== 3-5. resuming: reusing ${P[*]}"
+mkdir -p "$R"
+sudo mount "${P[1]}" "$R"
+sudo mount "${P[0]}" "$R/boot/efi"
+RUUID=$(lsblk -no UUID "${P[1]}"); EUUID=$(lsblk -no UUID "${P[0]}")
+else
 echo "== 3. partitions and filesystems on $DEV"
 sudo wipefs -qa "$DEV"
 sudo sfdisk -q "$DEV" <<'EOF'
@@ -118,7 +143,11 @@ MODULES=(dwc3 dwc3_qcom xhci_plat_hcd phy_qcom_qmp_combo phy_snps_eusb2 typec gp
          usb_storage uas vfat ufs_qcom ufshcd_pltfrm phy_qcom_qmp_ufs)
 HOOKS=(base systemd modconf block filesystems keyboard sd-vconsole fsck)
 EOF
+fi   # RESUME
 
+if (( RESUME )) && ls "$R"/var/lib/pacman/local/grub-[0-9]* >/dev/null 2>&1 && grep -q "^$U:" "$R/etc/passwd"; then
+echo "== 6. packages and user already done"
+else
 echo "== 6. packages, user (inside the stick's system)"
 ns /bin/bash -euc "
 pacman-key --init >/dev/null
@@ -131,13 +160,21 @@ pacman -D --asexplicit mkinitcpio >/dev/null
 locale-gen >/dev/null 2>&1 || true
 depmod $K
 systemctl enable NetworkManager >/dev/null
+systemctl disable systemd-networkd systemd-networkd.socket >/dev/null 2>&1 || true
 userdel -r alarm 2>/dev/null || true
-useradd -m -G wheel -s /bin/bash $U
+id $U >/dev/null 2>&1 || useradd -m -G wheel -s /bin/bash $U
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel; chmod 440 /etc/sudoers.d/10-wheel
 passwd -l root >/dev/null
 "
-echo "   password for $U on the stick:"
-ns passwd "$U"
+fi
+# Password only if none is set yet (resume after an interrupted prompt).
+if sudo awk -F: -v u="$U" '$1 == u { exit !($2 == "" || $2 ~ /^!/) }' "$R/etc/shadow"; then
+    echo "   password for $U on the stick:"
+    ns passwd "$U"
+else
+    echo "   $U already has a password on the stick"
+fi
+sudo rm -rf "$R/home/$U/$(basename "$REPO")"
 sudo cp -a "$REPO" "$R/home/$U/"
 ns chown -R "$U:$U" "/home/$U/$(basename "$REPO")"
 

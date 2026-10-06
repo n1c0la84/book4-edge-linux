@@ -111,11 +111,17 @@ Not yet reported:
 - [ ] **Make the Arch/Omarchy setup reproducible end to end**: stage 1-2 and
       the Omarchy stage 3 scripts exist in `install/arch/`, but
       `stage3-omarchy-install.sh` as a whole has not been run. [arch.md](arch.md).
-- [ ] **Rescue USB stick** (`install/arch/rescue-usb.sh`, written 5 Oct,
-      **untested**): a generic live USB cannot boot this machine (no
-      `cutmem`, no device tree, no Anatase drivers). Build it on the 64 GB
-      stick, boot it from the firmware menu, check Wi-Fi, the internal disk
-      (UFS) and a backup onto its `BOOK4-BACKUP` partition.
+- [ ] **Rescue USB stick** (`install/arch/rescue-usb.sh`): a generic live
+      USB cannot boot this machine (no `cutmem`, no device tree, no Anatase
+      drivers). **Built 6 Oct** on a 64 GB stick (first run stopped at an
+      expired sudo prompt; the script now keeps sudo alive and resumes on a
+      stick that already has its partitions). **Not yet boot-tested**: boot
+      it from the firmware menu, check Wi-Fi (`nmtui`), the internal disk
+      (UFS) and a backup onto its `BOOK4-BACKUP` partition. On this stick,
+      once: `sudo systemctl disable --now systemd-networkd systemd-networkd.socket`
+      (the Arch Linux ARM base enables it next to NetworkManager; fixed in the
+      script). No restore script yet: each backup writes `RESTORE.md` with the
+      manual steps.
 - [ ] **`install/arch/fedora-shell.sh`** (Fedora container from Arch, incl.
       `--sync-modules`): written 5 Oct, not yet run. Test in three steps
       (read-only command, interactive shell, `--sync-modules` + reboot).
