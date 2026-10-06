@@ -85,6 +85,15 @@ the end.
 - [ ] EC word at `0xb6` (37 on this unit): cycle-count candidate, watch
       whether it ever increments.
 
+## Kernel
+
+- [ ] **Public kernel branch** (decided 6 Oct): `book4/7.2` = Anatase base +
+      our device tree and samsung-emuec patches + `book4_edge_defconfig`, in a
+      GitHub fork of `anatase-org/patchwork`. Script
+      `install/kernel-branch.sh`, steps in
+      [handoff-fedora-next.md](handoff-fedora-next.md#3-our-kernel-branch-public-written-6-october-on-arch).
+      Then an Arch `linux-book4` PKGBUILD from it.
+
 ## Upstream
 
 Details in [upstream.md](upstream.md).

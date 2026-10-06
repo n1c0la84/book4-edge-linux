@@ -75,3 +75,33 @@ PipeWire (filter-chain) is the follow-up, as other X1E laptops do it.
 
 Rollback: delete `/etc/book4/test-dtb` and rerun the boot hook; UCM changes
 live in `userspace/audio/` and are only installed by hand.
+
+## 3. Our kernel branch, public (written 6 October on Arch)
+
+Decision (6 October): the samsung EC and USB-C drivers exist only in
+Anatase's tree and may not reach mainline soon, so this machine needs a
+custom kernel for the foreseeable future. Not an independent kernel, but a
+**lightweight public fork**: Anatase's tree plus our few patches as commits,
+one branch per series (`book4/7.2`), rebased when Anatase moves; every patch
+also offered to Anatase, so the branch only carries what they have not taken.
+Our repo stays the integration layer (patch files, config, build scripts).
+
+[`install/kernel-branch.sh`](../install/kernel-branch.sh), in Fedora (or
+`install/arch/fedora-shell.sh` from Arch):
+
+```sh
+cd ~/book4-edge-linux && git pull --ff-only
+git -C ~/src/patchwork status --short --branch     # must be clean (tracked files)
+bash install/kernel-branch.sh                       # local branch book4/7.2 only
+bash install/kernel-branch.sh --push                # then: fork (asks YES) and push
+```
+
+It creates `book4/7.2` from the base the running kernel was built on
+(`2ad788424`), applies `dts/patches/` with `git am` and
+`drivers/anatase/patches/` as commits, adds the running config as
+`arch/arm64/configs/book4_edge_defconfig`, and shows the difference to the
+branch the installed kernel came from (expected: none, or only patches newer
+than that build). `--push` forks `anatase-org/patchwork` as
+`<you>/linux-book4-edge` (once), pushes the branch and makes it the default.
+Then: an Arch `PKGBUILD` (`linux-book4`) building from that branch, so Arch
+gets a real kernel package instead of copied modules.

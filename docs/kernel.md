@@ -153,6 +153,16 @@ security update becomes our work rather than someone else's. We are already
 running a kernel-install hook and pinning a default kernel, so this is not a new
 kind of burden — but it is more of it.
 
+## Our branch (planned 6 October)
+
+The kernel stays Anatase's tree plus our patches, but as a public branch
+instead of a local one: `book4/<series>` in a GitHub fork of
+`anatase-org/patchwork`, created by
+[`install/kernel-branch.sh`](../install/kernel-branch.sh) from the patch
+files in this repo (`dts/patches/`, `drivers/anatase/patches/`) and the
+running config (`book4_edge_defconfig`). Steps:
+[handoff-fedora-next.md](handoff-fedora-next.md).
+
 ## Done: 1 October 2026
 
 Built and running: `7.2.7-book4` from `anatase-org/patchwork` branch `anatase-7.2`
