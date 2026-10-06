@@ -49,23 +49,14 @@ echo "   default: $kver $dtbpath"
 # New Kconfig symbols would make the build stop and ask: take the defaults.
 make -s LOCALVERSION= olddefconfig >/dev/null
 make -s LOCALVERSION= "qcom/$DTBNAME"
-# The kernel build compiles with dtc -@ (overlay symbols), which also gives
-# every labelled node a phandle and so renumbers all references. The /boot
-# DTB was compiled without -@ (and re-padded with -p 8192 by
-# install/speakers-default.sh): compile the build's preprocessed source the
-# same way, so equal sources give equal bytes.
-cp "arch/arm64/boot/dts/qcom/.$DTBNAME.dts.tmp" "$T/branch.dts.tmp"
+cp "arch/arm64/boot/dts/qcom/$DTBNAME" "$T/branch.dtb"
 [ "$start" = "$BRANCH" ] || git switch -q "$start"
-dtc -q -I dts -O dtb -o "$T/branch.dtb" "$T/branch.dts.tmp"
-dtc -q -I dtb -O dtb -p 8192 -o "$T/branch.p.dtb" "$T/branch.dtb"
-dtc -q -I dtb -O dtb -p 8192 -o "$T/boot.p.dtb" "/boot$dtbpath"
-if cmp -s "$T/branch.p.dtb" "$T/boot.p.dtb"; then
-    echo "   IDENTICAL (byte for byte; both compiled without -@)"
+# By content: the kernel build uses dtc -@ (__symbols__, more phandles) and
+# a different source order than the /boot DTB, so the bytes and the phandle
+# numbers differ even for the same tree.
+if python3 "$REPO/tools/kernel/dtb-compare.py" "/boot$dtbpath" "$T/branch.dtb" > "$T/dtb.diff"; then
+    echo "   $(cat "$T/dtb.diff")"
 else
-    dtc -q -I dtb -O dts -s "$T/boot.p.dtb" > "$T/boot.dts"
-    dtc -q -I dtb -O dts -s "$T/branch.p.dtb" > "$T/branch.dts"
-    diff -u "$T/boot.dts" "$T/branch.dts" > "$T/dtb.diff" || true
-    echo "   DIFFERENT ($(grep -c '^[-+][^-+]' "$T/dtb.diff") changed lines):"
-    sed -n 1,80p "$T/dtb.diff"; rc=1
+    sed 's/^/   /' "$T/dtb.diff" | sed -n 1,80p; rc=1
 fi
 exit $rc
