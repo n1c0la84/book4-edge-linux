@@ -193,6 +193,12 @@ and `mise up`) does the same job.
 - Caps Lock and its LED: Omarchy maps Caps Lock to Compose (`compose:caps`);
   our `input.lua` override keeps a real Caps Lock
   (`kb_options = "shift:both_capslock_cancel"`).
+- SSH (6 October): the Arch Linux ARM base enables `sshd` (password login
+  allowed by default), and our stage scripts left it on; only Omarchy's ufw
+  (incoming dropped) kept it unreachable. [`install/arch/ssh-lan.sh`](../install/arch/ssh-lan.sh)
+  opens port 22 to the current home subnet only (detected, private ranges
+  only) and adds an sshd drop-in: passwords on, root never, only your user,
+  `MaxAuthTries 3` (Omarchy's faillock locks after 10 failures).
 
 Not yet tested on Arch: headset microphone on the jack, a display across
 suspend/resume, `install/arch/fedora-shell.sh`. **External monitor through a
