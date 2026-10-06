@@ -80,6 +80,14 @@ git commit -q --author="$AUTHOR" -m "arm64: configs: add book4_edge_defconfig" \
 cp "$SAVED" .config   # leave the tree's .config as it was
 echo "   $(git log -1 --format='%h %s')"
 
+echo "== 4b. .github/README.md (what GitHub shows for the fork; the kernel's README stays)"
+mkdir -p .github
+cp "$REPO/tools/kernel/fork-README.md" .github/README.md
+git add .github/README.md
+git commit -q --author="$AUTHOR" -m "README for the book4 branch (.github/README.md)" \
+    -m "What this fork is, its patches and their upstream status, how to build it; GitHub shows .github/README.md in place of the kernel's README."
+echo "   $(git log -1 --format='%h %s')"
+
 echo "== 5. check against what was built"
 if [ -n "$prev" ]; then
     echo "   differences to $prev in the driver and the device tree (expect none or only our newer patches):"
