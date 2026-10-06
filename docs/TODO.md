@@ -20,6 +20,16 @@ the end.
 - [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
       and HDMI (`rtd2171` bridge, `simple_bridge`). Also the last open check
       for the sleep fix (`patches/0002`): a display still works after resume.
+      **6 Oct, Arch: USB-C to HDMI hub (VIA VL817, Billboard) does not work.**
+      `samsung-emuec 1-0033: DisplayPort Alt Mode configured with pin D`, the
+      USB controller restarted and the hub's USB side (card reader) came up,
+      but no HPD, no link training, not one `msm_dp` message; DP-1/DP-2 stayed
+      disconnected and the hub then exposed its Billboard device. The break is
+      between Alt Mode entry and the display driver: DP Status/Attention ->
+      HPD in `samsung-emuec`, the DRM bridge, or the hub. Next: retest with
+      `samsung_emuec` dynamic debug and `drm.debug=0x106`, monitor on and
+      connected to the hub before plugging it in; also the other port and a
+      direct USB-C-to-DP/HDMI cable. Same driver on Fedora.
 - [ ] **The sleep fix in long-term use** (installed 4 Oct, Fedora and Arch):
       repeated cycles, plug-in and unplug during sleep, over days.
 - [ ] **Fedora kernel update** (7.2.8 and later): only affects the fallback

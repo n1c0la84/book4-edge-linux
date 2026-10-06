@@ -194,8 +194,11 @@ and `mise up`) does the same job.
   our `input.lua` override keeps a real Caps Lock
   (`kb_options = "shift:both_capslock_cancel"`).
 
-Not yet tested on Arch: headset microphone on the jack, external monitor
-(and a display across suspend/resume), `install/arch/fedora-shell.sh`.
+Not yet tested on Arch: headset microphone on the jack, a display across
+suspend/resume, `install/arch/fedora-shell.sh`. **External monitor through a
+USB-C to HDMI hub does not work** (6 October): DisplayPort Alt Mode is
+entered (pin D) but no hot-plug reaches the display driver; details and next
+steps in [TODO.md](TODO.md).
 
 Boot log: the CDSP's `fastrpc` and `qcom_smd_qrtr` channels fail to probe
 ("failed to create endpoint", -12) at the same instant as a `qcom-apm` "CMD
