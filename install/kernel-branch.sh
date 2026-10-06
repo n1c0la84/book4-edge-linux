@@ -40,14 +40,18 @@ git rev-parse --verify -q "$BASE^{commit}" >/dev/null || { echo "Base $BASE not 
 [ -e .config ] || { echo "No .config in $TREE (the config the installed kernel was built with)." >&2; exit 1; }
 echo "   base $(git log -1 --format='%h %s' "$BASE")"
 echo "   current branch $(git branch --show-current) at $(git log -1 --format=%h)"
+EXISTS=0
 if git rev-parse --verify -q "$BRANCH" >/dev/null; then
-    echo "$BRANCH exists already; rename or delete it to rebuild it." >&2; exit 1
+    (( PUSH )) || { echo "$BRANCH exists already; rename or delete it to rebuild it (or --push it)." >&2; exit 1; }
+    EXISTS=1
+    echo "   $BRANCH exists: pushing it as it is"
 fi
 SAVED=$(mktemp)
 cp .config "$SAVED"
 trap 'rm -f "$SAVED"' EXIT
 prev=$(git branch --show-current)
 
+if (( ! EXISTS )); then
 echo "== 1. $BRANCH from $BASE"
 git switch -q -c "$BRANCH" "$BASE"
 
@@ -80,6 +84,7 @@ if [ -n "$prev" ]; then
     echo "   differences to $prev in the driver and the device tree (expect none or only our newer patches):"
     git diff --stat "$prev" "$BRANCH" -- $DIR/samsung-emuec.c arch/arm64/boot/dts/qcom/ | tail -5
 fi
+fi   # ! EXISTS
 git log --oneline "$BASE".."$BRANCH"
 
 if (( PUSH )); then
