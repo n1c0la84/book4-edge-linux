@@ -93,6 +93,21 @@ the end.
       checked against what runs ([kernel.md](kernel.md#our-branch-n1c0la84linux-book4-edge-6-october)).
 - [ ] **Arch `linux-book4` PKGBUILD** from that branch, so Arch gets a real
       kernel package instead of modules copied from Fedora.
+- [ ] **Installer stick for other owners** (planned 6 Oct). A newcomer has
+      only Windows: they need our kernel and device tree (public branch), a
+      GRUB with `cutmem`, the devicetree line and our kernel parameters,
+      **their own firmware extracted from their Windows partition** (not
+      redistributable: DSP images, GPU, Wi-Fi board data, `firmware.md`), an
+      initramfs that boots from USB (solved in `rescue-usb.sh`) and our
+      userspace settings. `rescue-usb.sh` builds such a stick but takes the
+      kernel, DTB, firmware and settings from this running machine. Next:
+      a "from scratch" mode that runs on any Linux PC (kernel from the
+      branch, cross-built or as a published package; Arch Linux ARM set up
+      under `qemu-user`, as omarchy-snapdragon does), plus a first-boot
+      script that copies the firmware from the internal Windows partition;
+      then install Fedora or Arch/Omarchy from the stick with our scripts.
+      Prerequisite: boot-test the rescue stick (it proves the boot loader and
+      the USB initramfs).
 
 ## Upstream
 
