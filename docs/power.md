@@ -6,6 +6,47 @@ charging port's `samsung-emuec` before sleep avoids the unplug reset in both
 USB state it manages, without identifying a faulty function. See
 [the test matrix and reproduction scripts](#further-isolation-3-october-evening-charging-port-driver-unbind-succeeds).
 
+## Charging stalls after a plug-in while awake (6-7 October 2026)
+
+Symptom: plugged in while awake, the battery "charges" at ~1 W ("holding"):
+stuck at 10 % for an hour on 6 October, on both ports. A brief spike
+(~7.5-8 W into the battery) at each plug-in, then almost nothing, while the
+laptop draws ~8-9 W: the adapter delivers ~10 W in total despite a 20 V
+contract. Later the EC's battery values froze (voltage identical to the
+microvolt for 10 minutes) until a reboot.
+
+Pattern over 5-7 October (Arch, patches 0001-0003):
+
+| plug-in | negotiation | result |
+|---|---|---|
+| lid closed (wake, resync, sleep again), 60 W | only `PD contract 20000 mV` | charged overnight, 58 -> 99 % and to 100 % |
+| awake, 65 W (x3, both ports) | `request 1 failed: -110`, then 5 V, then 20 V | stuck at 10 % |
+| awake, 60 W | same sequence | unclear (readings frozen) |
+
+When the charger arrives during sleep, the PD firmware has already
+negotiated 20 V by itself before the driver looks, so the driver sends no
+request. Awake, the driver requests within milliseconds, the S2MM006 has not
+settled, the request times out (`samsung_emuec_request_pdo`, 20 x 100 ms),
+the port sits at 5 V and our retry (`patches/0001`) gets 20 V a second later.
+**Hypothesis:** the EC's battery charger keeps the input limit it set for the
+5 V step (~15 W) and does not follow the later 20 V renegotiation. The
+charger is probably not at fault (the 60 W one charges on the sleep path;
+the 65 W one was only tried awake), not proven.
+
+Workaround: plug the charger in with the lid closed.
+
+Fix ideas: (A) after attach, give the firmware a grace period (~3 s) to
+negotiate on its own and request only if it is still below the best PDO,
+so the awake path looks like the sleep path; (B) if not enough, tell the EC
+about the contract as Windows does: EC2.sys's `CableDetect` handler sends
+EC command `0x0d` (two-byte value), see below.
+
+Test: [`tools/power/charge-test.sh`](../tools/power/charge-test.sh) LABEL
+[MINUTES] waits for the plug-in (awake or during sleep), records the
+contract and the battery every 10 s and reports capacity gained, average
+power into the battery and whether the readings froze. Run below ~80 %:
+awake vs. asleep, 60 W vs. 65 W, then again with fix A.
+
 ## CPU frequency scaling was off (5 October 2026)
 
 There was **no cpufreq at all** (no `/sys/devices/system/cpu/cpufreq/policy*`):

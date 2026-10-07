@@ -51,6 +51,12 @@ the end.
 - [ ] **CPU boost** (`/sys/devices/system/cpu/cpufreq/boost` = 0): try 4 GHz
       single/dual-core boost; watch temperature and battery.
 
+- [ ] **Charging stalls after plugging in while awake** (6-7 Oct): first PD
+      request times out, 5 V, then 20 V; the battery then gets ~1 W. Plugged
+      in during sleep it charges fine. Workaround: plug in with the lid
+      closed. Test with `tools/power/charge-test.sh`; fix ideas (grace period
+      before the first request; EC `CableDetect`) in
+      [power.md](power.md#charging-stalls-after-a-plug-in-while-awake-6-7-october-2026).
 - [ ] **Suspend drain is about 1.7 W** (~6 %/h, ~16 h from full) on both
       kernels and desktops. The SoC does not seem to power-collapse.
       [power.md](power.md).
