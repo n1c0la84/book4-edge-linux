@@ -44,6 +44,25 @@ the EC does not refresh the battery values at all (identical for minutes,
 also on 7 October), so `charge-test.sh` compares before plug-in with after
 unplug.
 
+**Fix B, what the DSDT says** (7 October; Fedora's `~/src/acpi/dsdt.dsl`,
+the 14" machine's own dump). `EC2.sys` serves vendor operation region
+`MCU1` (space `0xA0`, in `\_SB.ECTC`) with four fields: `BTPT`
+(`BTPThreshold`, EC command 0x06), **`CBDT` (`CableDetect`, EC command
+0x0d)**, `RESP` (Modern Standby phase, logged only) and `PSRC` (read in
+the `_Q51`/`_Q52` charger events). The only writer of `CBDT` is
+**`Method (SCDT, 1)`** ("set cable detect": logs `SCDT:<value>`, then
+`CBDT = Arg0`), and **nothing in the DSDT calls `SCDT`** (nor `SBTP` for
+`BTPT`): a Windows driver or service evaluates `\_SB.ECTC.SCDT` directly
+with a 32-bit value. Next: find that caller on the Windows partition
+(binaries containing `SCDT` / `\_SB.ECTC`, likely a Samsung service or a
+Qualcomm charger/UCSI driver) and the value it passes, then try EC command
+0x0d with it after an awake plug-in (`tools/ec/`, `charge-test.sh`). Also
+in the DSDT: region `EMOP` (space `0x9C`: `DROL`, `PROL`, `CHGS`, `CHTY`,
+`CCST`, `HPDS`, `MUXV`, ...: USB-C and charger state) and `BMOP` (space
+`0x9E`: `SOC`, `CHST`, `VOLT`, `CHGC`, ...: battery manager), served by
+other Windows drivers; the `SCDT` caller probably reads `CHTY`/`CHGS`.
+The only EC mailbox call in the DSDT is `CMDD (0xEE, ...)`.
+
 Fix ideas: (A) after attach, give the firmware a grace period (~3 s) to
 negotiate on its own and request only if it is still below the best PDO,
 so the awake path looks like the sleep path; (B) if not enough, tell the EC
