@@ -72,7 +72,13 @@ declarations are disassembler artefacts), and neither do Samsung's Store
 apps (`WindowsApps`). `SCDT`/`CableDetect` may well be unused on this model,
 which would make fix B a false lead. To settle it: in Windows, watch the
 firmware's debug output (`SCDT` logs `SCDT:<value>` through `ADBG`) while
-plugging in a charger. Only worth it if 0004 does not fix charging.
+plugging in a charger. `ADBG` goes to `\_SB.SAFI.PRNT`: the string is
+written to region `ECM2` (0x9F) and signalled with `Notify (SAFI, 0x89)` to
+Samsung's "Samsung Firmware Interface" driver (`SAM0701`), only if it has
+registered (`AVBL`), so DebugView will not show it; the capture has to come
+from that driver. Steps for a Windows session:
+[handoff-windows-scdt.md](handoff-windows-scdt.md). Only worth it if 0004
+does not fix charging.
 
 Fix ideas: (A) after attach, give the firmware a grace period (~3 s) to
 negotiate on its own and request only if it is still below the best PDO,

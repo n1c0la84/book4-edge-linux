@@ -59,6 +59,8 @@ the end.
       [power.md](power.md#charging-stalls-after-a-plug-in-while-awake-6-7-october-2026).
       Fix A drafted (untested): `patches-experimental/0004`, steps in
       [handoff-fedora-next.md](handoff-fedora-next.md#4-charging-after-a-plug-in-while-awake-written-7-october-on-arch).
+      If 0004 is not enough: [handoff-windows-scdt.md](handoff-windows-scdt.md)
+      (does Windows call the firmware's `SCDT`, "set cable detect"?).
 - [ ] **Suspend drain is about 1.7 W** (~6 %/h, ~16 h from full) on both
       kernels and desktops. The SoC does not seem to power-collapse.
       [power.md](power.md).
