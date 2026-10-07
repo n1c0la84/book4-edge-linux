@@ -65,11 +65,14 @@ The only EC mailbox call in the DSDT is `CMDD (0xEE, ...)`.
 Searched the Windows partition (read-only, 7 October): no driver in
 `DriverStore`/`drivers` and nothing under `Program Files/Samsung` contains
 `SCDT` or `\_SB.ECTC`, as text or as the ARM64 immediate pair for 'SCDT'.
-So `SCDT` is most likely called from another ACPI table (the DSDT declares
-several `ECTC` names `External`). The existing dump
-(`Users/<you>/Downloads/acpidump/dsdt.dat`) holds only the DSDT: on the next
-Windows boot run `acpidump.exe -b` (admin) there to write every table
-(`ssdt*.dat`), then decompile them with `iasl` and look for `SCDT`.
+There are **no SSDTs**: Fedora's `~/src/acpi` holds the complete dump
+(APIC, BGRT, CSRT, DBG2, DSDT, FACP, FPDT, GTDT, IORT, MCFG, PPTT, TPM2,
+XSDT), so no ACPI table calls `SCDT` either (the DSDT's `External`
+declarations are disassembler artefacts), and neither do Samsung's Store
+apps (`WindowsApps`). `SCDT`/`CableDetect` may well be unused on this model,
+which would make fix B a false lead. To settle it: in Windows, watch the
+firmware's debug output (`SCDT` logs `SCDT:<value>` through `ADBG`) while
+plugging in a charger. Only worth it if 0004 does not fix charging.
 
 Fix ideas: (A) after attach, give the firmware a grace period (~3 s) to
 negotiate on its own and request only if it is still below the best PDO,
