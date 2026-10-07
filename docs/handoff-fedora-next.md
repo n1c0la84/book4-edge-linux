@@ -111,3 +111,38 @@ than that build). `--push` forks `anatase-org/patchwork` as
 `<you>/linux-book4-edge` (once), pushes the branch and makes it the default.
 Then: an Arch `PKGBUILD` (`linux-book4`) building from that branch, so Arch
 gets a real kernel package instead of copied modules.
+
+## 4. Charging after a plug-in while awake (written 7 October on Arch)
+
+Problem and hypothesis: [power.md](power.md#charging-stalls-after-a-plug-in-while-awake-6-7-october-2026).
+Workaround meanwhile: plug the charger in with the lid closed.
+
+Fix A, **untested, not compiled**:
+[`patches-experimental/0004`](../drivers/anatase/patches-experimental/0004-samsung-emuec-grace-period-before-first-pd-request.patch)
+on top of `patches/0001-0003`: after a new charger attach the driver waits
+`pd_grace_ms` (default 3000) before requesting a contract, and only if the
+firmware has not reached the best voltage by then. Resume, quiesce and
+wake-on-plug-in (0002/0003) do not start a new attach, so they are
+unchanged. `pd_grace_ms` is writable at runtime
+(`/sys/module/samsung_emuec/parameters/pd_grace_ms`, 0 = old behaviour), so
+before/after needs no rebuild.
+
+Steps (from Arch through the container, or directly in Fedora):
+
+```sh
+bash install/arch/fedora-shell.sh bash -lc 'cd ~/book4-edge-linux && git pull -q --ff-only'
+bash install/arch/fedora-shell.sh env EMUEC_EXTRA_PATCHES=/home/$USER/book4-edge-linux/drivers/anatase/patches-experimental/0004-samsung-emuec-grace-period-before-first-pd-request.patch \
+     bash book4-edge-linux/install/update-emuec-module.sh       # builds, installs on Fedora (.prev kept)
+bash install/arch/fedora-shell.sh --sync-modules               # same module for Arch; first real run
+# reboot into Arch, battery below ~80 %, charger unplugged:
+bash tools/power/charge-test.sh awake-grace-60w                # expect: no "request 1 failed", charges
+echo 0 | sudo tee /sys/module/samsung_emuec/parameters/pd_grace_ms
+bash tools/power/charge-test.sh awake-nograce-60w              # old behaviour for comparison
+```
+
+Also check the other fixes still hold: lid-close plug-in still wakes and
+charges (0003), unplug during sleep no reset (0002), replug at 20 V (0001).
+If A works, promote it to `patches/0004`, add it to the kernel branch
+(`install/kernel-branch.sh` / a rebuilt `book4/7.2`) and offer it to
+Anatase. If not: fix B (EC `CableDetect`, command 0x0d) in power.md.
+Rollback: the `.prev` module files `update-emuec-module.sh` prints.

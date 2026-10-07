@@ -199,6 +199,18 @@ and `mise up`) does the same job.
   opens port 22 to the current home subnet only (detected, private ranges
   only) and adds an sshd drop-in: passwords on, root never, only your user,
   `MaxAuthTries 3` (Omarchy's faillock locks after 10 failures).
+- Icons (6 October): Omarchy sets the icon theme `Yaru-blue`, which Arch
+  Linux ARM does not have (Quickshell then finds no app icons by name).
+  Install it from the AUR (`yay -S yaru-icon-theme`, arch `any`; refresh with
+  `pacman -Syu` first if a make dependency 404s). Omarchy's
+  `theme-system.sh` leaves two links, `/usr/share/icons/Yaru/scalable/actions/go-{next,previous}-symbolic.svg`
+  -> Adwaita, that conflict with the package: remove them first (owned by
+  no package). Rerunning Omarchy's system setup would recreate them.
+- Bar plugins: `omarchy plugin add` puts a replacement widget next to the
+  stock one; disable the stock one (`omarchy plugin disable
+  omarchy.workspaces` for tjcelaya.workspace-icons). The hw-monitor plugin
+  finds no CPU temperature or GPU here (it knows PC sensor names and
+  AMD/Intel/NVIDIA GPUs, not the X1E's `cpu*_thermal` zones or Adreno).
 
 Not yet tested on Arch: headset microphone on the jack, a display across
 suspend/resume, `install/arch/fedora-shell.sh`. **External monitor through a

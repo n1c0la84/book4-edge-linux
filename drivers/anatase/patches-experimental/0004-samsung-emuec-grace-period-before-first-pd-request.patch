@@ -1,0 +1,72 @@
+From: book4-edge-linux
+Subject: [PATCH] usb: typec: samsung-emuec: let the firmware negotiate before requesting a PD contract (experiment)
+
+On top of patches/0001-0003. Plugged in while the system sleeps, a charger
+gets its 20 V contract from the PD firmware alone and the battery charges
+(58 -> 99 % overnight). Plugged in while awake, the driver requested within
+milliseconds, the S2MM006 had not settled, the request timed out (-110),
+the port sat at 5 V and the retry reached 20 V a second later; the battery
+then charged at ~1 W, apparently because the EC keeps the input limit it
+set for 5 V (docs/power.md, 6-7 October).
+
+After a new attach, wait pd_grace_ms (default 3000, runtime-writable in
+/sys/module/samsung_emuec/parameters, 0 = old behaviour) and request only
+if the contract is still below the best fixed PDO. Resume and the sleep
+handling of 0002/0003 do not start a new attach, so they are unchanged.
+
+Untested, not compiled.
+
+---
+--- a/samsung-emuec.c	2026-10-07 14:11:16.032862017 +0200
++++ b/samsung-emuec.c	2026-10-07 14:11:30.694044376 +0200
+@@ -109,6 +109,7 @@
+ 	struct notifier_block pm_nb;
+ 	bool quiesced;
+ 	bool wake_armed;
++	unsigned long attach_time;
+ };
+ 
+ static int samsung_emuec_pm_notify(struct notifier_block *nb,
+@@ -397,6 +398,20 @@
+ 	return -ETIMEDOUT;
+ }
+ 
++/*
++ * A charger plugged in while the system sleeps has its 20 V contract
++ * negotiated by the PD firmware on its own, and the battery charges. Plugged
++ * in while awake, the request below went out before the S2MM006 had settled,
++ * timed out, the port sat at 5 V and only the retry reached 20 V; the
++ * battery then got ~1 W (the EC appears to keep the 5 V input limit). Give
++ * the firmware this long after an attach before requesting anything.
++ * 0 restores the old behaviour. Only a new attach waits: resume and the
++ * sleep handling do not go through here with a fresh attach_time.
++ */
++static unsigned int pd_grace_ms = 3000;
++module_param(pd_grace_ms, uint, 0644);
++MODULE_PARM_DESC(pd_grace_ms, "ms after a charger attach before the driver requests a PD contract (0: at once)");
++
+ static void samsung_emuec_update_pd(struct samsung_emuec *pdic)
+ {
+ 	struct usb_power_delivery_capabilities_desc caps = { .role = TYPEC_SOURCE };
+@@ -459,7 +474,12 @@
+ 		 * has settled and time out; it succeeds when repeated a little
+ 		 * later, so retry a few times instead of staying at 5 V.
+ 		 */
+-		if (pdic->pd_attempts < 5) {
++		unsigned long due = pdic->attach_time + msecs_to_jiffies(pd_grace_ms);
++
++		if (pd_grace_ms && time_before(jiffies, due)) {
++			/* Let the firmware negotiate first; look again at the deadline. */
++			mod_delayed_work(system_dfl_wq, &pdic->work, due - jiffies);
++		} else if (pdic->pd_attempts < 5) {
+ 			pdic->pd_attempts++;
+ 			ret = samsung_emuec_request_pdo(pdic, requested);
+ 			if (ret) {
+@@ -857,6 +877,7 @@
+ 		}
+ 
+ 		pdic->attached = true;
++		pdic->attach_time = jiffies;
+ 		pdic->power_role = power_role;
+ 		pdic->data_role = data_role;
+ 		typec_port_set_usb_mode(pdic->port, USB_MODE_NONE);
