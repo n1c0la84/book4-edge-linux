@@ -62,6 +62,14 @@ in the DSDT: region `EMOP` (space `0x9C`: `DROL`, `PROL`, `CHGS`, `CHTY`,
 `0x9E`: `SOC`, `CHST`, `VOLT`, `CHGC`, ...: battery manager), served by
 other Windows drivers; the `SCDT` caller probably reads `CHTY`/`CHGS`.
 The only EC mailbox call in the DSDT is `CMDD (0xEE, ...)`.
+Searched the Windows partition (read-only, 7 October): no driver in
+`DriverStore`/`drivers` and nothing under `Program Files/Samsung` contains
+`SCDT` or `\_SB.ECTC`, as text or as the ARM64 immediate pair for 'SCDT'.
+So `SCDT` is most likely called from another ACPI table (the DSDT declares
+several `ECTC` names `External`). The existing dump
+(`Users/<you>/Downloads/acpidump/dsdt.dat`) holds only the DSDT: on the next
+Windows boot run `acpidump.exe -b` (admin) there to write every table
+(`ssdt*.dat`), then decompile them with `iasl` and look for `SCDT`.
 
 Fix ideas: (A) after attach, give the firmware a grace period (~3 s) to
 negotiate on its own and request only if it is still below the best PDO,
