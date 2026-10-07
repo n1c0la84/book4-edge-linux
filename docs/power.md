@@ -44,6 +44,14 @@ the EC does not refresh the battery values at all (identical for minutes,
 also on 7 October), so `charge-test.sh` compares before plug-in with after
 unplug.
 
+**0004 does not fix it** (7 October, 15:18, Arch, 65 W charger, awake,
+`charge-test.sh awake-0004 20`): clean negotiation (5 V at attach, 20 V /
+3.25 A on the first request 3 s later), yet 80 -> 79 % in 22 minutes
+(-36 mAh, about -1.6 W into the battery). Still open: the same 65 W charger
+on the sleep path (it has never been seen charging this machine; it works
+with other machines), or the 60 W charger awake, to rule the charger out.
+If the awake path is confirmed: [handoff-windows-scdt.md](handoff-windows-scdt.md).
+
 **Fix B, what the DSDT says** (7 October; Fedora's `~/src/acpi/dsdt.dsl`,
 the 14" machine's own dump). `EC2.sys` serves vendor operation region
 `MCU1` (space `0xA0`, in `\_SB.ECTC`) with four fields: `BTPT`
