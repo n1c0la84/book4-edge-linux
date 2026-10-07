@@ -35,6 +35,15 @@ the 65 W one was only tried awake), not proven.
 
 Workaround: plug the charger in with the lid closed.
 
+0004 installed on Arch (7 October, `pd_grace_ms` 3000): awake plug-in of the
+65 W charger now gives `5000 mV` at attach and `20000 mV` 3.1 s later on the
+**first** request (no -110, no retry). The 5 V step remains: awake, the
+firmware does not raise the contract by itself within 3 s. Whether the
+battery now charges is still to be measured. While a charger is connected
+the EC does not refresh the battery values at all (identical for minutes,
+also on 7 October), so `charge-test.sh` compares before plug-in with after
+unplug.
+
 Fix ideas: (A) after attach, give the firmware a grace period (~3 s) to
 negotiate on its own and request only if it is still below the best PDO,
 so the awake path looks like the sleep path; (B) if not enough, tell the EC
