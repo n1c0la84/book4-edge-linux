@@ -135,7 +135,8 @@ tokens) is no longer unlocked at login. Either give `login` an empty password
 (Seahorse) or put the PAM lines back. Same symptom on Fedora with KWallet. Chosen
 (8 Oct): the PAM lines back, since this disk is not encrypted:
 [`install/arch/keyring-unlock.sh`](../install/arch/keyring-unlock.sh);
-rerun it after `omarchy-apply-system`.
+rerun it after `omarchy-apply-system`. Works: no keyring prompt after a password
+login (8 Oct).
 
 **Pick "Hyprland (uwsm-managed)" at the SDDM login**, not plain
 "Hyprland": Omarchy's logout is `uwsm stop`, which does nothing in a
