@@ -8,6 +8,8 @@
 # device tree, no Anatase drivers (black screen, no USB-C host).
 #
 #   bash install/arch/rescue-usb.sh /dev/sdX      (run as your user on Arch)
+#   GRUB_ONLY=1 bash install/arch/rescue-usb.sh /dev/sdX
+#        on a finished stick: rebuild only its GRUB (step 8)
 #
 # WIPES /dev/sdX. Refuses the internal disk, non-USB disks and mounted ones.
 # Resumable: on a stick that already has the three BOOK4 partitions it offers
@@ -66,6 +68,9 @@ cleanup() {
     for d in "$R/boot/efi" "$R" "$M/fboot" "$M/fesp"; do mountpoint -q "$d" && sudo umount "$d" || true; done
 }
 trap cleanup EXIT
+
+GRUB_ONLY=${GRUB_ONLY:-0}
+(( ! GRUB_ONLY || RESUME )) || { echo "GRUB_ONLY needs a stick that already has the rescue partitions." >&2; exit 1; }
 
 if (( ! RESUME )); then
 echo "== 1. Arch Linux ARM tarball (signature checked)"
@@ -145,6 +150,8 @@ HOOKS=(base systemd modconf block filesystems keyboard sd-vconsole fsck)
 EOF
 fi   # RESUME
 
+E=$R/boot/efi
+if (( ! GRUB_ONLY )); then
 if (( RESUME )) && ls "$R"/var/lib/pacman/local/grub-[0-9]* >/dev/null 2>&1 && grep -q "^$U:" "$R/etc/passwd"; then
 echo "== 6. packages and user already done"
 else
@@ -179,7 +186,6 @@ sudo cp -a "$REPO" "$R/home/$U/"
 ns chown -R "$U:$U" "/home/$U/$(basename "$REPO")"
 
 echo "== 7. initramfs, kernel and device tree onto the stick's ESP"
-E=$R/boot/efi
 sudo mkdir -p "$E/book4"
 ns mkinitcpio -k "$K" -g /boot/efi/book4/initramfs.img
 LIST=$(ns lsinitcpio /boot/efi/book4/initramfs.img)
@@ -190,6 +196,8 @@ done
 sudo test -s "$E/book4/initramfs.img" || { echo "initramfs did not land on the stick's ESP." >&2; exit 1; }
 sudo install -m 644 "$M/fboot/vmlinuz-$K" "$E/book4/vmlinuz"
 sudo install -m 644 "$M/fboot$DTB" "$E/book4/book4.dtb"
+
+fi   # GRUB_ONLY
 
 echo "== 8. GRUB (standalone image, built inside the stick's system)"
 sudo touch "$E/book4-rescue.id"
@@ -215,7 +223,10 @@ menuentry "Book4 rescue - verbose" {
 }
 menuentry "UEFI Firmware Settings" { fwsetup }
 EOF
-sudo tee "$R/tmp/grub-embed.cfg" >/dev/null <<'EOF'
+# Not under /tmp: systemd-nspawn mounts an empty tmpfs there, and
+# grub-mkstandalone then built an image without this file (stick stopped at
+# a bare grub> prompt, 8 Oct).
+sudo tee "$R/root/grub-embed.cfg" >/dev/null <<'EOF'
 search --no-floppy --set=root --file /book4-rescue.id
 set prefix=($root)/book4
 configfile $prefix/grub.cfg
@@ -223,9 +234,10 @@ EOF
 sudo mkdir -p "$E/EFI/BOOT"
 ns grub-mkstandalone -O arm64-efi -o /boot/efi/EFI/BOOT/BOOTAA64.EFI \
     --modules="part_gpt fat search search_fs_file configfile linux fdt mmap efi_gop" \
-    "boot/grub/grub.cfg=/tmp/grub-embed.cfg"
-sudo rm -f "$R/tmp/grub-embed.cfg"
+    "boot/grub/grub.cfg=/root/grub-embed.cfg"
+sudo rm -f "$R/root/grub-embed.cfg"
 sudo test -s "$E/EFI/BOOT/BOOTAA64.EFI" || { echo "GRUB image did not land on the stick's ESP." >&2; exit 1; }
+sudo grep -qa 'book4-rescue.id' "$E/EFI/BOOT/BOOTAA64.EFI" || { echo "GRUB image lacks its built-in config." >&2; exit 1; }
 ns sh -c 'ls /usr/lib/grub/arm64-efi/ | grep -qx mmap.mod'   # provides cutmem
 
 echo "== 9. done"

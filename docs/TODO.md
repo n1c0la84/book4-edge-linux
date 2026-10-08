@@ -279,7 +279,10 @@ Not yet reported:
       (UFS) and a backup onto its `BOOK4-BACKUP` partition. **8 Oct: first
       boot stopped at a bare `grub>` prompt** (built-in config failed:
       search for /book4-rescue.id or configfile /book4/grub.cfg). Check the
-      stick with `install/arch/rescue-usb-check.sh`. On this stick,
+      stick with `install/arch/rescue-usb-check.sh`. Cause: the built-in
+      config was missing from BOOTAA64.EFI (written to the stick's /tmp,
+      which systemd-nspawn hides behind a tmpfs). Fixed in the script; on an
+      existing stick: `GRUB_ONLY=1 bash install/arch/rescue-usb.sh /dev/sdX`. On this stick,
       once: `sudo systemctl disable --now systemd-networkd systemd-networkd.socket`
       (the Arch Linux ARM base enables it next to NetworkManager; fixed in the
       script). No restore script yet: each backup writes `RESTORE.md` with the
