@@ -29,6 +29,8 @@ state() {
         done
         [ -e $p-partner ] && echo "    partner present"
     done
+    echo "--- SBU mux GPIOs (ss0: enable 168 active-low, select 167; ss1: enable 179, select 178)"
+    grep -E 'gpio(16[78]|17[89])[ :]' /sys/kernel/debug/gpio 2>/dev/null | sed 's/^/  /'
 }
 
 echo "# usbc-dp-capture $(date '+%F %T'), kernel $(uname -r), window ${SECS}s"

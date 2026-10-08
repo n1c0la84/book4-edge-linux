@@ -36,6 +36,14 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       `samsung_emuec` dynamic debug and `drm.debug=0x106`, monitor on and
       connected to the hub before plugging it in; also the other port and a
       direct USB-C-to-DP/HDMI cable. Same driver on Fedora.
+      **8 Oct, Arch, traced (`tools/display/usbc-dp-capture.sh`):** the
+      whole Alt Mode sequence is ACKed (SVID, modes, enter, status,
+      configure, attention), HPD = 1 reaches `msm_dp` (DP-1, 2 s after
+      plug-in), then **every AUX read times out (-110)** and after ~8 s
+      `msm_dp` gives up ("failed to read caps"); the hub then shows its
+      Billboard. Orientation was "reverse". AUX runs over SBU through the
+      FSUSB42 mux (`usb-1-ss0-sbu-mux`, enable TLMM 168, select 167): next,
+      flip the plug (orientation polarity) and read the mux GPIOs.
       **8 Oct, Windows: the same hub works on the same port** (picture,
       card reader). The hub's Billboard reports DP alt mode (SVID 0xFF01)
       entered with configuration status 0x3 ("configured successfully"), so
