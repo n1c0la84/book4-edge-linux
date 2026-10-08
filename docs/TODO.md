@@ -176,7 +176,7 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       Fedora's RPM by `install/fingerprint-libfprint.sh`, version-locked.
       sudo authenticates by finger; the KDE lock screen claims the sensor and
       waits (seen in fprintd's log) but an unlock by finger is not confirmed:
-      rest the finger, a click is a power-key press. Left: Arch (PKGBUILD,
+      rest the finger, a click is a power-key press. Sent to Anatase as #5. Left: Arch (PKGBUILD,
       lanlanndn/galaxybook4-fingerprint), drop the local build once !547 is
       in a Fedora release.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and

@@ -26,6 +26,9 @@
    https://github.com/anatase-org/kernel-anatase/issues/4
    ([dts/patches/0003](../dts/patches)). Offered: a follow-up renaming the
    swapped woofer prefixes to `WooferLeft`/`WooferRight`.
+1e. **Fingerprint reader on `usb_2`, device tree.** Sent 8 October:
+   https://github.com/anatase-org/kernel-anatase/issues/5 (standalone on
+   `anatase-7.2`; ours, on top of the tweeters, is `dts/patches/0004`).
 2. **Cycle count reads the wrong register.** `KB9058_CYCLES` is `0xd0`, but on
    this 14" unit EC space `0xd0..0xd1` holds the state of charge (`00 62` = 98
    while the gauge at `0xa0` read 98 %). The BIX-style block at `0xb0..0xb7` is
