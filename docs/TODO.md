@@ -69,13 +69,24 @@ the end.
 
 - [ ] **CPU boost** (`/sys/devices/system/cpu/cpufreq/boost` = 0): try 4 GHz
       single/dual-core boost; watch temperature and battery. Windows,
-      8 Oct, **on battery** (Balanced): every core ~2560 MHz, one busy or
-      all 12, so no boost and a lower cap on battery
-      ([tools/power/cpu-clock.py](../tools/power/cpu-clock.py): a chain of
-      dependent adds, clock without counters; Windows' own counters read
-      a flat 1851 MHz and are not usable). Still to do: the same on AC in
-      Windows, and `cpu-clock.py` on Linux as a cross-check (should read
-      ~3418 with `scmi-cpufreq`).
+      8 Oct ([tools/power/cpu-clock.py](../tools/power/cpu-clock.py): a
+      chain of dependent adds, clock without counters; Windows' own
+      counters read a flat 1851 MHz and are not usable):
+
+      | Windows | one core busy | all 12 busy |
+      |---|---|---|
+      | battery, Balanced | ~2510 MHz, every cluster | ~2510 MHz |
+      | **AC, "Best performance" mode** | **~4005 MHz on CPUs 4-11**, ~3410 on CPUs 0-3 | ~3417 MHz |
+
+      So the 4 GHz boost is real, on the second and third clusters only
+      (CPU 0-3 tops out at the 3417.6 MHz step), single-core, on AC.
+      (Battery figures corrected by 100/102 like the tool; the AC
+      all-core reading matches the 3417.6 MHz step exactly.) Next, on
+      Linux: `echo 1 > /sys/devices/system/cpu/cpufreq/boost`, check that
+      `scaling_max_freq` of `policy4`/`policy8` rises above 3417600, then
+      `python3 tools/power/cpu-clock.py 4 8` (expect ~4000) and watch the
+      temperature; the boot log's "Failed to add opps_by_lvl at 3417600 for
+      NCC1/NCC2" may be related.
 
 - [ ] **Charging stalls after plugging in while awake** (6-7 Oct): first PD
       request times out, 5 V, then 20 V; the battery then gets ~1 W. Plugged

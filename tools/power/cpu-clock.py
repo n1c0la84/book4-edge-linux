@@ -2,7 +2,9 @@
 """Measure the real CPU clock on ARM64 (Linux or Windows), without counters.
 
 Runs a chain of 100 dependent `add x0, x0, #1` (one cycle each) in a loop,
-so instructions per second = clock. Each worker is pinned to one CPU.
+so adds per second = clock (the loop's subs/b.ne run alongside the adds and
+cost no extra cycle: counting them read 2 % high against the known 3417.6
+MHz step). Each worker is pinned to one CPU.
 
     python3 cpu-clock.py              # one worker on CPU 0, then 4, then 8
     python3 cpu-clock.py all          # one worker per CPU, all at once
@@ -54,7 +56,7 @@ def worker(cpu, seconds=5.0):
     while time.perf_counter() < end:
         t = time.perf_counter()
         f(2000000)
-        best = max(best, 2000000 * (N + 2) / (time.perf_counter() - t) / 1e6)
+        best = max(best, 2000000 * N / (time.perf_counter() - t) / 1e6)
     return cpu, best
 
 
