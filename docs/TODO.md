@@ -30,6 +30,20 @@ the end.
       `samsung_emuec` dynamic debug and `drm.debug=0x106`, monitor on and
       connected to the hub before plugging it in; also the other port and a
       direct USB-C-to-DP/HDMI cable. Same driver on Fedora.
+      **8 Oct, Windows: the same hub works on the same port** (picture,
+      card reader). The hub's Billboard reports DP alt mode (SVID 0xFF01)
+      entered with configuration status 0x3 ("configured successfully"), so
+      the hub is fine and the fault is on the Linux side; compare with
+      `lsusb -v` of the Billboard on Linux (`bmConfigured`). The firmware's
+      ACPI logs only role reads (`GDRO`/`GPRO`) during it. Also logged:
+      `SMC arrived with function code 4200010a` with parameters `2 1 2a`,
+      `2 1 9`, `2 2 9`, 3.2 s after plug-in and again 2.4 s after unplug,
+      i.e. at display bring-up and teardown. Reading 0x4200010a as Qualcomm
+      SiP service 1 (boot), command 0x0a, that would be
+      `QCOM_SCM_BOOT_SET_REMOTE_STATE` (2 arguments: state 1/2, id 0x2a and
+      9). Unverified, but worth checking whether Linux's DP path makes (or
+      needs) such a call. Raw captures: `C:\scdt\hub1.etl`,
+      `dbgview-hub1.log` (Samsung driver WPP events there are undecoded).
 - [ ] **The sleep fix in long-term use** (installed 4 Oct, Fedora and Arch):
       repeated cycles, plug-in and unplug during sleep, over days.
 - [ ] **Fedora kernel update** (7.2.8 and later): only affects the fallback
