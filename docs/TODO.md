@@ -5,6 +5,9 @@ Omarchy, both on the Anatase kernel `7.2.7-book4`). Roughly in order of
 everyday usefulness within each section. What is already done is listed at
 the end.
 
+**Next for the Linux side (8 October):** the tests collected in Windows,
+in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
+
 ## To test (should work, never verified)
 
 - [x] **CPU frequency scaling on Fedora** (5 Oct): `scmi-cpufreq` via
