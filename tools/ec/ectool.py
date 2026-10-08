@@ -11,6 +11,9 @@ Protocol reverse-engineered from Windows EC2.sys (see NOTES.md):
   sudo python3 ectool.py probe        # stage 1: read-only XDATA reads, touches nothing
   sudo python3 ectool.py battery      # stage 2: EC-space reads of the ACPI ECR (0xA1) battery fields
   sudo python3 ectool.py dump         # stage 2: EC-space bytes 0x00-0xFF
+  sudo python3 ectool.py read OFF [N] # EC-space bytes OFF.. (read only)
+  sudo python3 ectool.py write OFF VAL   # one EC-space byte; only 0x91/0x92 without --force
+  sudo python3 ectool.py btp-plugin   # Windows' _BTP at a plug-in: trip point 0, then remaining mAh
 """
 import ctypes, fcntl, glob, os, sys, time
 
@@ -90,6 +93,20 @@ def ec_read(off):
             return v
     raise IOError('EC space %02x: collision on every retry' % off)
 
+def ec_write(off, val):
+    """SecEne9058KbcWriteEcSpace: F480 = offset, F481 = value, FF10 = 0x89."""
+    wait_idle()
+    s = get_slot()
+    xwrite(0xF480, off)
+    xwrite(0xF481, val)
+    xwrite(0xFF10, 0x89)
+    wait_idle()          # Windows does not wait here; waiting is harmless
+    clear_slot(s)
+
+# EC-space bytes the write commands may touch without --force: the battery
+# trip point (BTPC, big-endian u16 at 0x91-0x92), written by Windows' _BTP.
+WRITABLE = (0x91, 0x92)
+
 def u32(off):   # ACPI field = 4 consecutive EC-space bytes, little-endian
     return sum(ec_read(off + i) << (8 * i) for i in range(4))
 
@@ -132,6 +149,27 @@ elif cmd == 'events':
             break
     if ADDR == 0x64:
         print('AC online now: %d' % ((ec_read(0x80) >> 2) & 1))
+elif cmd == 'read':
+    off, n = int(sys.argv[2], 0), int(sys.argv[3], 0) if len(sys.argv) > 3 else 1
+    print('%02x: %s' % (off, ' '.join('%02x' % ec_read(off + i) for i in range(n))))
+elif cmd == 'write':
+    off, val = int(sys.argv[2], 0), int(sys.argv[3], 0)
+    if off not in WRITABLE and '--force' not in sys.argv:
+        sys.exit('refusing to write EC space 0x%02x (allowed: %s; --force to override)'
+                 % (off, ', '.join('0x%02x' % o for o in WRITABLE)))
+    before = ec_read(off)
+    ec_write(off, val & 0xff)
+    print('%02x: %02x -> %02x (read back %02x)' % (off, before, val & 0xff, ec_read(off)))
+elif cmd == 'btp-plugin':
+    # What Windows does at a charger plug-in (_BTP): trip point 0, then about
+    # the remaining capacity in mAh (EC 0xA2-0xA3, big-endian), high byte at 0x91.
+    remain = (ec_read(0xA2) << 8) | ec_read(0xA3)
+    print('trip point before: %d   remaining capacity: %d mAh' % ((ec_read(0x91) << 8) | ec_read(0x92), remain))
+    for v in (0, remain):
+        ec_write(0x91, v >> 8)
+        ec_write(0x92, v & 0xff)
+        print('trip point set to %d, reads back %d' % (v, (ec_read(0x91) << 8) | ec_read(0x92)))
+        time.sleep(1)
 elif cmd == 'dump':
     for row in range(0, 0x100, 16):
         print('%02x: %s' % (row, ' '.join('%02x' % ec_read(row + i) for i in range(16))))
