@@ -141,7 +141,7 @@ rerun it after `omarchy-apply-system`.
 "Hyprland": Omarchy's logout is `uwsm stop`, which does nothing in a
 session uwsm did not start (8 Oct: "Compositor is not running"). SDDM
 reuses the last choice; [`install/arch/sddm-uwsm-session.sh`](../install/arch/sddm-uwsm-session.sh)
-sets it. In a plain session, `hyprctl dispatch exit` logs out.
+sets it. In a plain session, `hyprctl dispatch 'hl.dsp.exit()'` logs out (Lua config).
 
 ![fastfetch in the Omarchy session: Omarchy 4.0.4 on Arch Linux ARM, kernel 7.2.7-book4, Hyprland 0.56.2, 8 GiB zram swap](images/fastfetch-omarchy.png)
 
