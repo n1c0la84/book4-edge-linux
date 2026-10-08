@@ -40,6 +40,9 @@ state
 KP=0
 if [ -w $T/kprobe_events ]; then
     echo > $T/trace
+    # leftovers from an interrupted run
+    [ -d $T/events/book4 ] && echo 0 > $T/events/book4/enable
+    grep '^[pr]:book4/' $T/kprobe_events | sed 's/^[pr]:\(book4\/[a-z_]*\).*/-:\1/' | while read -r l; do echo "$l" >> $T/kprobe_events; done
     {
         echo 'p:book4/vdm samsung_emuec_read_vdm reg=%x1:x16 svid=%x2:x16 cmd=%x3:x8 cmdt=%x4:x8'
         echo 'r:book4/vdm_ret samsung_emuec_read_vdm ret=$retval:s32'
@@ -68,6 +71,7 @@ SINCE=$(date '+%F %T')
 echo
 read -r -p ">>> Plug the hub in now (monitor on), then press Enter... " _ </dev/tty
 echo "# plugged at $(date +%T); collecting for ${SECS}s"
+for i in 1 2 3 4 5 6; do sleep 1; echo "  +${i}s port0 orientation=$(cat /sys/class/typec/port0/orientation) port1 orientation=$(cat /sys/class/typec/port1/orientation)"; done
 sleep "$SECS"
 state
 
