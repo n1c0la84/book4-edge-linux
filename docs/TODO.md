@@ -213,6 +213,15 @@ Not yet reported:
       and `/sys/bus/hid/devices/*0CF2:9050*/report_descriptor`. A hwdb
       entry or a HID quirk that drops those usages would fix it for
       everyone.
+      Confirmed on Linux (8 Oct, Arch, Anatase kernel): report descriptor
+      has System Control (`05 01 09 80`), report 0x0D, Button usages 1-2
+      (`05 09 19 01 29 02`); the node gets KEY bits 0x100/0x101 (BTN_0/1).
+      With Anatase's HID quirk the device is split into separate nodes and
+      nothing is mis-tagged (systemd 262: keyboard node `ID_INPUT_KEYBOARD`,
+      System Control node only `ID_INPUT`). The tablet-pad tag happens only
+      on kernels without the quirk (one merged "Keyboard" node, e.g.
+      Fedora's stock fallback). Upstream fix to propose and test there: a
+      `60-input-id.hwdb` entry for `0cf2:9050` (keyboard, not tablet pad).
 - [ ] Saddytech driver: design/last-full swapped, rate sign. Windows
       (8 Oct) confirms our mapping: design 54 801 mWh = 0xB0 (3531 mAh) x
       15.52 V, full charge 55 872 mWh = 0xB2 (3600 mAh) x 15.52 V; `_BST`
