@@ -1,5 +1,10 @@
 # Windows handoff: does Windows ever call SCDT ("set cable detect")?
 
+**Done, 8 October: no.** `SCDT` did not run for an awake plug-in or for a
+plug-in in Modern Standby; fix B is dead. Firmware debug output is visible
+in DebugView (SafiDrv prints it with `DbgPrintEx`). Details:
+[power.md](power.md#charging-stalls-after-a-plug-in-while-awake-6-7-october-2026).
+
 Written 7 October 2026 on Arch, for a Claude Code session **in Windows** on
 the same machine (Samsung Galaxy Book4 Edge 14", NP940XMA). Read this, then
 [power.md](power.md#charging-stalls-after-a-plug-in-while-awake-6-7-october-2026)

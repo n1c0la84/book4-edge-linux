@@ -88,6 +88,31 @@ from that driver. Steps for a Windows session:
 [handoff-windows-scdt.md](handoff-windows-scdt.md). Only worth it if 0004
 does not fix charging.
 
+**Fix B is dead: Windows never calls `SCDT`** (8 October, Windows, 65 W
+charger). The SAM0701 driver is `SafiDrv.sys` (service `SafiDrv`, oem27.inf,
+2.12.27.700); `EC2.sys` is service `EC2` on `SAM060B` (oem79.inf,
+15.27.1.994). Contrary to the guess above, SafiDrv passes every firmware
+message to `DbgPrintEx` as `ADBG: <text>`, so **DebugView (elevated,
+"Capture Kernel" + verbose: `Dbgview /k /v /l <file>`) shows all firmware
+debug output** (truncated to ~15 characters). An ETW trace of the nine
+provider GUIDs found in SafiDrv/EC2/EmuEC/UcmEm plus
+`Microsoft-Windows-Kernel-Acpi` ran alongside; it contains no `SCDT`
+either. Raw captures: `C:\scdt\` (`dbgview1.log`, `dbgview2.log`,
+`scdt1/2.etl`).
+
+| plug-in | firmware messages around it | `SCDT` |
+|---|---|---|
+| awake, lid open (97 %) | `GDRO>0x2`, `GPRO<1`, `Unknown event`, `CSFI=0x7A`/`DSBB=0x7A` (with hex buffers starting `43 58 7a 00`), `_Q66`, `_STA B1EX=1`, `_BTP<S…`/`_BTP<T…`, `NTCA=0x42`, `NTCA=0x84` | never |
+| lid closed, in Modern Standby (`MS:DisplayOff`, `MS:MS+`, `MS:LPS+` logged) | same set: `LPS-`/`MS-`, `GDRO`/`GPRO`, `_Q66`, `_BTP`, `CSFI`/`DSBB`, `NTCA=0x42`, back to `MS:MS+` | never |
+
+Side observations for the Linux side to look up in the DSDT: after each
+`_Q66` Windows' battery driver re-reads `_BST`/`_STA` and sets a battery
+trip point through `_BTP` (`_BTP<S0` then `_BTP<S3437`/`3474`/`3510`,
+close to the remaining capacity in mAh); the `CSFI`/`DSBB`/`NTCA` lines look like
+the USB-C/PD mailbox path (`EMOP`) that EmuEC/UcmEm drive. Linux on device
+tree runs none of these ACPI methods, but which of them (if any) matters
+for the charge current is not known.
+
 Fix ideas: (A) after attach, give the firmware a grace period (~3 s) to
 negotiate on its own and request only if it is still below the best PDO,
 so the awake path looks like the sleep path; (B) if not enough, tell the EC
