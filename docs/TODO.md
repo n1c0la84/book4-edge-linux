@@ -178,7 +178,10 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       waits (seen in fprintd's log) but an unlock by finger is not confirmed:
       rest the finger, a click is a power-key press. Sent to Anatase as #5. Arch: `install/arch/sync-fingerprint.sh` ran to the end (8 Oct); **sudo works on Arch** (8 Oct,
       `libfprint-sdcp` provides/conflicts `libfprint`, so updates keep it).
-      Left: hyprlock (Omarchy's fingerprint unlock) on Arch; drop the local
+      Never run `omarchy-setup-security-fingerprint` (replaces
+      libfprint-sdcp with libfprint-git); the lock-screen PAM file is
+      written by `sync-fingerprint.sh` step 8 or `sudo omarchy-apply-lock`.
+      Left: lock screen by fingerprint on Arch to test; drop the local
       builds once !547 is in Fedora's and Arch's libfprint.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to

@@ -9,6 +9,12 @@
 # duplicate), and fprintd-delete on either system removes it for both.
 # Run as your user on Fedora, with Arch not running; needs the internet.
 #
+# Never run Omarchy's omarchy-setup-security-fingerprint (or its first-run
+# "Setup Fingerprint Reader" notification): it installs libfprint-git with
+# --ask 4, which replaces libfprint-sdcp, and the reader stops working. Step 8
+# writes the lock-screen PAM file it would write, which also stops that
+# notification from appearing.
+#
 #   bash install/arch/sync-fingerprint.sh
 set -euo pipefail
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
@@ -78,7 +84,12 @@ sudo grep -q pam_fprintd "$P" ||
     sudo sed -i '0,/^auth/s//auth       sufficient   pam_fprintd.so\n&/' "$P"
 sudo cat "$P"
 
-echo "== 8. lock screen PAM (shown, not changed)"
-for f in hyprlock system-auth; do echo "-- /etc/pam.d/$f"; sudo cat "$R/etc/pam.d/$f" 2>/dev/null || echo "(none)"; done
+echo "== 8. Omarchy lock screen by fingerprint"
+# Same file omarchy-apply-lock writes when prints are enrolled; the lock
+# screen (shell plugin "lock") uses it next to omarchy-lock-password.
+printf '%s\n' '#%PAM-1.0' \
+    'auth       required                    pam_fprintd.so' \
+    'account    include                     system-local-login' |
+    sudo tee "$R/etc/pam.d/omarchy-lock-fingerprint"
 echo
 echo "Done. In Arch: sudo -k; sudo true   (rest the finger on the power button)"
