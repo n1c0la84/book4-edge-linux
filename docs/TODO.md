@@ -62,7 +62,9 @@ the end.
       If 0004 is not enough: [handoff-windows-scdt.md](handoff-windows-scdt.md)
       (does Windows call the firmware's `SCDT`, "set cable detect"?).
 - [ ] **Suspend drain is about 1.7 W** (~6 %/h, ~16 h from full) on both
-      kernels and desktops. The SoC does not seem to power-collapse.
+      kernels and desktops. The SoC does not seem to power-collapse on
+      Linux; **under Windows it does** (sleep study, 8 Oct: hardware low
+      power ~98 % of each sleep), so the hardware can.
       [power.md](power.md).
 - [ ] **Hibernation** as a workaround for the drain. Both kernels have
       `CONFIG_HIBERNATION=y`, lockdown is off. Needs a ~20 GB btrfs swap file
@@ -82,7 +84,11 @@ the end.
       (`install/speakers-default.sh`), UCM + PipeWire crossover and limiter
       ([audio.md](audio.md#four-speakers-5-october)). On Arch too
       (`install/arch/sync-audio.sh`, checked 5 Oct). DT sent to Anatase as #4.
-- [ ] **Fingerprint reader**: not visible to Linux at all.
+- [ ] **Fingerprint reader**: not visible to Linux because its USB
+      controller `usb@a200000` (`usb_2`) is disabled in our DTB. Windows
+      shows an EgisTec `1c7a:05a1` (libfprint `egismoc`) on that controller,
+      plus a GPIO on TLMM 184. Steps:
+      [handoff-linux-fingerprint.md](handoff-linux-fingerprint.md).
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
       create endpoint" (-12), together with a `qcom-apm` "CMD timeout". No
@@ -92,8 +98,10 @@ the end.
       but it changes how the EC handles power events in sleep; worth
       revisiting together with the drain. [power.md](power.md).
 - [ ] `deep` suspend never resumes (s2idle works; probably leave it).
-- [ ] EC word at `0xb6` (37 on this unit): cycle-count candidate, watch
-      whether it ever increments.
+- [x] EC word at `0xb6` (37 on this unit) is **not** the cycle count: the
+      DSDT's `_BIX` reads it from `CYLC`, EC offset **0xD0** (16 bit, high
+      byte first); Windows reports 105 cycles (8 Oct). What 0xB6 is stays
+      open. [ec-protocol.md](ec-protocol.md).
 
 ## Kernel
 
@@ -133,7 +141,10 @@ Not yet reported:
 
 - [ ] ath12k / linux-firmware: WCN7850 firmware c7-00108 regression on this card.
 - [ ] systemd/libinput: keyboard tagged as tablet pad.
-- [ ] Saddytech driver: design/last-full swapped, rate sign.
+- [ ] Saddytech driver: design/last-full swapped, rate sign. Windows
+      (8 Oct) confirms our mapping: design 54 801 mWh = 0xB0 (3531 mAh) x
+      15.52 V, full charge 55 872 mWh = 0xB2 (3600 mAh) x 15.52 V; `_BST`
+      treats the rate as signed 16 bit and reports its absolute value.
 - [ ] linux-arm-msm DTS thread: `pmic-glink` cannot work with this firmware
       image (and, if wanted, a tester's report on the v6 series).
 - [ ] Help get `samsung-galaxybook-ec` and `samsung-emuec` to mainline, even

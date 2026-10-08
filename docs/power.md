@@ -493,6 +493,12 @@ above; no permanent sleep configuration or kernel/module change was made.
 
 ## What we know about the sleep state
 
+- **Windows reaches full low power in sleep** (`powercfg /sleepstudy`,
+  8 October, sessions of 7-8 October on AC): hardware low-power time is
+  ~98 % of each sleep session (e.g. 18 765 s of 19 063 s; 5 452 s of
+  5 557 s). So the SoC can power-collapse on this machine; the Linux drain
+  is a software problem. Those sessions were on AC, so they give no drain
+  rate yet: an hour of battery standby in Windows would.
 - **The machine stays asleep.** With `pm_debug_messages` on, one suspend of
   five minutes showed a single wake-up, IRQ 131 = `gpio_keys` (the lid), when
   the lid was opened. No wake-up storm.

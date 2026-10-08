@@ -92,7 +92,8 @@ ectool prints u32s assembled little-endian (byte off+0 lowest), shown MSB first,
 | 0xB0 | 0d cb | 3531 | design capacity, mAh (ACPI low half of B1AF) |
 | 0xB2 | 0e 10 | 3600 | last full charge capacity, mAh |
 | 0xB4 | 3c a0 | 15520 | design voltage, mV |
-| 0xB6 | 00 25 | 37 | unknown, maybe cycle count |
+| 0xB6 | 00 25 | 37 | unknown; **not** the cycle count (see 0xD0) |
+| 0xD0 | | | cycle count (`CYLC`, read by `_BIX`); Windows reports 105 on 8 Oct |
 Little-endian gives garbage (0xA0 -> 25600), so big-endian is confirmed by the data.
 
 ## Keyboard backlight (raw target 0x62)
