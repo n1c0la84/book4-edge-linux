@@ -52,6 +52,13 @@ on the sleep path (it has never been seen charging this machine; it works
 with other machines), or the 60 W charger awake, to rule the charger out.
 If the awake path is confirmed: [handoff-windows-scdt.md](handoff-windows-scdt.md).
 
+Battery trip point (Windows' only extra EC write at a plug-in, `_BTP` to
+0x91-0x92), 8 October, 65 W, awake, 0004, `ectool.py btp-plugin` 15 s
+after the plug-in: **95 -> 87 % in 26 min, -11.4 W**: the laptop ran
+entirely from the battery despite the 20 V / 3.25 A contract. The trip
+point does not help. Both awake failures so far are with the 65 W charger;
+next: the 60 W one awake without EC writes (`charge-test.sh awake-60w`).
+
 **Fix B, what the DSDT says** (7 October; Fedora's `~/src/acpi/dsdt.dsl`,
 the 14" machine's own dump). `EC2.sys` serves vendor operation region
 `MCU1` (space `0xA0`, in `\_SB.ECTC`) with four fields: `BTPT`
