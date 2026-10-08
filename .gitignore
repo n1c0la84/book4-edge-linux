@@ -14,3 +14,5 @@ modules.order
 *.ann
 *.dis
 *.ko.cmd
+__pycache__/
+*.pyc
