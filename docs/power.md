@@ -54,9 +54,14 @@ If the awake path is confirmed: [handoff-windows-scdt.md](handoff-windows-scdt.m
 
 Battery trip point (Windows' only extra EC write at a plug-in, `_BTP` to
 0x91-0x92), 8 October, 65 W, awake, 0004, `ectool.py btp-plugin` 15 s
-after the plug-in: **95 -> 87 % in 26 min, -11.4 W**: the laptop ran
-entirely from the battery despite the 20 V / 3.25 A contract. The trip
-point does not help. Both awake failures so far are with the 65 W charger;
+after the plug-in: charge-test printed 95 -> 87 %, -11.4 W, but **that
+result is invalid**: the "before" 95 % was stale (unchanged since an earlier
+event), the reading jumped to 87 % at the plug-in itself (10:39:37) and
+then did not move for the whole test, nor for 20 minutes on battery
+afterwards (87 %, -79 mA, 17.12 V, constant). So the EC's battery block
+seems to refresh **only at power events** (plug-in, unplug, maybe resume),
+on battery as well as on AC, not just "freeze while a charger is
+connected". The trip point test says nothing either way. Both awake failures so far are with the 65 W charger;
 next: the 60 W one awake without EC writes (`charge-test.sh awake-60w`).
 
 **Fix B, what the DSDT says** (7 October; Fedora's `~/src/acpi/dsdt.dsl`,
