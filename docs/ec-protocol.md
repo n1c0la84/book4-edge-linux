@@ -126,6 +126,20 @@ Capstone. IOCTL dispatch switch at 0x140003de0 (device type 3,
 - How the EC wakes the SoC (power-button-like line, EC event interrupt, ...)
   is not known: on Linux that line has to be a wakeup source for s2idle.
 
+Tested on Linux (8 October, Arch, `tools/ec/wake-timer.py`): `once 90
+--sleep` and `once 2 --sleep` (lid open, battery): no wake within 2 and 4
+minutes (woken by the power key, IRQ 225). Awake, `once 1`: the EC's
+interrupt (TLMM 66, IRQ 195, `samsung-galaxybook-ec`) did not fire within
+3.5 minutes either, so there is no sign that the EC ran the timer. On Linux
+TLMM 66 is not a wakeup source (no `wakeup-source`, not armed); the DSDT
+declares the EC's interrupt `GpioInt (Edge, ActiveLow, SharedAndWake)` on
+GIO0 pin 0x140 (Qualcomm ACPI numbering, not necessarily TLMM 66), plus
+`GpioIo` output pin 0x5F. Open: whether the EC only runs the timer in
+Modern Standby (GPIO 44 "MODS" low, never driven on Linux), wakes through
+another line, or ignores the command as sent. A Windows check would
+settle the first: does `IOCTL_START_WAKEUP_ONCE` wake Windows from Modern
+Standby, and after how long. Parked.
+
 
 `IOCTL_SET_KBDBLT` queues `{0x10, timeout, level}`, `IOCTL_GET_KBDBLT` queues
 `{0x11}`; both go out as plain writes on the raw target. Level 0..3. The EC

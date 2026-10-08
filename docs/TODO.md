@@ -136,6 +136,8 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       `{03, T/60, T%60}` on 0x62, T 0-255 in an unknown unit. Next, on
       Linux: `sudo python3 tools/ec/wake-timer.py once 90 --sleep` to find
       the unit and whether the EC can wake the machine from s2idle.
+      EC wake timer tested 8 Oct: no wake and no EC interrupt (see
+      [ec-protocol.md](ec-protocol.md#wake-timer-raw-target-0x62-decoded-8-october-2026)); parked.
 - [x] **Charger plugged in during sleep now charges** (`patches/0003`,
       5 Oct, Fedora): wakes, negotiates, sleeps again. Same on
       Arch/Omarchy (5 Oct): logind re-suspends 29 s after the wake.
