@@ -165,11 +165,18 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       (`install/speakers-default.sh`), UCM + PipeWire crossover and limiter
       ([audio.md](audio.md#four-speakers-5-october)). On Arch too
       (`install/arch/sync-audio.sh`, checked 5 Oct). DT sent to Anatase as #4.
-- [ ] **Fingerprint reader**: not visible to Linux because its USB
-      controller `usb@a200000` (`usb_2`) is disabled in our DTB. Windows
-      shows an EgisTec `1c7a:05a1` (libfprint `egismoc`) on that controller,
-      plus a GPIO on TLMM 184. Steps:
-      [handoff-linux-fingerprint.md](handoff-linux-fingerprint.md).
+- [ ] **Fingerprint reader** (8 Oct): hardware works with `usb_2` enabled
+      ([dts/patches/0004](../dts/patches), the "alt DT fingerprint.dtb"
+      entry): EgisTec `1c7a:05a1` (ETU905A80-E, firmware 9050.1.2.32)
+      enumerates, fprintd enrolls (USB autosuspend off:
+      `userspace/fingerprint/`). But the sensor does not keep the print:
+      verify finds 0 prints on the chip and fprintd deletes the enrolment.
+      Known egismoc issue: this firmware stores prints only over SDCP, which
+      Fedora's libfprint 1.94.100 lacks; fixed by libfprint MR !547 (SDCP v2,
+      unmerged, head `2d7c5277`), confirmed on a Galaxy Book4 Pro with the
+      same sensor (lanlanndn/galaxybook4-fingerprint). A Fedora spec for it
+      is prepared in `~/src/fp-rpm` (not built). Decide: build MR !547, or
+      wait for it to land in a release.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
       create endpoint" (-12), together with a `qcom-apm` "CMD timeout". No

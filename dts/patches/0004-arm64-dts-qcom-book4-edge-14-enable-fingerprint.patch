@@ -1,0 +1,52 @@
+From fc80a190a17c9ad67d521796818b6102d3512d0b Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Thu, 8 Oct 2026 17:36:37 +0200
+Subject: [PATCH] arm64: dts: qcom: x1e80100-samsung-galaxy-book4-edge-14:
+ enable the fingerprint reader
+
+The 14" (NP940XMA) has an EgisTec match-on-chip fingerprint sensor
+(USB 1c7a:05a1, ETU905A80-E, libfprint egismoc) on the usb_2 controller
+(usb@a200000): Windows shows it on port 0 of \_SB.USB4 (QCOM0D09,
+registers at 0xa200000), whose _CRS also takes TLMM 184, the reset of the
+PTN3222 eUSB2 repeater already described as eusb6_repeater in
+x1e-samsung-galaxy-book4-edge.dtsi.
+
+Enable usb_2 in host mode and its high-speed PHY behind that repeater, with
+the supplies other X1E boards give usb_2_hsphy. The sensor enumerates and
+fprintd drives it (enrolment runs to completion). Keeping prints on the
+sensor needs SDCP in libfprint (MR !547, not merged); that is userspace.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01VZvhNtszdDfmc8XTwbYbqN
+Signed-off-by: Nicola Nicodemo <nicola084@gmail.com>
+---
+ .../x1e80100-samsung-galaxy-book4-edge-14.dts    | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/x1e80100-samsung-galaxy-book4-edge-14.dts b/arch/arm64/boot/dts/qcom/x1e80100-samsung-galaxy-book4-edge-14.dts
+index 47c2b8f7e..b599720ca 100644
+--- a/arch/arm64/boot/dts/qcom/x1e80100-samsung-galaxy-book4-edge-14.dts
++++ b/arch/arm64/boot/dts/qcom/x1e80100-samsung-galaxy-book4-edge-14.dts
+@@ -200,3 +200,19 @@ left_tweeter: speaker@0,1 {
+ 		qcom,port-mapping = <4 5 6 7>;
+ 	};
+ };
++
++/* Fingerprint reader (EgisTec 1c7a:05a1) on usb_2. */
++&usb_2 {
++	dr_mode = "host";
++
++	status = "okay";
++};
++
++&usb_2_hsphy {
++	vdd-supply = <&vreg_l2e_0p8>;
++	vdda12-supply = <&vreg_l3e_1p2>;
++
++	phys = <&eusb6_repeater>;
++
++	status = "okay";
++};
+-- 
+2.55.0
+

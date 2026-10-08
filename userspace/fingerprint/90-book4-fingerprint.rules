@@ -1,0 +1,4 @@
+# Galaxy Book4 Edge 14": EgisTec 1c7a:05a1 fingerprint sensor on usb_2.
+# With USB autosuspend it dropped off the bus during fprintd-enroll
+# ("device was disconnected"); kept awake it enrolls and verifies.
+ACTION=="add|bind", SUBSYSTEM=="usb", ATTR{idVendor}=="1c7a", ATTR{idProduct}=="05a1", TEST=="power/control", ATTR{power/control}="on"
