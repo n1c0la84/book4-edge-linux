@@ -81,6 +81,21 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       | battery, Balanced | ~2510 MHz, every cluster | ~2510 MHz |
       | **AC, "Best performance" mode** | **~4005 MHz on CPUs 4-11**, ~3410 on CPUs 0-3 | ~3417 MHz |
 
+      Linux, 8 Oct (Arch, AC): policies 4 and 8 list
+      `scaling_boost_frequencies` 4012800 (policy 0 none, as in Windows).
+      `boost` = 1 raises `scaling_max_freq` to 4012800, but schedutil never
+      requests it (one core busy: 3417.6 MHz, 0 s at 4012800 in
+      `time_in_state`). Forced with `scaling_min_freq` = 4012800, CPUs 4-5
+      measure **3996 MHz**, 48 C: the hardware boosts. Cause: schedutil
+      scales to the reference frequency recorded once at policy creation,
+      when boost was off (3417.6 MHz); no module or cpufreq parameter
+      changes that, and it is not updated later. Needs a kernel change
+      (scmi-cpufreq creating its policies with boost enabled, so the
+      reference is 4012.8 MHz) in our branch, plus boost off on battery
+      (as Windows) via a rule on AC changes. Alternative without a kernel
+      change: `ondemand` on policies 4/8 (loses schedutil's energy-aware
+      scheduling).
+
       So the 4 GHz boost is real, on the second and third clusters only
       (CPU 0-3 tops out at the 3417.6 MHz step), single-core, on AC.
       (Battery figures corrected by 100/102 like the tool; the AC
