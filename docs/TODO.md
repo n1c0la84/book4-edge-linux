@@ -57,13 +57,25 @@ the end.
 - [ ] **`install/install-fedora.sh` end to end** on a fresh install (each step
       was tested on its own, the script as a whole never).
 - [ ] **Touchscreen** on GNOME and on the Fedora kernel (works under KDE and
-      Hyprland on the Anatase kernel); what its two "UNKNOWN" HID interfaces
-      are (pen? gestures?).
+      Hyprland on the Anatase kernel). The two "UNKNOWN" HID interfaces are
+      **Goodix vendor channels, not pen or gestures** (Windows, 8 Oct): the
+      Goodix `27c6:0123` has three collections, COL01 touch screen (0x0D/0x04:
+      tip, contact ID, X 0-28800, Y 0-18000, contact count, max 10 contacts,
+      a 256-byte certification blob), COL02 vendor page 0xFFF0 and COL03
+      0xFFF1 (64-byte in/out reports, firmware/debug). No pen collection.
+      Windows binds only the generic `input.inf` to COL02/03. Nothing to do.
 
 ## Open problems
 
 - [ ] **CPU boost** (`/sys/devices/system/cpu/cpufreq/boost` = 0): try 4 GHz
-      single/dual-core boost; watch temperature and battery.
+      single/dual-core boost; watch temperature and battery. Windows,
+      8 Oct, **on battery** (Balanced): every core ~2560 MHz, one busy or
+      all 12, so no boost and a lower cap on battery
+      ([tools/power/cpu-clock.py](../tools/power/cpu-clock.py): a chain of
+      dependent adds, clock without counters; Windows' own counters read
+      a flat 1851 MHz and are not usable). Still to do: the same on AC in
+      Windows, and `cpu-clock.py` on Linux as a cross-check (should read
+      ~3418 with `scmi-cpufreq`).
 
 - [ ] **Charging stalls after plugging in while awake** (6-7 Oct): first PD
       request times out, 5 V, then 20 V; the battery then gets ~1 W. Plugged
@@ -158,7 +170,17 @@ Waiting for a reply (Anatase, `anatase-org/kernel-anatase`):
 Not yet reported:
 
 - [ ] ath12k / linux-firmware: WCN7850 firmware c7-00108 regression on this card.
-- [ ] systemd/libinput: keyboard tagged as tablet pad.
+- [ ] systemd/libinput: keyboard tagged as tablet pad. Likely cause, from
+      the HID caps in Windows (8 Oct): the ENE `0cf2:9050` has five
+      collections, keyboard, consumer, vendor 0xFF00 (256-usage array),
+      wireless radio controls, and a **System Control collection whose
+      input carries Button page usages 1-2**. Linux merges them into one
+      "Keyboard" input node; those two buttons should become BTN_0/BTN_1,
+      which `input_id` reads as tablet-pad buttons. To confirm on Linux:
+      the node's KEY bitmap (`/proc/bus/input/devices`, bits 0x100/0x101)
+      and `/sys/bus/hid/devices/*0CF2:9050*/report_descriptor`. A hwdb
+      entry or a HID quirk that drops those usages would fix it for
+      everyone.
 - [ ] Saddytech driver: design/last-full swapped, rate sign. Windows
       (8 Oct) confirms our mapping: design 54 801 mWh = 0xB0 (3531 mAh) x
       15.52 V, full charge 55 872 mWh = 0xB2 (3600 mAh) x 15.52 V; `_BST`
