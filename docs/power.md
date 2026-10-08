@@ -105,13 +105,34 @@ either. Raw captures: `C:\scdt\` (`dbgview1.log`, `dbgview2.log`,
 | awake, lid open (97 %) | `GDRO>0x2`, `GPRO<1`, `Unknown event`, `CSFI=0x7A`/`DSBB=0x7A` (with hex buffers starting `43 58 7a 00`), `_Q66`, `_STA B1EX=1`, `_BTP<S…`/`_BTP<T…`, `NTCA=0x42`, `NTCA=0x84` | never |
 | lid closed, in Modern Standby (`MS:DisplayOff`, `MS:MS+`, `MS:LPS+` logged) | same set: `LPS-`/`MS-`, `GDRO`/`GPRO`, `_Q66`, `_BTP`, `CSFI`/`DSBB`, `NTCA=0x42`, back to `MS:MS+` | never |
 
-Side observations for the Linux side to look up in the DSDT: after each
-`_Q66` Windows' battery driver re-reads `_BST`/`_STA` and sets a battery
-trip point through `_BTP` (`_BTP<S0` then `_BTP<S3437`/`3474`/`3510`,
-close to the remaining capacity in mAh); the `CSFI`/`DSBB`/`NTCA` lines look like
-the USB-C/PD mailbox path (`EMOP`) that EmuEC/UcmEm drive. Linux on device
-tree runs none of these ACPI methods, but which of them (if any) matters
-for the charge current is not known.
+What those messages are (DSDT decompiled in Windows with Intel's
+`iasl-win-20260408`, line numbers in that `dsdt.dsl`):
+
+- **`_BTP` is the only EC write at plug-in.** After every `_Q66`
+  (`Notify (BATC, 0x80)`) Windows' battery driver re-reads `_BST` and calls
+  `_BTP` (~1368): first with 0, then with a value just below/around the
+  remaining capacity (`RCAP` 0xDA4 = 3492 mAh, trip points 3437/3473/3474/3510).
+  `_BTP` byte-swaps the 16-bit value and writes it to **`\_SB.ECTC.BTPC`,
+  EC RAM offset 0x91-0x92** (region `ECR`, space 0xA1, the same map as
+  `B1ST` 0x84, `LDOS` 0x89; high byte at 0x91). Standard Windows battery
+  behaviour (a capacity alarm for the next status change); Linux on device
+  tree never writes it. Probably not a charge-current control, but it is
+  the one EC write Windows makes there that Linux does not, and cheap to try
+  after an awake plug-in (`tools/ec/`, `charge-test.sh`).
+- **`CSFI` / `DSBB`**: `CSFI` (~59672) passes a buffer to `\_SB.SAFI.DSBB`,
+  a mailbox to SafiDrv (`Notify (SAFI, 0x87)`, waits for the reply). The
+  buffers are Samsung settings calls in the `samsung-galaxybook` format
+  (`43 58` = 0x5843, `7a`, `82`, ...): `82 e9 91` (reads as "get battery
+  charge-control threshold" in that driver's terms, reply 0 = no limit),
+  `82 a6 39`, `82 a6 42`, `82 88 4c`. Samsung's software reading settings,
+  nothing charge-related is set.
+- **`NTCA`** (~58335): logs and `Notify (\_SB.SCAI, Arg0)`; a Samsung
+  notification, not an EC access.
+- **`GDRO` / `GPRO`** (~59293): only read the data/power role from `EMOP`
+  (`DROL`/`PROL`, served by EmuEC); `GDRO>0x2` at plug-in, `0x0` on unplug.
+- **`Unknown event`**: `EVTQ` (~57975) got an EC event number other than
+  0x51-0x54, 0x60, 0x61, 0x66, 0x7c at the plug-in; the charger events
+  `_Q51`/`_Q52` (which read `PSRC`) did **not** run.
 
 Fix ideas: (A) after attach, give the firmware a grace period (~3 s) to
 negotiate on its own and request only if it is still below the best PDO,
