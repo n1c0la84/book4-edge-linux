@@ -276,7 +276,10 @@ Not yet reported:
       expired sudo prompt; the script now keeps sudo alive and resumes on a
       stick that already has its partitions). **Not yet boot-tested**: boot
       it from the firmware menu, check Wi-Fi (`nmtui`), the internal disk
-      (UFS) and a backup onto its `BOOK4-BACKUP` partition. On this stick,
+      (UFS) and a backup onto its `BOOK4-BACKUP` partition. **8 Oct: first
+      boot stopped at a bare `grub>` prompt** (built-in config failed:
+      search for /book4-rescue.id or configfile /book4/grub.cfg). Check the
+      stick with `install/arch/rescue-usb-check.sh`. On this stick,
       once: `sudo systemctl disable --now systemd-networkd systemd-networkd.socket`
       (the Arch Linux ARM base enables it next to NetworkManager; fixed in the
       script). No restore script yet: each backup writes `RESTORE.md` with the
