@@ -174,9 +174,11 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       Known egismoc issue: this firmware stores prints only over SDCP, which
       Fedora's libfprint 1.94.100 lacks; fixed by libfprint MR !547 (SDCP v2,
       unmerged, head `2d7c5277`), confirmed on a Galaxy Book4 Pro with the
-      same sensor (lanlanndn/galaxybook4-fingerprint). A Fedora spec for it
-      is prepared in `~/src/fp-rpm` (not built). Decide: build MR !547, or
-      wait for it to land in a release.
+      same sensor (lanlanndn/galaxybook4-fingerprint). Built from that
+      (`install/fingerprint-libfprint.sh`, version-locked, 8 Oct): enroll
+      and `verify-match` work and the print stays. Left: default DTB + PAM
+      (`install/fingerprint.sh`), Arch (PKGBUILD from lanlanndn), drop the
+      local build once !547 is in a Fedora release, DT patch to Anatase.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
       create endpoint" (-12), together with a `qcom-apm` "CMD timeout". No
