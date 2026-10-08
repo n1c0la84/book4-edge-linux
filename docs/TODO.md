@@ -21,7 +21,10 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       automatic switching (5 Oct, Arch), as do digital USB-C earphones and
       Bluetooth earbuds (A2DP AAC); see [audio.md](audio.md).
 - [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
-      and HDMI (`rtd2171` bridge, `simple_bridge`). Also the last open check
+      and HDMI (`rtd2171` bridge, `simple_bridge`). **HDMI port works**
+      (8 Oct, Arch): AOC 27" at 2560x1440 @ 60 Hz, hot-plug detected, picture
+      fine (Hyprland gave it scale 2: set a per-monitor scale). Across
+      suspend/resume not yet checked. Also the last open check
       for the sleep fix (`patches/0002`): a display still works after resume.
       **6 Oct, Arch: USB-C to HDMI hub (VIA VL817, Billboard) does not work.**
       `samsung-emuec 1-0033: DisplayPort Alt Mode configured with pin D`, the
