@@ -132,7 +132,10 @@ layout (Omarchy adds compose on Caps Lock), Tokyo Night, no failed units,
 Service. Omarchy's `login/sddm.sh` removes the `pam_gnome_keyring` auth lines
 from `/etc/pam.d/sddm`, so the `login` keyring (Chromium Safe Storage, `gh`
 tokens) is no longer unlocked at login. Either give `login` an empty password
-(Seahorse) or put the PAM lines back. Same symptom on Fedora with KWallet.
+(Seahorse) or put the PAM lines back. Same symptom on Fedora with KWallet. Chosen
+(8 Oct): the PAM lines back, since this disk is not encrypted:
+[`install/arch/keyring-unlock.sh`](../install/arch/keyring-unlock.sh);
+rerun it after `omarchy-apply-system`.
 
 ![fastfetch in the Omarchy session: Omarchy 4.0.4 on Arch Linux ARM, kernel 7.2.7-book4, Hyprland 0.56.2, 8 GiB zram swap](images/fastfetch-omarchy.png)
 
