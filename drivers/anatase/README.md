@@ -33,6 +33,13 @@ time, so the originals stay identifiable and the patches can be sent upstream:
   empty ports and resyncs on resume. Plug-in and an hour charging in sleep
   passed, but unplugging still reset the machine; the original driver also
   reproduces that reset.
+`patches-galaxybook-ec/` (for `samsung-galaxybook-ec`, installed with
+`install/update-galaxybook-ec-module.sh`):
+
+- `0001-samsung-galaxybook-ec-refresh-battery-on-read.patch`: battery
+  values were only read at plug/unplug events and stayed stale in between;
+  re-read when older than one second.
+
 - `0003-samsung-galaxybook-ec-display-off-during-sleep.patch`: experimental
   EC display-state notification; did not prevent the unplug reset.
 

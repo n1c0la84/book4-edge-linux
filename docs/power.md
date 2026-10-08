@@ -61,7 +61,19 @@ then did not move for the whole test, nor for 20 minutes on battery
 afterwards (87 %, -79 mA, 17.12 V, constant). So the EC's battery block
 seems to refresh **only at power events** (plug-in, unplug, maybe resume),
 on battery as well as on AC, not just "freeze while a charger is
-connected". The trip point test says nothing either way. Both awake failures so far are with the 65 W charger;
+connected". The trip point test says nothing either way.
+
+Cause found the same day: **the driver caches, not the EC.** `ectool.py
+battery` read live values (rate 562 -> 460 mA, voltage 16623 -> 16616 mV
+between two runs) while sysfs stayed at -122 mA / 16.75 V.
+`samsung-galaxybook-ec` reads the EC battery block only at probe and from
+its interrupt, which the EC raises for plug/unplug only. Fix:
+[patches-galaxybook-ec/0001](../drivers/anatase/patches-galaxybook-ec/0001-samsung-galaxybook-ec-refresh-battery-on-read.patch)
+(re-read when older than 1 s, like the ACPI battery driver), installed with
+`install/update-galaxybook-ec-module.sh`. **All earlier charge-test results
+are suspect**: their "before" value was whatever the last plug/unplug
+event left, and "during" readings never moved. The awake-plug-in "stall"
+(1-2 W) must be re-measured with the fix before anything else. Both awake failures so far are with the 65 W charger;
 next: the 60 W one awake without EC writes (`charge-test.sh awake-60w`).
 
 **Fix B, what the DSDT says** (7 October; Fedora's `~/src/acpi/dsdt.dsl`,
