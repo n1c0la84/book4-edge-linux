@@ -294,9 +294,9 @@ Not yet reported:
       (the Arch Linux ARM base enables it next to NetworkManager; fixed in the
       script). No restore script yet: each backup writes `RESTORE.md` with the
       manual steps.
-      **sshd is enabled on the stick** (Arch Linux ARM base) with password
-      login and no firewall: decide off by default or home-subnet only as on
-      the installed Arch (`install/arch/ssh-lan.sh`), and fix the script.
+      sshd (enabled by the Arch Linux ARM base, password login, no
+      firewall): the script now disables it; on the stick built 6 Oct, once:
+      `sudo systemctl disable --now sshd` (start it by hand when needed).
 - [ ] **`install/arch/fedora-shell.sh`**: works (6 Oct): read-only command,
       running Fedora's tools in the container, redirected output (`--pipe`);
       used to build and publish the kernel branch. Not yet run:

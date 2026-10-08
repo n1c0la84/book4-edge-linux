@@ -168,6 +168,9 @@ locale-gen >/dev/null 2>&1 || true
 depmod $K
 systemctl enable NetworkManager >/dev/null
 systemctl disable systemd-networkd systemd-networkd.socket >/dev/null 2>&1 || true
+# Off by default: password login, no firewall. Start by hand when needed
+# (sudo systemctl start sshd), on a trusted network.
+systemctl disable sshd >/dev/null 2>&1 || true
 userdel -r alarm 2>/dev/null || true
 id $U >/dev/null 2>&1 || useradd -m -G wheel -s /bin/bash $U
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel; chmod 440 /etc/sudoers.d/10-wheel
