@@ -96,7 +96,36 @@ ectool prints u32s assembled little-endian (byte off+0 lowest), shown MSB first,
 | 0xD0 | | | cycle count (`CYLC`, read by `_BIX`); Windows reports 105 on 8 Oct |
 Little-endian gives garbage (0xA0 -> 25600), so big-endian is confirmed by the data.
 
-## Keyboard backlight (raw target 0x62)
+## Wake timer (raw target 0x62), decoded 8 October 2026
+
+From `EC2.sys` (same build, sha256 above), disassembled in Windows with
+Capstone. IOCTL dispatch switch at 0x140003de0 (device type 3,
+`METHOD_BUFFERED`, `FILE_ANY_ACCESS`):
+
+| IOCTL | code | handler | bytes written |
+|---|---|---|---|
+| `IOCTL_START_WAKEUP` | 0x0003000C | 0x140003f88 | `02 T/60 T%60` |
+| `IOCTL_START_WAKEUP_ONCE` | 0x00030010 | 0x140003f98 | `03 T/60 T%60` |
+| `IOCTL_STOP_WAKEUP` | 0x00030014 | 0x140003f64 | `04 00` |
+
+- START and ONCE share the code: a local starts at 0 (0x140003d70), START
+  sets it to 2 and falls through into ONCE; `mode = (local == 0) ? 3 : local`.
+- `WdfRequestRetrieveInputBuffer(min 1)`, then `T = (u8) *(u32 *)in`: only
+  the **low byte** is used, so T is 0-255. Logged as `TimeOut %d (%d)`
+  (byte, full value).
+- Split with the constant 0x88888889 (`umull`, `>> 37` = divide by 60):
+  byte 1 = T / 60, byte 2 = T % 60. So the EC takes a (larger unit, smaller
+  unit) pair: minutes and seconds if T is in seconds (max 4:15), hours and
+  minutes if T is in minutes (max 4 h 15). **The unit is not in the
+  driver**; find it with [tools/ec/wake-timer.py](../tools/ec/wake-timer.py).
+- Sent like every raw-target command: START/ONCE first through
+  `I2CWriteWithWorkItemSynced` (0x140005748: lock, then the raw write
+  0x140003818 on `ctx+0xB0`), then also queued on the 20-slot ring
+  (0x140003470, `WriteWorkItem wData`), so the EC gets it twice. STOP is
+  only queued.
+- How the EC wakes the SoC (power-button-like line, EC event interrupt, ...)
+  is not known: on Linux that line has to be a wakeup source for s2idle.
+
 
 `IOCTL_SET_KBDBLT` queues `{0x10, timeout, level}`, `IOCTL_GET_KBDBLT` queues
 `{0x11}`; both go out as plain writes on the raw target. Level 0..3. The EC

@@ -322,7 +322,10 @@ platform bug.
   0x06, value as two bytes).
 - `IOCTL_START_WAKEUP` / `_ONCE` / `IOCTL_STOP_WAKEUP` (from a Windows
   service) send an EC command with a timeout (`"TimeOut %d"`): an **EC wake
-  timer**. Not related to the unplug crash, but it is how this machine could
+  timer**. Decoded 8 October: `{02|03, T/60, T%60}` / `{04, 00}` on the raw
+  target 0x62, T one byte, unit unknown
+  ([ec-protocol.md](ec-protocol.md#wake-timer-raw-target-0x62-decoded-8-october-2026),
+  test: [tools/ec/wake-timer.py](../tools/ec/wake-timer.py)). Not related to the unplug crash, but it is how this machine could
   wake itself up from sleep, which the RTC cannot (useful for
   suspend-then-hibernate).
 
