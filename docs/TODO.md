@@ -44,6 +44,15 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       Billboard. Orientation was "reverse". AUX runs over SBU through the
       FSUSB42 mux (`usb-1-ss0-sbu-mux`, enable TLMM 168, select 167): next,
       flip the plug (orientation polarity) and read the mux GPIOs.
+      Flip test (8 Oct, 11:16 and 11:17, plug rotated in between): sysfs
+      orientation reads **"reverse" both ways** (4 of 4 plug-ins), AUX
+      fails both ways. So samsung-emuec's orientation decoding (CC_STATUS
+      0x11 bits 7:4) is wrong or that field is not orientation; the SBU mux
+      then always selects the same way (ss0: enable 168 low, select 167
+      high). AUX failing in *both* orientations suggests a second fault
+      too. Next (parked, HDMI port covers external displays): raw bytes
+      for both orientations with `sudo python3 tools/display/pdic-cc.py 1
+      watch`, fix the decoding, retest.
       **8 Oct, Windows: the same hub works on the same port** (picture,
       card reader). The hub's Billboard reports DP alt mode (SVID 0xFF01)
       entered with configuration status 0x3 ("configured successfully"), so
