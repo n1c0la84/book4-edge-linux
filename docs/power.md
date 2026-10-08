@@ -90,7 +90,14 @@ mA, 5.2 W. Both valid runs were at **78-82 %**, where the charger may
 already be tapering, and the earlier "sleep plug-in charges fine" came from
 stale readings too. Decisive next test: awake plug-in **below ~50 %**
 (`charge-test.sh awake-low 20`); ~20 W or more = nothing broken, ~5 W =
-real problem. Both awake failures so far are with the 65 W charger;
+real problem.
+
+Real sleep charge (12:34-13:50, lid closed, attached during sleep, live
+readings since the fix): 82 % -> about 92 % in 76 min (back-calculated from
+88 % after ~19 min awake at -540 mA), **~5 W, the same as awake** at this
+level. So above ~80 % sleep and awake charge alike; the "awake stall" was
+most likely stale readings plus the normal top-end taper. The below-50 %
+awake test remains the confirmation. Both awake failures so far are with the 65 W charger;
 next: the 60 W one awake without EC writes (`charge-test.sh awake-60w`).
 
 **Fix B, what the DSDT says** (7 October; Fedora's `~/src/acpi/dsdt.dsl`,
