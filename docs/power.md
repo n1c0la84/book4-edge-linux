@@ -81,7 +81,16 @@ First valid awake measurement (8 October 11:43, 65 W, Arch, 0004,
 after 3 s, then battery current 14-66 mA for ~5 min and a steady
 **~300 mA (~5 W)** after that; 78 -> 80 % in 24 min, **3 W average**. The
 awake stall is real. Next: the same measurement for a plug-in during sleep
-(lid closed, plug in, open after a minute) to compare the current. Both awake failures so far are with the 65 W charger;
+(lid closed, plug in, open after a minute) to compare the current.
+
+Sleep attempt (12:10, `asleep-fixed`): the plug-in woke the machine
+(patches/0003) and the contract (20 V / 2.99 A) was negotiated after
+resume, so it was another awake plug-in: 79 -> 82 % in 21 min, ~200-300
+mA, 5.2 W. Both valid runs were at **78-82 %**, where the charger may
+already be tapering, and the earlier "sleep plug-in charges fine" came from
+stale readings too. Decisive next test: awake plug-in **below ~50 %**
+(`charge-test.sh awake-low 20`); ~20 W or more = nothing broken, ~5 W =
+real problem. Both awake failures so far are with the 65 W charger;
 next: the 60 W one awake without EC writes (`charge-test.sh awake-60w`).
 
 **Fix B, what the DSDT says** (7 October; Fedora's `~/src/acpi/dsdt.dsl`,
