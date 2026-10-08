@@ -181,7 +181,8 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       Never run `omarchy-setup-security-fingerprint` (replaces
       libfprint-sdcp with libfprint-git); the lock-screen PAM file is
       written by `sync-fingerprint.sh` step 8 or `sudo omarchy-apply-lock`.
-      Left: lock screen by fingerprint on Arch to test; drop the local
+      **Lock screen by fingerprint works on Arch** (8 Oct, after
+      `sudo omarchy-apply-lock`). Left: drop the local
       builds once !547 is in Fedora's and Arch's libfprint.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
