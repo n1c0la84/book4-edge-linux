@@ -44,15 +44,23 @@ echo "== 3. build libfprint-sdcp as $AUSER (a few minutes)"
 B=/home/$AUSER/.cache/book4-libfprint
 sudo install -d -o "${own%:*}" -g "${own#*:}" "$R$B"
 sudo install -m 644 -o "${own%:*}" -g "${own#*:}" "$REPO"/userspace/fingerprint/arch/PKGBUILD "$R$B/PKGBUILD"
-ns runuser -u "$AUSER" -- bash -c "cd $B && makepkg -f --noconfirm" > /tmp/arch-libfprint-build.log 2>&1 ||
-    { tail -30 /tmp/arch-libfprint-build.log; echo "build failed: /tmp/arch-libfprint-build.log" >&2; exit 1; }
-PKG=$(sudo sh -c "ls -t $R$B/libfprint-sdcp-*.pkg.tar.zst" | grep -v debug | head -1)
-echo "   ${PKG#$R}"
+# makepkg names the file itself (PKGEXT, PKGDEST): ask it, build only if missing
+LIST=$(ns runuser -u "$AUSER" -- bash -c "cd $B && makepkg --packagelist" | tr -d '\r')
+PKG=$(grep -E '/libfprint-sdcp-[^/]*\.pkg\.tar' <<<"$LIST" | grep -v -- -debug- | head -1)
+[ -n "$PKG" ] || { echo "makepkg --packagelist gave no package path:" >&2; echo "$LIST" >&2; exit 1; }
+if sudo test -e "$R$PKG"; then
+    echo "   already built: $PKG"
+else
+    ns runuser -u "$AUSER" -- bash -c "cd $B && makepkg -f --noconfirm" > /tmp/arch-libfprint-build.log 2>&1 ||
+        { tail -30 /tmp/arch-libfprint-build.log; echo "build failed: /tmp/arch-libfprint-build.log" >&2; exit 1; }
+    sudo test -e "$R$PKG" || { echo "built, but $PKG is missing" >&2; exit 1; }
+    echo "   $PKG"
+fi
 
 echo "== 4. install it (replacing Arch's libfprint) and fprintd"
 PKGS=$(ns pacman -Qq)   # captured: grep -q in a pipe trips pipefail
 grep -qx libfprint <<<"$PKGS" && ns pacman -Rdd --noconfirm libfprint
-ns pacman -U --noconfirm "${PKG#$R}"
+ns pacman -U --noconfirm "$PKG"
 ns pacman -S --needed --noconfirm fprintd
 ns pacman -Q libfprint-sdcp fprintd
 
