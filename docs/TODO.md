@@ -165,20 +165,20 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       (`install/speakers-default.sh`), UCM + PipeWire crossover and limiter
       ([audio.md](audio.md#four-speakers-5-october)). On Arch too
       (`install/arch/sync-audio.sh`, checked 5 Oct). DT sent to Anatase as #4.
-- [ ] **Fingerprint reader** (8 Oct): hardware works with `usb_2` enabled
-      ([dts/patches/0004](../dts/patches), the "alt DT fingerprint.dtb"
-      entry): EgisTec `1c7a:05a1` (ETU905A80-E, firmware 9050.1.2.32)
-      enumerates, fprintd enrolls (USB autosuspend off:
-      `userspace/fingerprint/`). But the sensor does not keep the print:
-      verify finds 0 prints on the chip and fprintd deletes the enrolment.
-      Known egismoc issue: this firmware stores prints only over SDCP, which
-      Fedora's libfprint 1.94.100 lacks; fixed by libfprint MR !547 (SDCP v2,
-      unmerged, head `2d7c5277`), confirmed on a Galaxy Book4 Pro with the
-      same sensor (lanlanndn/galaxybook4-fingerprint). Built from that
-      (`install/fingerprint-libfprint.sh`, version-locked, 8 Oct): enroll
-      and `verify-match` work and the print stays. Left: default DTB + PAM
-      (`install/fingerprint.sh`), Arch (PKGBUILD from lanlanndn), drop the
-      local build once !547 is in a Fedora release, DT patch to Anatase.
+- [ ] **Fingerprint reader** (8 Oct): works on Fedora. EgisTec `1c7a:05a1`
+      (ETU905A80-E, firmware 9050.1.2.32) in the power button, on `usb_2`
+      ([dts/patches/0004](../dts/patches); default DTB via
+      `install/fingerprint.sh`, also on the kernel branch). Two userspace
+      needs: USB autosuspend off (it dropped off the bus while enrolling;
+      `userspace/fingerprint/`), and SDCP in libfprint, without which the
+      sensor drops every print (verify finds 0 on the chip, fprintd deletes
+      the enrolment): libfprint MR !547 (unmerged, head `2d7c5277`) built as
+      Fedora's RPM by `install/fingerprint-libfprint.sh`, version-locked.
+      sudo authenticates by finger; the KDE lock screen claims the sensor and
+      waits (seen in fprintd's log) but an unlock by finger is not confirmed:
+      rest the finger, a click is a power-key press. Left: Arch (PKGBUILD,
+      lanlanndn/galaxybook4-fingerprint), drop the local build once !547 is
+      in a Fedora release.
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
       create endpoint" (-12), together with a `qcom-apm` "CMD timeout". No
