@@ -287,7 +287,9 @@ Not yet reported:
       stick with `install/arch/rescue-usb-check.sh`. Cause: the built-in
       config was missing from BOOTAA64.EFI (written to the stick's /tmp,
       which systemd-nspawn hides behind a tmpfs). Fixed in the script; on an
-      existing stick: `GRUB_ONLY=1 bash install/arch/rescue-usb.sh /dev/sdX`. On this stick,
+      existing stick: `GRUB_ONLY=1 bash install/arch/rescue-usb.sh /dev/sdX`. **After
+      the GRUB rebuild the stick boots, with Wi-Fi** (8 Oct). Left: a
+      backup onto `BOOK4-BACKUP` and the sshd decision below. On this stick,
       once: `sudo systemctl disable --now systemd-networkd systemd-networkd.socket`
       (the Arch Linux ARM base enables it next to NetworkManager; fixed in the
       script). No restore script yet: each backup writes `RESTORE.md` with the
