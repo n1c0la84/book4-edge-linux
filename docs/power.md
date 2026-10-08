@@ -73,7 +73,8 @@ its interrupt, which the EC raises for plug/unplug only. Fix:
 `install/update-galaxybook-ec-module.sh`. **All earlier charge-test results
 are suspect**: their "before" value was whatever the last plug/unplug
 event left, and "during" readings never moved. The awake-plug-in "stall"
-(1-2 W) must be re-measured with the fix before anything else. Both awake failures so far are with the 65 W charger;
+(1-2 W) must be re-measured with the fix before anything else. Fix installed
+on Fedora and Arch on 8 October: values now change between events. Both awake failures so far are with the 65 W charger;
 next: the 60 W one awake without EC writes (`charge-test.sh awake-60w`).
 
 **Fix B, what the DSDT says** (7 October; Fedora's `~/src/acpi/dsdt.dsl`,
