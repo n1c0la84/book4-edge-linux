@@ -1,0 +1,306 @@
+<title>Book4 Edge Wiring</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a schematic sheet. View tabs across the top, the drawing in the
+   middle, the selected part's datasheet on the right (below on phones). */
+:root {
+  --sheet: #f2f4f6; --panel: #ffffff; --ink: #18212b; --muted: #5a6776;
+  --rule: #d4dbe2; --accent: #0b6a87; --accent-ink: #ffffff;
+  --bound: #dff3e4; --bound-line: #2f8a4b; --idle: #fbf0d0; --idle-line: #b0841d;
+  --off: #eceff2; --off-line: #9aa5b1;
+  --k-graph: #2a62c9; --k-phy: #7a45c8; --k-gpio: #c27512; --k-irq: #c8423a;
+  --k-supply: #2f8a4b; --k-bus: #6b7785; --k-usb: #0e8aa0; --k-part: #18212b; --k-other: #a3adb8;
+  --f-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --sheet: #10161d; --panel: #18212b; --ink: #e2e8ee; --muted: #93a1b0;
+  --rule: #2c3846; --accent: #4fb2d0; --accent-ink: #0b1218;
+  --bound: #17331f; --bound-line: #5cc27c; --idle: #3a3016; --idle-line: #d9a93a;
+  --off: #1d2530; --off-line: #5f6b78;
+  --k-graph: #6f9bf0; --k-phy: #b08ae8; --k-gpio: #e3a046; --k-irq: #ee7a72;
+  --k-supply: #5cc27c; --k-bus: #95a2b0; --k-usb: #43c0d4; --k-part: #e2e8ee; --k-other: #6c7885;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --sheet: #10161d; --panel: #18212b; --ink: #e2e8ee; --muted: #93a1b0;
+  --rule: #2c3846; --accent: #4fb2d0; --accent-ink: #0b1218;
+  --bound: #17331f; --bound-line: #5cc27c; --idle: #3a3016; --idle-line: #d9a93a;
+  --off: #1d2530; --off-line: #5f6b78;
+  --k-graph: #6f9bf0; --k-phy: #b08ae8; --k-gpio: #e3a046; --k-irq: #ee7a72;
+  --k-supply: #5cc27c; --k-bus: #95a2b0; --k-usb: #43c0d4; --k-part: #e2e8ee; --k-other: #6c7885;
+  color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--sheet); color: var(--ink); font: 14px/1.5 var(--f-sans); padding: 16px 16px 24px; }
+.wrap { max-width: 1400px; margin: 0 auto; display: grid; gap: 14px }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px }
+h1 { font-size: 20px; font-weight: 600; margin: 0; text-wrap: balance }
+.meta { color: var(--muted); font: 12px var(--f-mono) }
+.tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px }
+.tab { flex: none; border: 1px solid var(--rule); background: var(--panel); color: var(--ink);
+  font: 500 13px var(--f-sans); padding: 6px 12px; border-radius: 6px; cursor: pointer }
+.tab[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink) }
+.tab:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.note { color: var(--muted); max-width: 90ch; margin: 0; min-height: 1.5em }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px }
+.chips { display: flex; flex-wrap: wrap; gap: 4px }
+.chip { border: 1px solid var(--rule); background: var(--panel); color: var(--muted); border-radius: 999px;
+  padding: 2px 9px; font: 12px var(--f-mono); cursor: pointer; display: inline-flex; gap: 6px; align-items: center }
+.chip i { width: 10px; height: 3px; border-radius: 2px; display: inline-block }
+.chip[aria-pressed="true"] { color: var(--ink); border-color: var(--ink) }
+.ctl { display: inline-flex; gap: 6px; align-items: center; color: var(--muted) }
+.ctl button { border: 1px solid var(--rule); background: var(--panel); color: var(--ink); width: 26px; height: 26px; border-radius: 5px; cursor: pointer }
+.ctl b { font: 500 13px var(--f-mono); color: var(--ink); min-width: 1ch; text-align: center }
+.search { position: relative; flex: 1 1 220px; max-width: 360px }
+.search input { width: 100%; padding: 6px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--ink); font: 13px var(--f-sans) }
+.results { position: absolute; z-index: 5; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 6px; max-height: 280px; overflow-y: auto; box-shadow: 0 6px 18px rgb(0 0 0 / .15) }
+.results button { display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--ink); padding: 6px 10px; cursor: pointer; font: 13px var(--f-sans) }
+.results button:hover, .results button:focus { background: var(--sheet) }
+.results small { display: block; color: var(--muted); font: 11px var(--f-mono); overflow-wrap: anywhere }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr) } }
+#graph { height: min(72vh, 760px); min-height: 420px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; position: relative }
+.warn { position: absolute; left: 10px; bottom: 8px; font: 12px var(--f-mono); color: var(--k-irq); z-index: 2 }
+aside { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px; min-width: 0 }
+aside h2 { font-size: 16px; margin: 0 0 2px; overflow-wrap: anywhere }
+.path { font: 12px var(--f-mono); color: var(--muted); overflow-wrap: anywhere; margin: 0 0 10px }
+dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 10px; margin: 0 0 12px; font-size: 13px }
+dt { color: var(--muted) } dd { margin: 0; overflow-wrap: anywhere; font-family: var(--f-mono); font-size: 12px }
+.pill { display: inline-block; padding: 0 8px; border-radius: 999px; font: 500 12px var(--f-sans); border: 1px solid }
+.pill.bound { background: var(--bound); border-color: var(--bound-line) } .pill.idle { background: var(--idle); border-color: var(--idle-line) }
+.pill.off { background: var(--off); border-color: var(--off-line) }
+aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 12px 0 4px }
+.links { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px }
+.links button { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font: 13px var(--f-sans); text-align: left; overflow-wrap: anywhere }
+.links li { font-size: 13px; display: flex; gap: 6px; align-items: baseline }
+.links .k { font: 11px var(--f-mono); color: var(--muted); flex: none; min-width: 6.5ch }
+.links .x { font: 11px var(--f-mono); color: var(--muted) }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted) }
+.legend span { display: inline-flex; gap: 6px; align-items: center }
+.sw { width: 14px; height: 10px; border-radius: 3px; border: 1px solid; display: inline-block }
+.empty { color: var(--muted) }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Book4 Edge Wiring</h1>
+    <span class="meta" id="meta"></span>
+  </header>
+  <div class="tabs" id="tabs" role="toolbar" aria-label="Views"></div>
+  <p class="note" id="note"></p>
+  <div class="controls">
+    <div class="search">
+      <input id="q" type="search" placeholder="Find a node: label, name, compatible, driver" autocomplete="off" aria-label="Find a node">
+      <div class="results" id="results" hidden></div>
+    </div>
+    <span class="ctl">Depth <button id="dminus" aria-label="Less depth">−</button><b id="depth">2</b><button id="dplus" aria-label="More depth">+</button></span>
+    <label class="ctl"><input type="checkbox" id="disabled"> show disabled nodes</label>
+  </div>
+  <div class="chips" id="kinds" aria-label="Link kinds"></div>
+  <div class="main">
+    <div id="graph"><span class="warn" id="warn" hidden></span></div>
+    <aside id="detail"><p class="empty">Select a part in the drawing to see its datasheet: what it is, which driver runs it, and every link to other parts.</p></aside>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--bound);border-color:var(--bound-line)"></i>driver attached</span>
+    <span><i class="sw" style="background:var(--idle);border-color:var(--idle-line)"></i>enabled, no driver</span>
+    <span><i class="sw" style="background:var(--off);border-color:var(--off-line)"></i>disabled in the device tree</span>
+    <span>Thick border: the node a view starts from.</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const G = JSON.parse(document.getElementById('data').textContent);
+const BY = new Map(G.nodes.map(n => [n.path, n]));
+const LAB = new Map(); G.nodes.forEach(n => n.labels.forEach(l => LAB.set(l, n.path)));
+const KINDS = ['graph','phy','usb','part','bus','gpio','irq','supply','clock','power','reset','interconnect','dai','dma','iommu','thermal','mbox','other'];
+const KCOL = {graph:'--k-graph',phy:'--k-phy',usb:'--k-usb',part:'--k-part',bus:'--k-bus',gpio:'--k-gpio',irq:'--k-irq',supply:'--k-supply'};
+const KNAME = {graph:'data path',phy:'PHY',usb:'USB role',part:'part of',bus:'on bus',gpio:'GPIO',irq:'interrupt',supply:'power supply',clock:'clock',power:'power domain',reset:'reset',interconnect:'interconnect',dai:'audio link',dma:'DMA',iommu:'IOMMU',thermal:'thermal',mbox:'mailbox',other:'other'};
+const kindOf = e => KINDS.includes(e.kind) ? e.kind : 'other';
+
+const VIEWS = [
+  {id:'usbc', name:'USB-C & DisplayPort', focus:['/soc@0/geniqup@ac0000/i2c@a84000/pdic@33/connector','/soc@0/geniqup@ac0000/i2c@a9c000/pdic@33/connector'], depth:3, kinds:['graph','phy','usb','part'],
+   note:'Each USB-C connector belongs to a Samsung port controller (pdic@33). Linux port0 is the one on i2c@a84000, the charging port. Port 0 of the connector carries USB 2, port 1 the SuperSpeed lanes into the combo PHY, port 2 the SBU wires through the FSUSB42 switch: DisplayPort AUX runs there. Open bug: orientation reads "reverse" both ways and AUX times out.'},
+  {id:'panel', name:'Internal display', focus:['panel'], depth:2, kinds:['graph','phy','supply','gpio','part','bus'],
+   note:'The Samsung OLED panel hangs off the eDP controller\'s AUX bus; its power rails and enable GPIO are shown.'},
+  {id:'audio', name:'Speakers & audio', focus:['/sound'], depth:2, kinds:['dai','bus','part','graph'],
+   note:'Four speakers: woofers and tweeters, a WSA883x amplifier each, on two SoundWire buses (swr0, swr3). The headphone jack codec (wcd938x) uses swr1 and swr2.'},
+  {id:'ec', name:'EC, keyboard & touchpad', focus:['/soc@0/geniqup@bc0000/i2c@b80000/embedded-controller@64','/soc@0/geniqup@bc0000/i2c@b80000/keyboard@5','/soc@0/geniqup@ac0000/i2c@a94000/touchpad@40'], depth:1, kinds:['irq','gpio','bus','supply','part'],
+   note:'The embedded controller (battery, AC, keyboard backlight) signals Linux on TLMM 66. The keyboard is a HID device on the same I2C bus.'},
+  {id:'fp', name:'Fingerprint (usb_2)', focus:['usb_2'], depth:2, kinds:['phy','supply','gpio','bus','part','usb'],
+   note:'usb_2 was disabled until our device-tree patch; the EgisTec 1c7a:05a1 sensor is the only device behind it.'},
+  {id:'wifi', name:'Wi-Fi & Bluetooth', focus:['/wcn7850-pmu'], depth:2, kinds:['supply','gpio','bus','part'],
+   note:'The WCN7850 power unit feeds both the Wi-Fi (PCIe) and the Bluetooth (UART) halves of the chip.'},
+  {id:'camera', name:'Camera', focus:['/soc@0/cci@ac15000/i2c-bus@0/camera@36'], depth:2, kinds:['graph','supply','gpio','part','bus'],
+   note:'The OV02C10 sensor talks over the CCI bus and streams into CAMSS through the data path.'},
+];
+
+let state = {view:'usbc', focus:[], depth:3, kinds:new Set(), disabled:false};
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const title = n => n.labels[0] || (n.path.split('/').length > 3 && !n.name.includes('@') ? n.path.split('/').slice(-3).join(' / ') : n.name);
+const nodeState = n => n.driver.length ? 'bound' : (n.status === 'okay' ? 'idle' : 'off');
+const resolve = f => LAB.get(f) || (BY.has(f) ? f : null);
+
+$('meta').textContent = 'Live device tree, Arch, kernel 7.2.7-book4 · ' + G.nodes.length + ' nodes · ' + G.edges.length + ' links';
+
+function renderTabs() {
+  $('tabs').innerHTML = '';
+  VIEWS.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'tab'; b.textContent = v.name; b.setAttribute('aria-pressed', state.view === v.id);
+    b.onclick = () => setView(v.id); $('tabs').appendChild(b);
+  });
+  if (state.view === 'custom') {
+    const b = document.createElement('button'); b.className = 'tab'; b.setAttribute('aria-pressed', 'true');
+    b.textContent = 'Around ' + title(BY.get(state.focus[0])); $('tabs').appendChild(b);
+  }
+}
+function renderKinds() {
+  $('kinds').innerHTML = '';
+  const present = new Set(G.edges.map(kindOf));
+  KINDS.filter(k => present.has(k)).forEach(k => {
+    const b = document.createElement('button'); b.className = 'chip';
+    b.setAttribute('aria-pressed', state.kinds.has(k));
+    b.innerHTML = '<i style="background:var(' + (KCOL[k] || '--k-other') + ')"></i>' + KNAME[k];
+    b.onclick = () => { state.kinds.has(k) ? state.kinds.delete(k) : state.kinds.add(k); renderKinds(); draw(); };
+    $('kinds').appendChild(b);
+  });
+}
+function setView(id) {
+  const v = VIEWS.find(x => x.id === id);
+  state = {...state, view:id, focus:v.focus.map(resolve).filter(Boolean), depth:v.depth, kinds:new Set(v.kinds)};
+  $('note').textContent = v.note;
+  try { localStorage.setItem('dt-view', id) } catch (e) {}
+  renderTabs(); renderKinds(); draw();
+}
+function focusOn(path) {
+  state = {...state, view:'custom', focus:[path], depth:1, kinds:new Set(KINDS.filter(k => !['clock','interconnect','power','dma','iommu','thermal','reset'].includes(k)))};
+  $('note').textContent = 'Everything one step away from ' + title(BY.get(path)) + '. Add link kinds or depth to widen it.';
+  renderTabs(); renderKinds(); draw(); showDetail(path);
+}
+
+function subgraph() {
+  const E = G.edges.filter(e => state.kinds.has(kindOf(e)) && BY.has(e.from) && BY.has(e.to));
+  const keep = new Set(state.focus); let frontier = new Set(state.focus);
+  for (let d = 0; d < state.depth; d++) {
+    const next = new Set();
+    E.forEach(e => {
+      if (frontier.has(e.from) && !keep.has(e.to)) next.add(e.to);
+      if (frontier.has(e.to) && !keep.has(e.from)) next.add(e.from);
+    });
+    const ok = [...next].filter(p => state.disabled || BY.get(p).status === 'okay');
+    ok.forEach(p => keep.add(p)); frontier = new Set(ok);
+  }
+  const seen = new Set(), edges = [];
+  E.forEach(e => {
+    if (!keep.has(e.from) || !keep.has(e.to)) return;
+    const k = e.from + '|' + e.to + '|' + e.kind + '|' + e.info;
+    if (!seen.has(k)) { seen.add(k); edges.push(e) }
+  });
+  return {nodes:[...keep], edges};
+}
+
+let cy = null;
+function styles() {
+  const st = {bound:['--bound','--bound-line'], idle:['--idle','--idle-line'], off:['--off','--off-line']};
+  const s = [
+    {selector:'node', style:{shape:'round-rectangle', label:'data(label)', 'text-wrap':'wrap', 'text-valign':'center', 'text-halign':'center',
+      'font-family':'IBM Plex Sans, system-ui, sans-serif', 'font-size':11, color:css('--ink'), width:'label', height:'label', padding:10, 'border-width':1.2, 'text-max-width':220}},
+    {selector:'node.focus', style:{'border-width':3}},
+    {selector:'node:selected', style:{'border-color':css('--accent'), 'border-width':3}},
+    {selector:'edge', style:{'curve-style':'bezier', 'target-arrow-shape':'triangle', 'arrow-scale':.8, width:1.4, label:'data(label)',
+      'font-size':9, 'font-family':'IBM Plex Mono, monospace', color:css('--muted'), 'text-background-color':css('--panel'),
+      'text-background-opacity':1, 'text-background-padding':2, 'text-rotation':'autorotate'}},
+    {selector:'edge.graph', style:{'target-arrow-shape':'none', width:2.2}},
+    {selector:'edge.part', style:{'line-style':'dashed'}},
+  ];
+  Object.entries(st).forEach(([k, [f, l]]) => s.push({selector:'node.' + k, style:{'background-color':css(f), 'border-color':css(l)}}));
+  s.push({selector:'node.off', style:{'border-style':'dashed'}});
+  KINDS.forEach(k => s.push({selector:'edge.' + k, style:{'line-color':css(KCOL[k] || '--k-other'), 'target-arrow-color':css(KCOL[k] || '--k-other')}}));
+  return s;
+}
+function draw() {
+  const sg = subgraph();
+  const cap = 140, nodes = sg.nodes.slice(0, cap);
+  const keep = new Set(nodes);
+  $('warn').hidden = sg.nodes.length <= cap;
+  $('warn').textContent = 'Showing ' + cap + ' of ' + sg.nodes.length + ' nodes: lower the depth or switch link kinds off.';
+  const names = {}; nodes.forEach(p => { const t = title(BY.get(p)); (names[t] = names[t] || []).push(p) });
+  const els = nodes.map(p => {
+    const n = BY.get(p); let t = title(n);
+    if (names[t].length > 1) t = p.split('/').slice(-2, -1)[0] + ' / ' + t;
+    const sub = (n.compatible || '').split(', ')[0];
+    const drv = n.driver.length ? n.driver.join(', ') : (n.status === 'okay' ? 'no driver' : n.status);
+    return {data:{id:p, label:[t, sub, drv].filter(Boolean).join('\n')}, classes:nodeState(n) + (state.focus.includes(p) ? ' focus' : '')};
+  });
+  sg.edges.filter(e => keep.has(e.from) && keep.has(e.to)).forEach((e, i) => {
+    const lbl = e.kind === 'graph' ? e.info : [e.prop, e.info].filter(Boolean).join(' ');
+    els.push({data:{id:'e' + i, source:e.from, target:e.to, label:lbl}, classes:kindOf(e)});
+  });
+  if (cy) cy.destroy();
+  cy = cytoscape({container:$('graph'), elements:els, style:styles(), wheelSensitivity:.25,
+    layout:{name:'dagre', rankDir:'LR', nodeSep:18, rankSep:70, edgeSep:8, padding:20}});
+  cy.on('tap', 'node', ev => showDetail(ev.target.id()));
+  cy.on('dbltap', 'node', ev => focusOn(ev.target.id()));
+  $('depth').textContent = state.depth;
+  $('disabled').checked = state.disabled;
+}
+
+function showDetail(path) {
+  const n = BY.get(path); if (!n) return;
+  const s = nodeState(n);
+  const pill = s === 'bound' ? '<span class="pill bound">driver attached</span>' : s === 'idle' ? '<span class="pill idle">enabled, no driver</span>' : '<span class="pill off">' + esc(n.status) + '</span>';
+  const out = G.edges.filter(e => e.from === path), inn = G.edges.filter(e => e.to === path);
+  const group = (list, dir) => {
+    const by = {}; list.forEach(e => (by[kindOf(e)] = by[kindOf(e)] || []).push(e));
+    return Object.keys(by).sort((a, b) => KINDS.indexOf(a) - KINDS.indexOf(b)).map(k => by[k].map(e => {
+      const other = dir === 'out' ? e.to : e.from, on = BY.get(other);
+      const x = [e.prop, e.info].filter(Boolean).join(' ');
+      return '<li><span class="k">' + KNAME[k] + '</span><button data-p="' + esc(other) + '">' + esc(on ? title(on) : other) + '</button>' + (x ? ' <span class="x">' + esc(x) + '</span>' : '') + '</li>';
+    }).join('')).join('');
+  };
+  $('detail').innerHTML = '<h2>' + esc(title(n)) + '</h2><p class="path">' + esc(n.path) + '</p>' +
+    '<dl><dt>State</dt><dd>' + pill + '</dd>' +
+    (n.compatible ? '<dt>Compatible</dt><dd>' + esc(n.compatible) + '</dd>' : '') +
+    (n.driver.length ? '<dt>Driver</dt><dd>' + esc(n.driver.join(', ')) + '</dd>' : '') +
+    (n.labels.length ? '<dt>Labels</dt><dd>' + esc(n.labels.join(', ')) + '</dd>' : '') + '</dl>' +
+    (out.length ? '<h3>Uses (' + out.length + ')</h3><ul class="links">' + group(out, 'out') + '</ul>' : '') +
+    (inn.length ? '<h3>Used by (' + inn.length + ')</h3><ul class="links">' + group(inn, 'in') + '</ul>' : '') +
+    '<h3>Explore</h3><ul class="links"><li><button data-focus="' + esc(path) + '">Draw everything around this part</button></li></ul>';
+  $('detail').querySelectorAll('button[data-p]').forEach(b => b.onclick = () => {
+    const p = b.dataset.p; if (cy && cy.getElementById(p).length) { cy.$(':selected').unselect(); cy.getElementById(p).select(); cy.animate({center:{eles:cy.getElementById(p)}}, {duration:250}) }
+    showDetail(p);
+  });
+  $('detail').querySelectorAll('button[data-focus]').forEach(b => b.onclick = () => focusOn(b.dataset.focus));
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])) }
+
+$('q').addEventListener('input', () => {
+  const q = $('q').value.trim().toLowerCase(), r = $('results');
+  if (q.length < 2) { r.hidden = true; return }
+  const hits = G.nodes.filter(n => (n.labels.join(' ') + ' ' + n.path + ' ' + n.compatible + ' ' + n.driver.join(' ')).toLowerCase().includes(q)).slice(0, 30);
+  r.innerHTML = hits.length ? hits.map(n => '<button data-p="' + esc(n.path) + '">' + esc(title(n)) + '<small>' + esc(n.compatible || n.path) + '</small></button>').join('') : '<button disabled>No match</button>';
+  r.hidden = false;
+  r.querySelectorAll('button[data-p]').forEach(b => b.onclick = () => { r.hidden = true; $('q').value = ''; focusOn(b.dataset.p) });
+});
+$('q').addEventListener('keydown', e => { if (e.key === 'Escape') $('results').hidden = true });
+document.addEventListener('click', e => { if (!e.target.closest('.search')) $('results').hidden = true });
+$('dminus').onclick = () => { if (state.depth > 1) { state.depth--; draw() } };
+$('dplus').onclick = () => { if (state.depth < 5) { state.depth++; draw() } };
+$('disabled').onchange = e => { state.disabled = e.target.checked; draw() };
+
+const restyle = () => cy && cy.style(styles());
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', restyle);
+new MutationObserver(restyle).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+let first = 'usbc';
+try { const v = localStorage.getItem('dt-view'); if (VIEWS.some(x => x.id === v)) first = v } catch (e) {}
+if (location.hash && VIEWS.some(x => x.id === location.hash.slice(1))) first = location.hash.slice(1);
+setView(first);
+</script>

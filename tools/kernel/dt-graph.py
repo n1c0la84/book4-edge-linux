@@ -16,6 +16,7 @@ and turns every cross-reference into an edge:
   dt-graph.py json > dt.json                    # everything
   dt-graph.py dot --focus LABEL[,LABEL] [--depth N] [--kinds graph,phy,...]
               [--disabled] > view.dot            # a focused view for Graphviz
+  dt-graph.py html > wiring.html                # interactive explorer (dt-explorer.html)
 """
 import argparse, json, os, struct, sys
 
@@ -298,7 +299,7 @@ def dot(g, focus, depth, kinds, disabled):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('mode', choices=('json', 'dot'))
+    ap.add_argument('mode', choices=('json', 'dot', 'html'))
     ap.add_argument('--base', default=BASE)
     ap.add_argument('--focus', default='')
     ap.add_argument('--depth', type=int, default=2)
@@ -308,6 +309,9 @@ def main():
     g = build(a.base)
     if a.mode == 'json':
         json.dump(g, sys.stdout, indent=1)
+    elif a.mode == 'html':
+        t = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dt-explorer.html')).read()
+        sys.stdout.write(t.replace('__DATA__', json.dumps(g, separators=(',', ':')).replace('</', '<\\/')))
     else:
         print(dot(g, [f for f in a.focus.split(',') if f], a.depth,
                   set(k for k in a.kinds.split(',') if k), a.disabled))
