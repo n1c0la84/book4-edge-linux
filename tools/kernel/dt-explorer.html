@@ -91,7 +91,7 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
 .bus small { display: block; font: 400 11px var(--f-mono); opacity: .75 }
 .devs { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0 }
 .dev { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--bound-line); border-radius: 6px; padding: 6px 10px; min-width: 0; max-width: 100% }
-.dev.warn { border-left-color: var(--idle-line) } .dev.bad { border-left-color: var(--k-irq) }
+.dev.partial { border-left-color: var(--idle-line) } .dev.bad { border-left-color: var(--k-irq) }
 .dev b { display: block; font-size: 13px; font-weight: 600 }
 .dev span { display: block; font: 11px var(--f-mono); color: var(--muted); overflow-wrap: anywhere }
 .dev em { display: block; font-style: normal; font-size: 12px; color: var(--muted) }
@@ -130,7 +130,7 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
         <div class="dev bad"><b>Monitor over USB-C</b><span>DisplayPort alt mode</span><em>No picture: AUX times out</em></div></div></div>
       <div class="lane"><div class="bus">SoundWire<small>4 buses</small></div><div class="devs">
         <div class="dev"><b>Four speakers</b><span>2 woofers + 2 tweeters · WSA883x amps</span></div>
-        <div class="dev warn"><b>Headphone jack</b><span>WCD9385 codec</span><em>Headset mic untested</em></div></div></div>
+        <div class="dev partial"><b>Headphone jack</b><span>WCD9385 codec</span><em>Headset mic untested</em></div></div></div>
       <div class="lane"><div class="bus">PCIe · UART<small>pcie4 · serial@a98000</small></div><div class="devs">
         <div class="dev"><b>Wi-Fi 7</b><span>Qualcomm WCN7850 · PCIe</span></div>
         <div class="dev"><b>Bluetooth</b><span>WCN7850 · UART</span></div></div></div>
