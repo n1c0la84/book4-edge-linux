@@ -91,6 +91,10 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
 .bus small { display: block; font: 400 11px var(--f-mono); opacity: .75 }
 .devs { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0 }
 .dev { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--bound-line); border-radius: 6px; padding: 6px 10px; min-width: 0; max-width: 100% }
+.dev.off { border-left-color: var(--off-line); opacity: .8 }
+.dev .via { color: var(--accent) }
+.sec { font-size: 15px; font-weight: 600; margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline }
+.sec small { font-weight: 400; font-size: 12px; color: var(--muted) }
 .dev.partial { border-left-color: var(--idle-line) } .dev.bad { border-left-color: var(--k-irq) }
 .dev b { display: block; font-size: 13px; font-weight: 600 }
 .dev span { display: block; font: 11px var(--f-mono); color: var(--muted); overflow-wrap: anywhere }
@@ -110,38 +114,105 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
     </div>
   </header>
   <section id="overview" class="wrap" style="gap:12px">
-    <div class="soc"><b>Snapdragon X Elite (X1E80100)</b><span>CPU · GPU · display engine · audio DSP · camera ISP</span></div>
+    <div class="soc"><b>Snapdragon X Elite (X1E80100)</b><span>CPU · GPU · display engine · audio DSP · camera ISP · serial engines (QUP) for I²C and UART</span></div>
+    <h2 class="sec">Input and control<small>I²C buses and the power-management bus</small></h2>
     <div class="lanes">
-      <div class="lane"><div class="bus">I²C<small>i2c@b80000</small></div><div class="devs">
-        <div class="dev"><b>Keyboard</b><span>ENE KB9058 · HID over I²C</span></div>
-        <div class="dev"><b>Embedded controller</b><span>Samsung EC · battery, charger, keyboard light</span><em>Interrupt on GPIO 66</em></div></div></div>
-      <div class="lane"><div class="bus">I²C<small>i2c@a94000 · i2c@a80000</small></div><div class="devs">
-        <div class="dev"><b>Touchpad</b><span>HID over I²C</span></div>
-        <div class="dev"><b>Touchscreen</b><span>HID over I²C</span></div></div></div>
-      <div class="lane"><div class="bus">I²C<small>i2c@a84000 · i2c@a9c000</small></div><div class="devs">
-        <div class="dev"><b>USB-C port controllers</b><span>Samsung S2MM006 × 2 · charging, roles, alt modes</span></div></div></div>
-      <div class="lane"><div class="bus">USB<small>3 controllers</small></div><div class="devs">
-        <div class="dev"><b>USB-C port 0</b><span>usb_1_ss0 · charging port</span></div>
-        <div class="dev"><b>USB-C port 1</b><span>usb_1_ss1</span></div>
-        <div class="dev"><b>Fingerprint sensor</b><span>EgisTec 1c7a:05a1 on usb_2</span></div></div></div>
-      <div class="lane"><div class="bus">Display<small>eDP · DisplayPort</small></div><div class="devs">
-        <div class="dev"><b>Built-in OLED panel</b><span>Samsung ATNA40CU07 · eDP</span></div>
-        <div class="dev"><b>HDMI port</b><span>DisplayPort → Realtek RTD2171 → HDMI</span></div>
-        <div class="dev bad"><b>Monitor over USB-C</b><span>DisplayPort alt mode</span><em>No picture: AUX times out</em></div></div></div>
-      <div class="lane"><div class="bus">SoundWire<small>4 buses</small></div><div class="devs">
-        <div class="dev"><b>Four speakers</b><span>2 woofers + 2 tweeters · WSA883x amps</span></div>
-        <div class="dev partial"><b>Headphone jack</b><span>WCD9385 codec</span><em>Headset mic untested</em></div></div></div>
-      <div class="lane"><div class="bus">PCIe · UART<small>pcie4 · serial@a98000</small></div><div class="devs">
-        <div class="dev"><b>Wi-Fi 7</b><span>Qualcomm WCN7850 · PCIe</span></div>
-        <div class="dev"><b>Bluetooth</b><span>WCN7850 · UART</span></div></div></div>
-      <div class="lane"><div class="bus">Camera<small>CCI I²C · CSI</small></div><div class="devs">
-        <div class="dev"><b>Webcam</b><span>OmniVision OV02C10 → CAMSS</span></div></div></div>
-      <div class="lane"><div class="bus">UFS<small>ufshc@1d84000</small></div><div class="devs">
-        <div class="dev"><b>Internal storage</b><span>UFS · Windows, Fedora, Arch</span></div></div></div>
+      <div class="lane"><div class="bus">I²C 0<small>i2c@b80000</small></div><div class="devs">
+        <div class="dev"><b>Keyboard</b><span>ENE KB9058 · HID over I²C · 0x05</span></div>
+        <div class="dev"><b>Embedded controller</b><span>Samsung EC · 0x64 · battery, charger, keyboard light, fan profiles</span><em>Interrupt: GPIO 66</em></div>
+</div></div>
+      <div class="lane"><div class="bus">I²C 5<small>i2c@b94000</small></div><div class="devs">
+        <div class="dev partial"><b>EC second channel</b><span>0x62 · event queue, keyboard-light and wake-timer commands</span><em>No Linux driver uses it</em></div>
+        <div class="dev"><b>eUSB2 repeater</b><span>NXP PTN3222 · 0x4f · reset GPIO 184</span><em>Serves the fingerprint sensor’s USB</em></div>
+        <div class="dev off"><b>eUSB2 repeater</b><span>NXP PTN3222 · 0x43</span><em>Enabled, nothing connected to it</em></div>
+</div></div>
+      <div class="lane"><div class="bus">I²C 13<small>i2c@a94000</small></div><div class="devs">
+        <div class="dev"><b>Touchpad</b><span>HID over I²C · 0x40</span></div>
+</div></div>
+      <div class="lane"><div class="bus">I²C 8<small>i2c@a80000</small></div><div class="devs">
+        <div class="dev partial"><b>Touchscreen</b><span>HID over I²C · 0x5d</span><em>Driver attached; not tested here</em></div>
+</div></div>
       <div class="lane"><div class="bus">SPMI<small>power-management bus</small></div><div class="devs">
-        <div class="dev"><b>Power ICs (PMICs) × 9</b><span>voltage rails · power key · clock (RTC)</span></div></div></div>
+        <div class="dev"><b>PMK8550</b><span>power key · real-time clock · reboot reason · charge-limit memory</span></div>
+        <div class="dev"><b>PM8550, PM8550VE ×3, PMC8380 ×4</b><span>voltage rails · GPIOs · temperature alarms</span></div>
+</div></div>
     </div>
-    <div class="key"><span><i style="background:var(--bound-line)"></i>works on Linux</span><span><i style="background:var(--idle-line)"></i>partly tested</span><span><i style="background:var(--k-irq)"></i>not working yet</span><span>Simplified from the device tree; the detailed explorer shows every link.</span></div>
+    <h2 class="sec">USB-C and USB<small>Each USB-C port: a port controller on I²C, a USB controller, and a combo PHY shared with DisplayPort</small></h2>
+    <div class="lanes">
+      <div class="lane"><div class="bus">I²C 9<small>i2c@a84000</small></div><div class="devs">
+        <div class="dev"><b>USB-C port controller 0</b><span>Samsung S2MM006 · 0x33 · charging, roles, alt modes</span><em>Linux typec port0: the charging port</em></div>
+</div></div>
+      <div class="lane"><div class="bus">I²C 15<small>i2c@a9c000</small></div><div class="devs">
+        <div class="dev"><b>USB-C port controller 1</b><span>Samsung S2MM006 · 0x33</span><em>Linux typec port1</em></div>
+</div></div>
+      <div class="lane"><div class="bus">USB 1 SS0<small>usb@a600000</small></div><div class="devs">
+        <div class="dev"><b>USB-C port 0</b><span>USB 2 + USB 3 lanes</span><span class="via">via combo PHY usb_1_ss0_qmpphy; SBU switch FSUSB42 (GPIO 167/168) for DisplayPort AUX</span></div>
+</div></div>
+      <div class="lane"><div class="bus">USB 1 SS1<small>usb@a800000</small></div><div class="devs">
+        <div class="dev"><b>USB-C port 1</b><span>USB 2 + USB 3 lanes</span><span class="via">via combo PHY usb_1_ss1_qmpphy; SBU switch FSUSB42 (GPIO 178/179)</span></div>
+</div></div>
+      <div class="lane"><div class="bus">USB 2<small>usb@a200000</small></div><div class="devs">
+        <div class="dev"><b>Fingerprint sensor</b><span>EgisTec ETU905A80-E · 1c7a:05a1 · match-on-chip</span><span class="via">via eUSB2 PHY and the repeater at I²C 5 / 0x4f</span><em>Enabled by our device-tree patch</em></div>
+</div></div>
+      <div class="lane"><div class="bus">Disabled<small>usb_1_ss2 · usb_mp</small></div><div class="devs">
+        <div class="dev off"><b>usb_1_ss2</b><span>third USB-C-type controller</span><em>Off; its combo PHY drives the HDMI port</em></div>
+        <div class="dev off"><b>usb_mp</b><span>multi-port USB controller</span><em>Off; nothing known wired to it</em></div>
+</div></div>
+    </div>
+    <h2 class="sec">Display<small>Four DisplayPort controllers in the display engine (MDSS)</small></h2>
+    <div class="lanes">
+      <div class="lane"><div class="bus">DP 3 (eDP)<small>displayport@aea0000</small></div><div class="devs">
+        <div class="dev"><b>Built-in OLED panel</b><span>Samsung ATNA40CU07 · 2880×1800 · 120 Hz</span><span class="via">via eDP PHY</span></div>
+</div></div>
+      <div class="lane"><div class="bus">DP 2<small>displayport@ae9a000</small></div><div class="devs">
+        <div class="dev"><b>HDMI port</b><span>tested at 2560×1440 · 60 Hz</span><span class="via">via usb_1_ss2’s combo PHY → Realtek RTD2171 converter</span></div>
+</div></div>
+      <div class="lane"><div class="bus">DP 0<small>displayport@ae90000</small></div><div class="devs">
+        <div class="dev bad"><b>Monitor on USB-C port 0</b><span>DisplayPort alt mode</span><span class="via">via combo PHY usb_1_ss0_qmpphy</span><em>No picture: AUX times out</em></div>
+</div></div>
+      <div class="lane"><div class="bus">DP 1<small>displayport@ae98000</small></div><div class="devs">
+        <div class="dev partial"><b>Monitor on USB-C port 1</b><span>DisplayPort alt mode</span><span class="via">via combo PHY usb_1_ss1_qmpphy</span><em>Untested</em></div>
+</div></div>
+    </div>
+    <h2 class="sec">Audio<small>SoundWire buses from the audio block (LPASS) to amplifiers and codecs</small></h2>
+    <div class="lanes">
+      <div class="lane"><div class="bus">SoundWire 0<small>WSA macro</small></div><div class="devs">
+        <div class="dev"><b>Left woofer</b><span>WSA883x amplifier</span></div>
+        <div class="dev"><b>Right tweeter</b><span>WSA883x amplifier</span></div>
+</div></div>
+      <div class="lane"><div class="bus">SoundWire 3<small>WSA2 macro</small></div><div class="devs">
+        <div class="dev"><b>Right woofer</b><span>WSA883x amplifier</span></div>
+        <div class="dev"><b>Left tweeter</b><span>WSA883x amplifier</span></div>
+</div></div>
+      <div class="lane"><div class="bus">SoundWire 1<small>RX macro</small></div><div class="devs">
+        <div class="dev"><b>Headphone jack, playback</b><span>WCD9385 codec</span></div>
+</div></div>
+      <div class="lane"><div class="bus">SoundWire 2<small>TX macro</small></div><div class="devs">
+        <div class="dev partial"><b>Headphone jack, microphone</b><span>WCD9385 codec</span><em>Headset mic untested</em></div>
+</div></div>
+    </div>
+    <h2 class="sec">Wireless<small>One Qualcomm WCN7850 chip, two halves, one shared power unit</small></h2>
+    <div class="lanes">
+      <div class="lane"><div class="bus">PCIe 4<small>pcie@1c08000</small></div><div class="devs">
+        <div class="dev"><b>Wi-Fi 7</b><span>WCN7850 · ath12k driver</span></div>
+</div></div>
+      <div class="lane"><div class="bus">UART 14<small>serial@a98000</small></div><div class="devs">
+        <div class="dev"><b>Bluetooth</b><span>WCN7850 · UART</span></div>
+</div></div>
+    </div>
+    <h2 class="sec">Camera, storage and the rest<small></small></h2>
+    <div class="lanes">
+      <div class="lane"><div class="bus">CCI 0<small>camera I²C</small></div><div class="devs">
+        <div class="dev partial"><b>Webcam sensor</b><span>OmniVision OV02C10 · 0x36</span><span class="via">via CSI into the camera block (CAMSS)</span><em>Driver attached; not tested here</em></div>
+</div></div>
+      <div class="lane"><div class="bus">UFS<small>ufshc@1d84000</small></div><div class="devs">
+        <div class="dev"><b>Internal storage</b><span>UFS · Windows, Fedora and Arch</span></div>
+</div></div>
+      <div class="lane"><div class="bus">UART 21<small>serial@894000</small></div><div class="devs">
+        <div class="dev off"><b>Debug UART</b><span>serial console</span><em>No connector known</em></div>
+</div></div>
+    </div>
+    <div class="key"><span><i style="background:var(--bound-line)"></i>works on Linux</span><span><i style="background:var(--idle-line)"></i>partly tested</span><span><i style="background:var(--k-irq)"></i>not working yet</span><span><i style="background:var(--off-line)"></i>off or unused</span><span>Simplified from the device tree; the detailed explorer shows every link.</span></div>
   </section>
   <section id="detailed" class="wrap" hidden>
   <div class="tabs" id="tabs" role="toolbar" aria-label="Views"></div>
