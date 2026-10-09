@@ -105,10 +105,18 @@ def build(base=BASE):
         b = raw.get(p, {}).get(name)
         return u32s(b)[0] if b else default
 
+    def anonymous(p):
+        # graph plumbing, or a sub-node with neither compatible nor label
+        # (e.g. /sound/wsa-dai-link/cpu): folded into its parent device
+        name = p.rsplit('/', 1)[-1]
+        if name.split('@')[0] in ('port', 'ports', 'endpoint', 'in-ports', 'out-ports'):
+            return True
+        return (p.count('/') > 1 and 'compatible' not in raw.get(p, {})
+                and not lab.get(p) and p.split('/')[1] not in ('thermal-zones', 'reserved-memory'))
+
     def owner(p):
-        # fold port / ports / endpoint nodes into the device they belong to
         parts = p.split('/')
-        while len(parts) > 1 and parts[-1].split('@')[0] in ('port', 'ports', 'endpoint', 'in-ports', 'out-ports'):
+        while len(parts) > 2 and anonymous('/'.join(parts)):
             parts.pop()
         return '/'.join(parts) or '/'
 
@@ -121,7 +129,7 @@ def build(base=BASE):
     nodes, edges = {}, []
     for p, props in raw.items():
         name = p.rsplit('/', 1)[-1] or '/'
-        if name.split('@')[0] in ('port', 'ports', 'endpoint', 'in-ports', 'out-ports'):
+        if p != '/' and anonymous(p):
             continue
         status = text(props.get('status', b'okay')) or 'okay'
         nodes[p] = {
