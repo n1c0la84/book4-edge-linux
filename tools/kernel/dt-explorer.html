@@ -177,12 +177,12 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
     <h2 class="sec">Audio<small>SoundWire buses from the audio block (LPASS) to amplifiers and codecs</small></h2>
     <div class="lanes">
       <div class="lane"><div class="bus">SoundWire 0<small>WSA macro</small></div><div class="devs">
-        <div class="dev"><b>Left woofer</b><span>WSA883x amplifier</span></div>
-        <div class="dev"><b>Right tweeter</b><span>WSA883x amplifier</span></div>
+        <div class="dev"><b>Right woofer</b><span>WSA883x amplifier · DT name SpkrLeft</span><em>Woofer names are swapped in the device tree</em></div>
+        <div class="dev"><b>Right tweeter</b><span>WSA883x amplifier · DT name TweeterRight</span></div>
 </div></div>
       <div class="lane"><div class="bus">SoundWire 3<small>WSA2 macro</small></div><div class="devs">
-        <div class="dev"><b>Right woofer</b><span>WSA883x amplifier</span></div>
-        <div class="dev"><b>Left tweeter</b><span>WSA883x amplifier</span></div>
+        <div class="dev"><b>Left woofer</b><span>WSA883x amplifier · DT name SpkrRight</span></div>
+        <div class="dev"><b>Left tweeter</b><span>WSA883x amplifier · DT name TweeterLeft</span></div>
 </div></div>
       <div class="lane"><div class="bus">SoundWire 1<small>RX macro</small></div><div class="devs">
         <div class="dev"><b>Headphone jack, playback</b><span>WCD9385 codec</span></div>
@@ -258,7 +258,7 @@ const VIEWS = [
   {id:'panel', name:'Internal display', focus:['panel'], depth:2, kinds:['graph','phy','supply','gpio','part','bus'],
    note:'The Samsung OLED panel hangs off the eDP controller\'s AUX bus; its power rails and enable GPIO are shown.'},
   {id:'audio', name:'Speakers & audio', focus:['/sound'], depth:2, kinds:['dai','bus','part','graph'],
-   note:'Four speakers: woofers and tweeters, a WSA883x amplifier each, on two SoundWire buses (swr0, swr3). The headphone jack codec (wcd938x) uses swr1 and swr2.'},
+   note:'Four speakers, a WSA883x amplifier each: swr0 drives the right woofer and tweeter, swr3 the left pair (the device tree swaps the woofer names). The headphone jack codec (wcd938x) uses swr1 and swr2.'},
   {id:'ec', name:'EC, keyboard & touchpad', focus:['/soc@0/geniqup@bc0000/i2c@b80000/embedded-controller@64','/soc@0/geniqup@bc0000/i2c@b80000/keyboard@5','/soc@0/geniqup@ac0000/i2c@a94000/touchpad@40'], depth:1, kinds:['irq','gpio','bus','supply','part'],
    note:'The embedded controller (battery, AC, keyboard backlight) signals Linux on TLMM 66. The keyboard is a HID device on the same I2C bus.'},
   {id:'fp', name:'Fingerprint (usb_2)', focus:['usb_2'], depth:2, kinds:['phy','supply','gpio','bus','part','usb'],
