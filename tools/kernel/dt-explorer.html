@@ -124,7 +124,7 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
       <div class="lane"><div class="bus">I²C 5<small>i2c@b94000</small></div><div class="devs">
         <div class="dev partial"><b>EC second channel</b><span>0x62 · event queue, keyboard-light and wake-timer commands</span><em>No Linux driver uses it</em></div>
         <div class="dev"><b>eUSB2 repeater</b><span>NXP PTN3222 · 0x4f · reset GPIO 184</span><em>Serves the fingerprint sensor’s USB</em></div>
-        <div class="dev off"><b>eUSB2 repeater</b><span>NXP PTN3222 · 0x43</span><em>Enabled, nothing connected to it</em></div>
+        <div class="dev off"><b>eUSB2 repeater</b><span>NXP PTN3222 · 0x43</span><em>Probably not on this board: Windows' ACPI has no 0x43; inherited DT entry</em></div>
 </div></div>
       <div class="lane"><div class="bus">I²C 13<small>i2c@a94000</small></div><div class="devs">
         <div class="dev"><b>Touchpad</b><span>HID over I²C · 0x40</span></div>

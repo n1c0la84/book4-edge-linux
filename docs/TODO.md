@@ -189,6 +189,12 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       `restorecon -R /var/lib/fprint` on Fedora. To check: whether removing
       the Windows Hello fingerprint stops the wipe. Left: drop the local
       builds once !547 is in Fedora's and Arch's libfprint.
+- [ ] **DT cleanup: `eusb5_repeater` (PTN3222 at I2C 5 / 0x43) is enabled
+      but probably absent.** Windows' DSDT has only the 0x4F repeater (used
+      by usb_2, the fingerprint) and three USB controllers (USB0/USB1 =
+      the USB-C ports, USB4 = usb_2); no USB-A port, `usb_mp` correctly
+      off. Nothing references the 0x43 node, so it is harmless; disable it
+      in the next board DT patch (found with `tools/kernel/dt-graph.py`, 9 Oct).
 - [ ] **CDSP channels fail at boot** on every boot, both kernels, Fedora and
       Arch: `fastrpc` / `qcom_smd_qrtr` on `32300000.remoteproc` "failed to
       create endpoint" (-12), together with a `qcom-apm` "CMD timeout". No
