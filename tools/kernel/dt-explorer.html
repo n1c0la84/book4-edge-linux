@@ -79,6 +79,25 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
 .legend span { display: inline-flex; gap: 6px; align-items: center }
 .sw { width: 14px; height: 10px; border-radius: 3px; border: 1px solid; display: inline-block }
 .empty { color: var(--muted) }
+.modes { display: inline-flex; border: 1px solid var(--rule); border-radius: 7px; overflow: hidden; margin-left: auto }
+.modes button { border: 0; background: var(--panel); color: var(--muted); font: 500 13px var(--f-sans); padding: 6px 12px; cursor: pointer }
+.modes button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink) }
+.soc { background: var(--panel); border: 2px solid var(--ink); border-radius: 10px; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline }
+.soc b { font-size: 16px } .soc span { color: var(--muted); font: 12px var(--f-mono) }
+.lanes { display: grid; gap: 10px; border-left: 2px solid var(--ink); margin-left: 22px; padding-left: 0 }
+.lane { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 10px; align-items: center; position: relative; padding-left: 18px }
+.lane::before { content: ""; position: absolute; left: 0; top: 50%; width: 18px; border-top: 2px solid var(--ink) }
+.bus { background: var(--ink); color: var(--sheet); border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 13px; line-height: 1.3 }
+.bus small { display: block; font: 400 11px var(--f-mono); opacity: .75 }
+.devs { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0 }
+.dev { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--bound-line); border-radius: 6px; padding: 6px 10px; min-width: 0; max-width: 100% }
+.dev.warn { border-left-color: var(--idle-line) } .dev.bad { border-left-color: var(--k-irq) }
+.dev b { display: block; font-size: 13px; font-weight: 600 }
+.dev span { display: block; font: 11px var(--f-mono); color: var(--muted); overflow-wrap: anywhere }
+.dev em { display: block; font-style: normal; font-size: 12px; color: var(--muted) }
+@media (max-width: 640px) { .lane { grid-template-columns: minmax(0, 1fr) } }
+.key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted) }
+.key i { display: inline-block; width: 4px; height: 12px; margin-right: 6px; vertical-align: -1px }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important } }
 </style>
 
@@ -86,7 +105,45 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
   <header>
     <h1>Book4 Edge Wiring</h1>
     <span class="meta" id="meta"></span>
+    <div class="modes" role="group" aria-label="Page mode">
+      <button id="m-over" aria-pressed="true">Overview</button><button id="m-det" aria-pressed="false">Detailed explorer</button>
+    </div>
   </header>
+  <section id="overview" class="wrap" style="gap:12px">
+    <div class="soc"><b>Snapdragon X Elite (X1E80100)</b><span>CPU · GPU · display engine · audio DSP · camera ISP</span></div>
+    <div class="lanes">
+      <div class="lane"><div class="bus">I²C<small>i2c@b80000</small></div><div class="devs">
+        <div class="dev"><b>Keyboard</b><span>ENE KB9058 · HID over I²C</span></div>
+        <div class="dev"><b>Embedded controller</b><span>Samsung EC · battery, charger, keyboard light</span><em>Interrupt on GPIO 66</em></div></div></div>
+      <div class="lane"><div class="bus">I²C<small>i2c@a94000 · i2c@a80000</small></div><div class="devs">
+        <div class="dev"><b>Touchpad</b><span>HID over I²C</span></div>
+        <div class="dev"><b>Touchscreen</b><span>HID over I²C</span></div></div></div>
+      <div class="lane"><div class="bus">I²C<small>i2c@a84000 · i2c@a9c000</small></div><div class="devs">
+        <div class="dev"><b>USB-C port controllers</b><span>Samsung S2MM006 × 2 · charging, roles, alt modes</span></div></div></div>
+      <div class="lane"><div class="bus">USB<small>3 controllers</small></div><div class="devs">
+        <div class="dev"><b>USB-C port 0</b><span>usb_1_ss0 · charging port</span></div>
+        <div class="dev"><b>USB-C port 1</b><span>usb_1_ss1</span></div>
+        <div class="dev"><b>Fingerprint sensor</b><span>EgisTec 1c7a:05a1 on usb_2</span></div></div></div>
+      <div class="lane"><div class="bus">Display<small>eDP · DisplayPort</small></div><div class="devs">
+        <div class="dev"><b>Built-in OLED panel</b><span>Samsung ATNA40CU07 · eDP</span></div>
+        <div class="dev"><b>HDMI port</b><span>DisplayPort → Realtek RTD2171 → HDMI</span></div>
+        <div class="dev bad"><b>Monitor over USB-C</b><span>DisplayPort alt mode</span><em>No picture: AUX times out</em></div></div></div>
+      <div class="lane"><div class="bus">SoundWire<small>4 buses</small></div><div class="devs">
+        <div class="dev"><b>Four speakers</b><span>2 woofers + 2 tweeters · WSA883x amps</span></div>
+        <div class="dev warn"><b>Headphone jack</b><span>WCD9385 codec</span><em>Headset mic untested</em></div></div></div>
+      <div class="lane"><div class="bus">PCIe · UART<small>pcie4 · serial@a98000</small></div><div class="devs">
+        <div class="dev"><b>Wi-Fi 7</b><span>Qualcomm WCN7850 · PCIe</span></div>
+        <div class="dev"><b>Bluetooth</b><span>WCN7850 · UART</span></div></div></div>
+      <div class="lane"><div class="bus">Camera<small>CCI I²C · CSI</small></div><div class="devs">
+        <div class="dev"><b>Webcam</b><span>OmniVision OV02C10 → CAMSS</span></div></div></div>
+      <div class="lane"><div class="bus">UFS<small>ufshc@1d84000</small></div><div class="devs">
+        <div class="dev"><b>Internal storage</b><span>UFS · Windows, Fedora, Arch</span></div></div></div>
+      <div class="lane"><div class="bus">SPMI<small>power-management bus</small></div><div class="devs">
+        <div class="dev"><b>Power ICs (PMICs) × 9</b><span>voltage rails · power key · clock (RTC)</span></div></div></div>
+    </div>
+    <div class="key"><span><i style="background:var(--bound-line)"></i>works on Linux</span><span><i style="background:var(--idle-line)"></i>partly tested</span><span><i style="background:var(--k-irq)"></i>not working yet</span><span>Simplified from the device tree; the detailed explorer shows every link.</span></div>
+  </section>
+  <section id="detailed" class="wrap" hidden>
   <div class="tabs" id="tabs" role="toolbar" aria-label="Views"></div>
   <p class="note" id="note"></p>
   <div class="controls">
@@ -108,6 +165,7 @@ aside h3 { font: 600 11px var(--f-sans); letter-spacing: .08em; text-transform: 
     <span><i class="sw" style="background:var(--off);border-color:var(--off-line)"></i>disabled in the device tree</span>
     <span>Thick border: the node a view starts from.</span>
   </div>
+  </section>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
@@ -299,8 +357,18 @@ const restyle = () => cy && cy.style(styles());
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', restyle);
 new MutationObserver(restyle).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
 
+function mode(det) {
+  $('overview').hidden = det; $('detailed').hidden = !det;
+  $('m-over').setAttribute('aria-pressed', !det); $('m-det').setAttribute('aria-pressed', det);
+  try { localStorage.setItem('dt-mode', det ? 'det' : 'over') } catch (e) {}
+  if (det && !cy) setView(first);
+}
+$('m-over').onclick = () => mode(false);
+$('m-det').onclick = () => mode(true);
 let first = 'usbc';
 try { const v = localStorage.getItem('dt-view'); if (VIEWS.some(x => x.id === v)) first = v } catch (e) {}
 if (location.hash && VIEWS.some(x => x.id === location.hash.slice(1))) first = location.hash.slice(1);
-setView(first);
+let startDet = location.hash && VIEWS.some(x => x.id === location.hash.slice(1));
+try { if (localStorage.getItem('dt-mode') === 'det') startDet = true } catch (e) {}
+mode(startDet);
 </script>
