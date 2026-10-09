@@ -53,6 +53,14 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       too. Next (parked, HDMI port covers external displays): raw bytes
       for both orientations with `sudo python3 tools/display/pdic-cc.py 1
       watch`, fix the decoding, retest.
+      **Cause found (9 Oct):** CC_STATUS (0x11) bits 7:4 are the attach
+      type / power direction, not the orientation: the charger (laptop
+      sink) reads 1 ("normal") with the plug either way round, the hub
+      (laptop source) 2 ("reverse") either way. So with a hub or monitor
+      the SBU mux and combo PHY are always set for "reverse". Next: find
+      the real orientation bits (`pdic-cc.py 1 watch`, charger flipped),
+      then fix `samsung-emuec` (and report to Anatase). AUX also failed
+      in the matching orientation, so a second fault remains.
       **8 Oct, Windows: the same hub works on the same port** (picture,
       card reader). The hub's Billboard reports DP alt mode (SVID 0xFF01)
       entered with configuration status 0x3 ("configured successfully"), so
