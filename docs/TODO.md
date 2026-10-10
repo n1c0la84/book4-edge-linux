@@ -8,7 +8,21 @@ the end.
 **Next for the Linux side (8 October):** the tests collected in Windows,
 in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
 
-## To test (should work, never verified)
+## Test of 10 October (DT 0005/0006, emuec orientation 0005)
+
+- [x] DT 0005/0006 (Fedora, "alt DT woofer-names.dtb"): new DT running,
+      repeater 0x43 gone, speakers from the right sides, fingerprint `1c7a`
+      present. Made the default (`book4-default-1010.dtb`, previous default
+      as the alt entry); UCM woofer order flipped; on the kernel branch
+      `book4/7.2` (f53908232). (The test's step 1 printed no names: it asked
+      `amixer -c0`, where UCM's remap hides them; `-D hw:0` shows them.)
+- [ ] emuec orientation `patches-experimental/0005`: **not tested**. The
+      module in Fedora was still the 7 October build (no `.prev` from 10 Oct),
+      so steps 4-5 ran the old driver: charger normal/normal, no picture with
+      the hub either way. Install it (`EMUEC_EXTRA_PATCHES=... 
+      install/update-emuec-module.sh`) and rerun steps 4-5.
+
+To test (should work, never verified)
 
 - [x] **CPU frequency scaling on Fedora** (5 Oct): `scmi-cpufreq` via
       `/etc/modules-load.d/book4-cpufreq.conf`, 710-3417 MHz, sha256 x2.9

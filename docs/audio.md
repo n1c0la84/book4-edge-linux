@@ -54,13 +54,13 @@ changes are needed. Install it with `install/speakers-dtb.sh` (test entry).
 
 | PCM channel | Macro path | Amplifier | Speaker |
 |---|---|---|---|
-| 1 (FL) | WSA2 RX0 | `SpkrRight` (bus 4, addr 2) | left woofer |
-| 2 (FR) | WSA RX0 | `SpkrLeft` (bus 1, addr 2) | right woofer |
+| 1 (FL) | WSA2 RX0 | `SpkrLeft` (bus 4, addr 2) | left woofer |
+| 2 (FR) | WSA RX0 | `SpkrRight` (bus 1, addr 2) | right woofer |
 | 3 (RL) | WSA2 RX1 | `TweeterLeft` (bus 4, addr 1) | left tweeter |
 | 4 (RR) | WSA RX1 | `TweeterRight` (bus 1, addr 1) | right tweeter |
 
-The woofers' DT names are left/right swapped (inherited); the tweeters are
-named by side. The default DTB (since 5 Oct) is the camera DTS built on
+Since 10 October ([`dts/patches/0005`](../dts/patches)) all four are named
+by side; before, the inherited woofer names were swapped. The default DTB (since 5 Oct) is the camera DTS built on
 [`dts/patches/0003`](../dts/patches) (tweeters, woofers routed from SPK1),
 which is what went to Anatase. Machine-driver caps: the tweeter prefixes are
 in its list; the earlier `SpkrLeft2`/`SpkrRight2` were capped only because
