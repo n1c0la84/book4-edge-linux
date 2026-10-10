@@ -15,6 +15,10 @@ Keep CC_STATUS bits 7:4 for attach detection and take the orientation from
 Experimental: decoded from register reads (tools/display/pdic-cc.py),
 not from documentation.
 
+
+Rebased 10 Oct onto the kernel tree's driver after patches/0002-0003 and
+patches-experimental/0004 (the first version was against drivers/anatase/
+samsung-emuec.c, whose detach test differs); same change.
 ---
 --- a/samsung-emuec.c
 +++ b/samsung-emuec.c
@@ -54,7 +58,7 @@ not from documentation.
  	ret = samsung_emuec_read(pdic, S2MM006_REG_PD_STATUS2, &pd, sizeof(pd));
  	if (ret)
  		return;
-@@ -813,17 +817,23 @@
+@@ -813,16 +817,23 @@
  	if (ret)
  		return;
  
@@ -77,9 +81,8 @@ not from documentation.
  	source_path_attached = bc & BIT(4);
  	consumer_path_active = sw & BIT(1);
  
--	if (orientation == TYPEC_ORIENTATION_NONE ||
--	    (!vbus_present && !source_path_attached)) {
-+	if (!attached || (!vbus_present && !source_path_attached)) {
+-	if (orientation == TYPEC_ORIENTATION_NONE) {
++	if (!attached) {
  		samsung_emuec_detach(pdic);
  		return;
  	}
