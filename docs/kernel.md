@@ -157,14 +157,14 @@ kind of burden — but it is more of it.
 
 The kernel stays Anatase's tree plus our patches, now as a public branch:
 **https://github.com/n1c0la84/linux-book4-edge/tree/book4/7.2**, a fork of
-`anatase-org/patchwork`. `book4/7.2` is Anatase `2ad788424` plus eight
+`anatase-org/patchwork`. `book4/7.2` is Anatase `2ad788424` plus eleven
 commits, made by [`install/kernel-branch.sh`](../install/kernel-branch.sh)
 from the patch files in this repo:
 
 | commit | from |
 |---|---|
-| hamoa: add CCI0 and CAMSS; enable the front camera; add tweeters; enable the fingerprint reader (8 Oct) | `dts/patches/0001-0004` |
-| samsung-emuec: PD retry; quiesce across sleep; wake on plug-in | `drivers/anatase/patches/0001-0003` |
+| hamoa: add CCI0 and CAMSS; enable the front camera; add tweeters; enable the fingerprint reader (8 Oct); woofer names by side, eusb5 off (10 Oct) | `dts/patches/0001-0006` |
+| samsung-emuec: PD retry; quiesce across sleep; wake on plug-in; orientation from the CC pin (10 Oct) | `drivers/anatase/patches/0001-0004` |
 | `arch/arm64/configs/book4_edge_defconfig` | the running 7.2.7-book4 config |
 
 Build: `git switch book4/7.2 && make LOCALVERSION= book4_edge_defconfig`.

@@ -16,9 +16,10 @@ Experimental: decoded from register reads (tools/display/pdic-cc.py),
 not from documentation.
 
 
-Rebased 10 Oct onto the kernel tree's driver after patches/0002-0003 and
-patches-experimental/0004 (the first version was against drivers/anatase/
-samsung-emuec.c, whose detach test differs); same change.
+Applies to the kernel tree's driver after patches/0002-0003 (also on top of
+patches-experimental/0004; the first version was against drivers/anatase/
+samsung-emuec.c, whose detach test differs). Tested 10 Oct: orientation
+follows the plug (charger and hub, both ways), SBU mux select follows.
 ---
 --- a/samsung-emuec.c
 +++ b/samsung-emuec.c

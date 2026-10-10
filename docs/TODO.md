@@ -16,11 +16,17 @@ in order: [handoff-linux-from-windows.md](handoff-linux-from-windows.md).
       as the alt entry); UCM woofer order flipped; on the kernel branch
       `book4/7.2` (f53908232). (The test's step 1 printed no names: it asked
       `amixer -c0`, where UCM's remap hides them; `-D hw:0` shows them.)
-- [ ] emuec orientation `patches-experimental/0005`: **not tested**. The
-      module in Fedora was still the 7 October build (no `.prev` from 10 Oct),
-      so steps 4-5 ran the old driver: charger normal/normal, no picture with
-      the hub either way. Install it (`EMUEC_EXTRA_PATCHES=... 
-      install/update-emuec-module.sh`) and rerun steps 4-5.
+- [x] emuec orientation: now `drivers/anatase/patches/0004` (rebased onto the
+      tree's driver; on `book4/7.2` as 6221fc739). Retest after installing it:
+      charger `reverse` / rotated `normal`, hub `normal` / rotated `reverse`;
+      the SBU mux select (GPIO 167) follows, enable (168, active low) on.
+- [ ] External monitor through the USB-C hub: still no picture **in both
+      orientations**, so orientation was not the blocker. DP alt mode is
+      entered and configured (pin D, all VDMs ACKed), HPD reaches msm_dp
+      (`bridge_hpd status=1`), then every DPCD read times out
+      (`dpu_dp_aux: 0x00102 AUX -> (ret=-110)`). Suspects: which DP
+      controller / AUX the port is really wired to, the SBU mux polarity, the
+      PHY. Captures: `~/usbc-dp-20261010-1822*.log`, `...-1823*.log`.
 
 To test (should work, never verified)
 
