@@ -56,7 +56,7 @@ if [ ${#kernels[@]} -eq 0 ]; then
     exit 0
 fi
 
-CMDLINE=$(cat /etc/kernel/cmdline)
+CMDLINE=$(cat "${BOOK4_CMDLINEFILE:-/etc/kernel/cmdline}")
 
 # Default = the pinned known-good kernel if it is still bootable, else the
 # newest. New kernels appear below it until you test one from the menu and
@@ -135,6 +135,14 @@ menuentry "$TITLE2 ($default)" {
 }
 EOF
     fi
+    # Extra entries kept in /boot by the second OS (test boots written by
+    # install/arch/test-entry.sh), so it can add some without this hook.
+    cat <<EOF
+
+if [ -f (\$bootdev)/book4-extra.cfg ]; then
+  source (\$bootdev)/book4-extra.cfg
+fi
+EOF
     # Windows shares the ESP; chainload its boot manager when it is there.
     if [ -e /boot/efi/EFI/Microsoft/Boot/bootmgfw.efi ] || [ -n "$BOOK4_WINDOWS" ]; then
         cat <<EOF
