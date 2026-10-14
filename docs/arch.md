@@ -17,7 +17,7 @@ side; [omarchy.md](omarchy.md) has the background and the two routes.
   `rootflags=subvol=arch`.
 - Test boot entries are managed from Arch with
   [`install/arch/test-entry.sh`](../install/arch/test-entry.sh): copies of the
-  Arch entry with changed kernel arguments or DTB, kept in
+  Arch entry with changed kernel arguments, DTB or initramfs, kept in
   `/boot/book4-extra.cfg`, which the hook's grub.cfg sources (so neither Fedora
   nor the ESP is touched), e.g.
   `test-entry.sh add synced -clk_ignore_unused +fw_devlink.sync_state=timeout`;

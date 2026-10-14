@@ -7,9 +7,10 @@
 # Fedora nor the ESP is touched. Never the default entry.
 # Run as your user (sudo inside), with /boot (sda4) not mounted elsewhere.
 #
-#   bash install/arch/test-entry.sh add NAME [-ARG ...] [+ARG ...] [dtb=/PATH]
+#   bash install/arch/test-entry.sh add NAME [-ARG ...] [+ARG ...] [dtb=/PATH] [initrd=/PATH]
 #        -ARG removes ARG (exact word, or KEY for KEY=...), +ARG appends it,
-#        dtb=/dtb-test/x.dtb replaces the device tree (path under /boot)
+#        dtb=/dtb-test/x.dtb replaces the device tree (path under /boot),
+#        initrd=/initramfs-x.img the initramfs (path under /boot)
 #   bash install/arch/test-entry.sh list
 #   bash install/arch/test-entry.sh remove NAME
 #   bash install/arch/test-entry.sh clear
@@ -24,7 +25,7 @@ ESPCFG=EFI/fedora/grub.cfg
 
 cmd=${1:-}; shift || true
 case "$cmd" in add|remove) [ -n "${1:-}" ] || cmd=help ;; list|clear) ;; *) cmd=help ;; esac
-if [ "$cmd" = help ]; then sed -n '3,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1; fi
+if [ "$cmd" = help ]; then sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1; fi
 
 if [ -n "${BOOK4_TESTROOT:-}" ]; then   # self-test: plain directories, no mounts, no sudo
   SUDO=; esp=$BOOK4_TESTROOT/esp; boot=$BOOK4_TESTROOT/boot
@@ -99,7 +100,10 @@ for a in "$@"; do
     dtb=/*) p=${a#dtb=}
         [ -e "$boot$p" ] || { echo "error: $p does not exist under /boot" >&2; exit 1; }
         dt="(\$bootdev)$p" ;;
-    *) echo "error: '$a': use -ARG, +ARG or dtb=/PATH" >&2; exit 1 ;;
+    initrd=/*) p=${a#initrd=}
+        [ -e "$boot$p" ] || { echo "error: $p does not exist under /boot" >&2; exit 1; }
+        initrd="(\$bootdev)$p" ;;
+    *) echo "error: '$a': use -ARG, +ARG, dtb=/PATH or initrd=/PATH" >&2; exit 1 ;;
   esac
 done
 
