@@ -164,11 +164,15 @@ To test (should work, never verified)
       [handoff-fedora-next.md](handoff-fedora-next.md#4-charging-after-a-plug-in-while-awake-written-7-october-on-arch).
       If 0004 is not enough: [handoff-windows-scdt.md](handoff-windows-scdt.md)
       (does Windows call the firmware's `SCDT`, "set cable detect"?).
-- [ ] **Suspend drain is about 1.7 W** (~6 %/h, ~16 h from full) on both
-      kernels and desktops. The SoC does not seem to power-collapse on
-      Linux; **under Windows it does** (sleep study, 8 Oct: hardware low
-      power ~98 % of each sleep), so the hardware can.
-      [power.md](power.md).
+- [ ] **Suspend drain is about 3.8 W** (7 %/h, measured 14 Oct; the older
+      "1.7 W" was a miscalculation) on both kernels and desktops. The SoC
+      never reaches deep sleep on Linux; **under Windows it does** (sleep
+      study, 8 Oct: hardware low power ~98 % of each sleep). Two causes (15
+      Oct): the boot votes are never released (videocc and QCE drivers
+      missing, GMU), and the PSCI system power domain is never entered in
+      s2idle, an open upstream problem on all Snapdragon X laptops.
+      Releasing the votes also needs UFS resume fixes. Parked until upstream
+      moves; [power.md](power.md#why-the-soc-never-reaches-deep-sleep-14-15-october-2026).
 - [ ] **Hibernation** as a workaround for the drain. Both kernels have
       `CONFIG_HIBERNATION=y`, lockdown is off. Needs a ~20 GB btrfs swap file
       (current swap is zram), `resume=` + `resume_offset=` in the boot hook's

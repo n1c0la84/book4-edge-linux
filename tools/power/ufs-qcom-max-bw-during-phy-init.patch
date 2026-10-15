@@ -1,0 +1,52 @@
+From: book4-edge-linux
+Subject: [PATCH] scsi: ufs: qcom: vote maximum bandwidth while (re)initialising the PHY (experiment)
+
+Kernel-tree patch (drivers/ufs/host/ufs-qcom.c, v7.2), not an out-of-tree
+driver: build it with tools/power/build-ufs-patch.sh.
+
+ufs_qcom_icc_init() votes MODE_MAX before the first initialisation. On
+resume (and any host reset), ufs_qcom_power_up_sequence() re-initialises
+and calibrates the PHY with whatever was voted last: MODE_MIN after
+suspend, or the PWM-gear table entry (cpu-ufs peak 1000 kB/s). While the
+interconnect boot floors are in place (sync_state never ran) that works;
+once they are gone, the QMP UFS PHY calibration times out (-110) and the
+disk is lost on resume. Holding any one interconnect path at peak (UFS's
+own, PCIe's or the display's) also avoids it: the PHY needs some bus/rail
+level, not this path specifically (docs/power.md, 14-15 October).
+
+Not proven. With the patch and no held path, pm_test=devices no longer
+aborts at the UFS suspend, but the machine then stops with a black screen
+and logs nothing, so whether UFS survives is unknown; the only passing run
+also held the PCIe paths, which rescues UFS by itself. See docs/power.md.
+
+---
+--- a/drivers/ufs/host/ufs-qcom.c
++++ b/drivers/ufs/host/ufs-qcom.c
+@@ -129,6 +129,7 @@
+ static unsigned long ufs_qcom_opp_freq_to_clk_freq(struct ufs_hba *hba,
+ 						   unsigned long freq, char *name);
+ static int ufs_qcom_set_core_clk_ctrl(struct ufs_hba *hba, bool is_scale_up, unsigned long freq);
++static int ufs_qcom_icc_set_bw(struct ufs_qcom_host *host, u32 mem_bw, u32 cfg_bw);
+ 
+ static struct ufs_qcom_host *rcdev_to_ufs_host(struct reset_controller_dev *rcd)
+ {
+@@ -503,6 +504,19 @@
+ 
+ 	mode = host_params->hs_rate == PA_HS_MODE_B ? PHY_MODE_UFS_HS_B : PHY_MODE_UFS_HS_A;
+ 
++	/*
++	 * Vote for maximum bandwidth while the PHY is (re)initialised, as
++	 * ufs_qcom_icc_init() does before the first initialisation. On resume
++	 * the votes are still those of the last power mode (or MODE_MIN), and
++	 * once the interconnect boot floors are gone (sync_state) they are too
++	 * low for the PHY: calibration then times out. The power mode change
++	 * that follows sets the votes for the negotiated gear again.
++	 */
++	ret = ufs_qcom_icc_set_bw(host, ufs_qcom_bw_table[MODE_MAX][0][0].mem_bw,
++				  ufs_qcom_bw_table[MODE_MAX][0][0].cfg_bw);
++	if (ret)
++		return ret;
++
+ 	/* Reset UFS Host Controller and PHY */
+ 	ret = ufs_qcom_host_reset(hba);
+ 	if (ret)

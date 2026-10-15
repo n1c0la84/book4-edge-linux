@@ -6,6 +6,111 @@ charging port's `samsung-emuec` before sleep avoids the unplug reset in both
 USB state it manages, without identifying a faulty function. See
 [the test matrix and reproduction scripts](#further-isolation-3-october-evening-charging-port-driver-unbind-succeeds).
 
+**Latest drain investigation (14-15 October):** the SoC never reaches deep
+sleep for two independent reasons; the first is ours and understood, the
+second is an open upstream problem on all Snapdragon X laptops. See
+[Why the SoC never reaches deep sleep](#why-the-soc-never-reaches-deep-sleep-14-15-october-2026).
+
+## Why the SoC never reaches deep sleep (14-15 October 2026)
+
+Baseline, normal Arch boot (`clk_ignore_unused pd_ignore_unused`), lid
+closed, 60 min on battery: **252 mAh = 3.76 W (7.0 %/h)**; `qcom_stats`
+`aosd`/`cxsd`/`ddr` 0 before and after (`tools/power/sleep-drain.sh`). The
+"1.7 W" in older notes was a miscalculation: 6-7 %/h of the 54.8 Wh pack is
+3.3-3.8 W.
+
+### 1. The firmware's boot votes are never released (ours, understood)
+
+Interconnect, RPMh power-domain and clock-controller providers keep the
+firmware's boot-time state (interconnect nodes at `INT_MAX`, i.e. DDR and
+buses at maximum; CX/MX at boot level; boot-on GDSCs on) until their
+`sync_state` runs, which needs every DT consumer bound to a driver. Here it
+never runs (`state_synced` 0, `tools/power/power-dump.sh` lists them):
+
+| Provider | Waits for | Why it never binds |
+|---|---|---|
+| `17500000.rsc:power-controller` (RPMh power domains) | `aaf0000` video clock controller | `CONFIG_SM_VIDEOCC_8550` not set (it drives `qcom,x1e80100-videocc`) |
+| `interconnect-1` (mc-virt), `1700000.interconnect` (aggre2) | `crypto@1dfa000` | `CONFIG_CRYPTO_DEV_QCE` not set |
+| GCC `100000`, GPU CC `3d90000` | `3d6a000.gmu` | the GPU driver uses the GMU without binding it |
+
+In 7.2 the interconnect floors are dropped for all nodes at once, when the
+last interconnect provider syncs (`icc_sync_state()`, one global flag). Both
+modules build as `=m` with no change to the built-in kernel (vermagic
+matches); `CRYPTO_DEV_QCE_*` bools only select algorithms inside `qcrypto`.
+
+`clk_ignore_unused pd_ignore_unused` add to it: ~155 clocks are on in
+hardware with no user (USB multiport and third USB controller at 200 MHz,
+SD card, QUP serial engines, five unused PCIe controllers, UFS ICE at
+403 MHz, camera PLLs). Without the flags 57 really switch off and everything
+still works, but the boot console goes dark between `simpledrm` and `msm`
+(no clocks/power domain in the `simple-framebuffer` node); the unused USB
+GDSCs then still stay on until GCC syncs.
+
+Windows' DSDT recipes (`tools/power/pep-dump.py` on the decompiled DSDT)
+switch the same blocks off in D3, and keep UFS at 4.8 GB/s memory and
+299 MB/s register bandwidth for the whole of D0.
+
+### Forcing the sync breaks resume
+
+`fw_devlink.sync_state=timeout deferred_probe_timeout=30` (the timeout is 0
+in this kernel's config, so `fw_devlink.sync_state=timeout` alone never
+fires), or per provider `printf 1 | sudo tee .../state_synced` (exactly
+`1`, no newline), forces it. After that, `pm_test=devices`
+(`tools/power/suspend-check.sh`) loses the disk:
+`qcom-qmp-ufs-phy 1d80000.phy: phy initialization timed-out`,
+`Failed to calibrate PHY: -110`; the suspend is aborted ("Some devices failed
+to suspend") and every read/write fails afterwards. In one such run Wi-Fi
+also failed to resume (`ath12k ... error -108`). Bisected:
+
+- Syncing only the interconnects is enough to break it (the RPMh power
+  domains and clock controllers were not tested on their own). Syncing
+  mc-virt alone changes nothing, because the floors only drop when the last
+  interconnect provider (aggre2) syncs.
+- With `tools/power/icc-hold/icc_hold.ko` (holds a peak vote on any DT
+  node's interconnect paths), holding **any one path** saves UFS: UFS's own
+  `ufs-ddr` or `cpu-ufs`, the Wi-Fi PCIe controller's, or the display's
+  memory-only or register-only path. So it is a bus/rail level (RPMh raises
+  the CX/MX corner with any bus clock), not one path.
+- `tools/power/icc-trace.sh`: on resume UFS re-votes only its PWM-gear levels
+  (`ufs-ddr` 255 591 kB/s, `cpu-ufs` 1 000 kB/s peak) while the PHY is
+  re-initialised, and raises them only once the link is back at HS gear.
+  At probe the driver votes `MODE_MAX` first (`ufs_qcom_icc_init()`).
+  `tools/power/ufs-qcom-max-bw-during-phy-init.patch` does the same in
+  `ufs_qcom_power_up_sequence()`. With it and no held path, the cycle no
+  longer aborts at UFS but the machine then stops with a black screen and
+  logs nothing; untested further.
+- An **active-only** hold (`tag=3`: applied while the CPUs run, dropped by
+  RPMh in deep sleep) made a full real suspend and resume work with all
+  providers forced to sync and no `clk/pd_ignore_unused`, stock modules:
+  **3.53 W** for 61 min, counters still 0. Small gain, because of 2.
+
+(`crypto@1dfa000`'s own vote was a wrong lead: with `qcrypto` loaded the
+interconnects sync, CE0 is voted, and UFS still fails the same way.)
+
+### 2. The system power domain is never entered in s2idle (upstream, open)
+
+`/sys/kernel/debug/pm_genpd/power-domain-system/idle_states` after that
+hour: state S0 used 31 833 times in normal idle, **S2idle 0**. The CPUs do
+sleep (each entered `cpu-sleep-0` once for the whole hour, no spurious
+wake-ups; `s2idle/time` stays tiny because timekeeping is frozen), but the
+step that hands the SoC to RPMh for CX collapse never happens in s2idle.
+Known on Snapdragon X: an IdeaPad Slim 5x owner
+([linux_ms_dev_kit #94](https://github.com/jglathe/linux_ms_dev_kit/issues/94))
+has the same counters; with the PDC wake-up series, Ulf Hansson's
+cpuidle-psci/genpd fixes and a `domain_ss3` system idle state the system
+domain does power off in s2idle, but `cxsd`/`aosd`/`ddr` stay 0, the drain
+went up to ~3.6 W and the lid switch stopped working. Qualcomm's
+["cpuidle/pmdomain: Correctly track state of excluded CPU clusters"](https://ratatoskr.run/linux-pm/2026/08/17394853/t)
+(in linux-next since September) fixes one reason the system domain refuses
+to power off. Nobody reports CX collapse on Linux yet; Windows Modern
+Standby on these machines is quoted at 0.2-0.5 W.
+
+**Status:** stopped here. Fixing 1 alone gains little until 2 is solved
+upstream; when it is, 1 is needed: `CONFIG_SM_VIDEOCC_8550=m`, a driver (or
+`status = "disabled"`) for `crypto@1dfa000`, the GMU blocker, and resume
+votes for UFS (the patch above) and whatever stops after it. For nights on
+battery: hibernation (TODO) or shut down.
+
 ## Charging stalls after a plug-in while awake (6-7 October 2026)
 
 Symptom: plugged in while awake, the battery "charges" at ~1 W ("holding"):
@@ -541,6 +646,9 @@ above; no permanent sleep configuration or kernel/module change was made.
   battery values late after resume, so it waits 60 s; still prefer runs of an
   hour or more, and unplug the charger a few minutes before starting.
 - Ignore the percentage shown in the first minute after opening the lid.
+- [`tools/power/sleep-drain.sh`](../tools/power/sleep-drain.sh) does the
+  same and also logs the deep-sleep evidence: `qcom_stats` counters and the
+  system power domain's s2idle entries.
 
 ## What we know about the sleep state
 
@@ -554,9 +662,10 @@ above; no permanent sleep configuration or kernel/module change was made.
   five minutes showed a single wake-up, IRQ 131 = `gpio_keys` (the lid), when
   the lid was opened. No wake-up storm.
 - `/sys/kernel/debug/qcom_stats` (`aosd`, `cxsd`, `ddr`) read 0 on both
-  kernels, before and after suspend, even since boot. Either the SoC never
-  reaches those states, or this firmware does not report them; the counters
-  alone cannot tell which.
+  kernels, before and after suspend, even since boot. Explained on 14-15
+  October: the PSCI system domain is never entered in s2idle and the boot
+  votes are never released, see
+  [Why the SoC never reaches deep sleep](#why-the-soc-never-reaches-deep-sleep-14-15-october-2026).
 - `EC read failed: -13` during suspend and `hwmon62: parent phy0 should not be
   sleeping` (ath12k) on resume appear on both kernels.
 - The RTC cannot wake this machine (`/dev/rtc0 not enabled for wakeup
@@ -574,8 +683,8 @@ DSPs.
    open (unbinding ath12k is avoided on this machine).
 2. Unbind devices one at a time before suspending (Wi-Fi, USB, ...) and
    compare.
-3. Compare with other X1E machines' reports (Lenovo T14s, Dell XPS 13) and the
-   linux-arm-msm list.
+3. ~~Compare with other X1E machines' reports~~: done 15 October, the same
+   on an IdeaPad Slim 5x; see the section at the top.
 
 In practice: closing the lid is fine for a few hours; for a night on battery,
 shut down.
