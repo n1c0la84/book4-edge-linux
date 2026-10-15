@@ -2,8 +2,8 @@
 
 **Status (15 October 2026): works, experimental.** Arch boots at EL2 with
 KVM, from a USB stick that loads [slbounce](https://github.com/TravMurav/slbounce)
-before the normal GRUB. No audio (the DSPs cannot start), no RTC and no
-UEFI variables. Nothing on the internal disk's ESP or in the firmware's
+before the normal GRUB. No internal audio (the DSPs cannot start; Bluetooth
+audio works), no RTC and no UEFI variables. Nothing on the internal disk's ESP or in the firmware's
 boot entries changes; without the stick the machine boots as before.
 
 ## Why
@@ -81,10 +81,11 @@ handlers registered).
 | Battery, charger, USB-C ports (EC over I2C) | work |
 | USB, fingerprint reader, camera nodes | present |
 | APSS watchdog | `qcom_wdt`, Linux's own, inactive unless opened |
-| **Audio, compute DSP** | **no**: `error -22 initializing firmware` (TrustZone refuses PAS without the hypervisor); Bluetooth/USB audio go through the ADSP too |
+| **Internal audio, compute DSP** | **no**: `error -22 initializing firmware` (TrustZone refuses PAS without the hypervisor); speakers, microphones and headset jack sit behind the ADSP |
+| Bluetooth audio | works (AirPods): encoded on the CPU, sent through the WCN7850, no DSP |
 | **UEFI variables** | **none** (`qcom_qseecom` probe `-22`): `/sys/firmware/efi/efivars` is empty, `efibootmgr` cannot work |
 | **RTC** | **none** (`RTC time: n/a`): `rtc-pm8xxx` needs the `RTCInfo` variable; the clock is right only once NTP syncs |
-| Suspend | not tested yet |
+| Suspend | `pm_test=devices` cycle passes (`tools/power/suspend-check.sh`); real lid-close sleep under test |
 
 Not tried: `cpuidle.off=1` (the HP OmniBook notes need it against input
 lag). Starting the DSPs from EL2 needs qebspil (an EFI driver that boots
