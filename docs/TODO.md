@@ -164,6 +164,10 @@ To test (should work, never verified)
       [handoff-fedora-next.md](handoff-fedora-next.md#4-charging-after-a-plug-in-while-awake-written-7-october-on-arch).
       If 0004 is not enough: [handoff-windows-scdt.md](handoff-windows-scdt.md)
       (does Windows call the firmware's `SCDT`, "set cable detect"?).
+- [ ] **Spontaneous reset at 47 h 59 min of uptime** (14 Oct, Arch, wall
+      clock including suspend; no log, no pstore). Suspect: a timer in
+      Qualcomm's hypervisor, which Windows never runs. Test: one boot at
+      EL2 (no hypervisor) kept up past 48 h; [el2.md](el2.md).
 - [ ] **Suspend drain is about 3.8 W** (7 %/h, measured 14 Oct; the older
       "1.7 W" was a miscalculation) on both kernels and desktops. The SoC
       never reaches deep sleep on Linux; **under Windows it does** (sleep

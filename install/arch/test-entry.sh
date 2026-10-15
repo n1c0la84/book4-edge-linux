@@ -5,7 +5,8 @@
 # kernel, DTB and initramfs) with changed kernel arguments or DTB. They live in
 # /boot/book4-extra.cfg, which the boot hook's grub.cfg sources, so neither
 # Fedora nor the ESP is touched. Never the default entry.
-# Run as your user (sudo inside), with /boot (sda4) not mounted elsewhere.
+# Run as your user (sudo inside), with /boot (sda4) not mounted elsewhere;
+# a mounted ESP (e.g. the /efi automount) is fine, it is only read.
 #
 #   bash install/arch/test-entry.sh add NAME [-ARG ...] [+ARG ...] [dtb=/PATH] [initrd=/PATH]
 #        -ARG removes ARG (exact word, or KEY for KEY=...), +ARG appends it,
@@ -31,16 +32,21 @@ if [ -n "${BOOK4_TESTROOT:-}" ]; then   # self-test: plain directories, no mount
   SUDO=; esp=$BOOK4_TESTROOT/esp; boot=$BOOK4_TESTROOT/boot
 else
   SUDO=sudo
-  for d in $BOOTDEV $ESPDEV; do
-    if findmnt -rn -S $d >/dev/null; then
-      echo "error: $d is already mounted ($(findmnt -rn -o TARGET -S $d | tr '\n' ' ')); unmount it first (bash ~/mount-ro.sh off)." >&2
-      exit 1
-    fi
-  done
-  boot=$(mktemp -d); esp=$(mktemp -d)
-  cleanup() { sudo umount "$boot" 2>/dev/null || true; sudo umount "$esp" 2>/dev/null || true; rmdir "$boot" "$esp"; }
+  if findmnt -rn -S $BOOTDEV >/dev/null; then
+    echo "error: $BOOTDEV is already mounted ($(findmnt -rn -o TARGET -S $BOOTDEV | tr '\n' ' ')); unmount it first." >&2
+    exit 1
+  fi
+  # The ESP is only read: reuse a mount if there is one (e.g. systemd's
+  # /efi automount on Arch, root-only, hence the reads through sudo).
+  esp=$(findmnt -rno TARGET -S $ESPDEV | head -1) || true
+  own_esp=; [ -n "$esp" ] || { esp=$(mktemp -d); own_esp=1; }
+  boot=$(mktemp -d)
+  cleanup() {
+    sudo umount "$boot" 2>/dev/null || true; rmdir "$boot"
+    if [ -n "$own_esp" ]; then sudo umount "$esp" 2>/dev/null || true; rmdir "$esp"; fi
+  }
   trap cleanup EXIT
-  sudo mount -o ro $ESPDEV "$esp"
+  [ -z "$own_esp" ] || sudo mount -o ro $ESPDEV "$esp"
   if [ "$cmd" = list ]; then sudo mount -o ro $BOOTDEV "$boot"; else sudo mount $BOOTDEV "$boot"; fi
 fi
 file=$boot/$EXTRA
@@ -79,7 +85,7 @@ subvol=$(findmnt -rn -o FSROOT /); subvol=${subvol#/}
 block=$(awk -v sv="rootflags=subvol=$subvol" '
   /^menuentry / { buf = $0 "\n"; inside = 1; next }
   inside { buf = buf $0 "\n" }
-  inside && /^}/ { inside = 0; if (index(buf, sv) && !found) { printf "%s", buf; found = 1 } }' "$esp/$ESPCFG")
+  inside && /^}/ { inside = 0; if (index(buf, sv) && !found) { printf "%s", buf; found = 1 } }' < <($SUDO cat "$esp/$ESPCFG"))
 [ -n "$block" ] || { echo "error: no entry with rootflags=subvol=$subvol in $ESPCFG" >&2; exit 1; }
 
 title=$(sed -n '1s/^menuentry "\(.*\)" {$/\1/p' <<<"$block")

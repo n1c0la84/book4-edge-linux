@@ -22,6 +22,11 @@ side; [omarchy.md](omarchy.md) has the background and the two routes.
   nor the ESP is touched), e.g.
   `test-entry.sh add synced -clk_ignore_unused +fw_devlink.sync_state=timeout`;
   `list`, `remove NAME`, `clear`.
+- The ESP is not in `/etc/fstab`: `systemd-gpt-auto-generator` automounts it
+  at `/efi` on access (root-only, unmounted after 120 s idle). Nothing in
+  Arch writes to it; `test-entry.sh` reads through it when it is mounted.
+- An EL2 test entry (no Qualcomm hypervisor, KVM) boots from a USB stick
+  with slbounce: [el2.md](el2.md).
 - Arch's own kernel package (`linux-aarch64`) is removed. Kernel modules are a
   copy of Fedora's `/usr/lib/modules/7.2.7-book4`.
 - Our firmware (Samsung DSP, GPU SQE, ath12k c5 set, topology alias) is in
