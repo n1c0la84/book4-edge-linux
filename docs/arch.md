@@ -14,7 +14,10 @@ side; [omarchy.md](omarchy.md) has the background and the two routes.
 - GRUB entry "Arch Linux (7.2.7-book4)" comes from the Fedora boot hook:
   `/etc/book4/second-os` on **Fedora** holds `arch Arch Linux`; the hook adds
   the entry when `/boot/initramfs-<kver>-arch.img` exists, with
-  `rootflags=subvol=arch`.
+  `rootflags=subvol=arch`. `/etc/book4/default-os` = `second` (on Fedora)
+  makes it GRUB's default (16 October: Arch is the daily system; also needed
+  for hibernation, since Fedora must never mount the shared btrfs while Arch
+  is hibernated). `~/boot-defaults.sh` sets it up from Arch.
 - Test boot entries are managed from Arch with
   [`install/arch/test-entry.sh`](../install/arch/test-entry.sh): copies of the
   Arch entry with changed kernel arguments, DTB or initramfs, kept in
