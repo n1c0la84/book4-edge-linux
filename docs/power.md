@@ -201,6 +201,10 @@ in hibern8), so overlapping calls leave references that are never dropped
 and `clk8` can never be released for sleep. Same code in mainline.
 Check: `~/ufs-refclk-check.sh` (count before/after two suspends); fix:
 return early in `ufs_qcom_enable_lane_clks()` when already enabled.
+**Confirmed:** `clk8` count 106 -> 106 -> 110 over two suspends, a few hours
+into the boot (42 after 20 minutes). Fix:
+`tools/power/ufs-qcom-lane-clks-guard.patch`, built with
+`build-ufs-patch.sh PATCH`.
 
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in

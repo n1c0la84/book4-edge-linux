@@ -1,0 +1,29 @@
+From: Nicola Nicodemo <nicola084@gmail.com>
+Subject: [PATCH] scsi: ufs: qcom: Don't enable the lane clocks twice
+
+ufs_qcom_disable_lane_clks() returns early when the clocks are already
+off, but ufs_qcom_enable_lane_clks() enables them unconditionally. It is
+called from ufs_qcom_hce_enable_notify(), ufs_qcom_resume() and the
+ungate path of ufs_qcom_setup_clocks() (link in hibern8), so overlapping
+calls take references that are never dropped. The bulk includes every
+clock of the controller node, ref_clk among them: on X1E80100 that is an
+RPMh clock buffer, whose enable count only grows (42 after 20 minutes,
+110 after a few hours), so its sleep-set vote is never released and the
+SoC cannot shut down the XO in suspend.
+
+Return early when the clocks are already enabled, like the disable path.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/ufs/host/ufs-qcom.c	2026-10-16 20:01:59.489112904 +0200
++++ b/drivers/ufs/host/ufs-qcom.c	2026-10-16 20:01:59.501099309 +0200
+@@ -356,6 +356,9 @@
+ {
+ 	int err;
+ 
++	if (host->is_lane_clks_enabled)
++		return 0;
++
+ 	err = clk_bulk_prepare_enable(host->num_clks, host->clks);
+ 	if (err)
+ 		return err;

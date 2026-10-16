@@ -1,12 +1,13 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Build ufs-qcom.ko with ufs-qcom-max-bw-during-phy-init.patch, from Arch, in
-# the Fedora container, without touching the kernel tree: ~/src/patchwork is
-# reflink-copied (instant, shared extents on btrfs) to ~/src/patchwork-ufstest
-# in Fedora's home, patched and built there (incremental). Delete that copy
-# when done. Then: tools/power/make-ufstest-initramfs.sh.
+# Build ufs-qcom.ko with one patch (default ufs-qcom-max-bw-during-phy-init.patch),
+# from Arch, in the Fedora container, without touching the kernel tree:
+# ~/src/patchwork is reflink-copied (instant, shared extents on btrfs) to
+# ~/src/patchwork-<patch name> in Fedora's home, patched and built there
+# (incremental). Delete that copy when done. Then:
+# tools/power/make-ufstest-initramfs.sh.
 #
-#   bash tools/power/build-ufs-patch.sh
+#   bash tools/power/build-ufs-patch.sh [PATCH]
 #
 # Output: ${BOOK4_POWER_OUT:-~/src/book4-acpi}/modules/ufs-qcom.ko
 set -euo pipefail
@@ -17,14 +18,17 @@ mkdir -p "$out"
 if findmnt -rn -O ro /mnt/fedora/home >/dev/null; then
     echo "error: /mnt/fedora/home is mounted read-only; unmount it first" >&2; exit 1
 fi
-pb=$(base64 -w0 <(sed -n '/^--- a\//,$p' "$here/ufs-qcom-max-bw-during-phy-init.patch"))
+patchfile=${1:-$here/ufs-qcom-max-bw-during-phy-init.patch}
+[ -r "$patchfile" ] || { echo "error: $patchfile not found" >&2; exit 1; }
+copy=patchwork-$(basename "$patchfile" .patch)
+pb=$(base64 -w0 <(sed -n '/^--- a\//,$p' "$patchfile"))
 inner="set -euo pipefail
 cd ~/src
-if [ ! -e patchwork-ufstest ]; then
-    echo '== reflink copy ~/src/patchwork -> ~/src/patchwork-ufstest' >&2
-    cp -a --reflink=always patchwork patchwork-ufstest
+if [ ! -e $copy ]; then
+    echo '== reflink copy ~/src/patchwork -> ~/src/$copy' >&2
+    cp -a --reflink=always patchwork $copy
 fi
-cd patchwork-ufstest
+cd $copy
 [ \"\$(make -s LOCALVERSION= kernelrelease)\" = \"\$(make -s -C ~/src/patchwork LOCALVERSION= kernelrelease)\" ]
 echo $pb | base64 -d > /tmp/ufs.patch
 if patch -p1 -R --dry-run -s -f < /tmp/ufs.patch >/dev/null 2>&1; then echo 'patch already applied' >&2
