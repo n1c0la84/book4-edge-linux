@@ -190,6 +190,18 @@ baseline 3.76 W, hold-active 3.53 W), Wi-Fi back after resume, but
 known XO/CX holder released the SoC still does not collapse: the remaining
 blocker is unidentified.
 
+**Suspect (16 October): UFS leaks enables on its `ref_clk`.** In the dump,
+`clk8` (an RPMh XO buffer, voting in the sleep set too) has enable count 42,
+all from `1d84000.ufshc` `ref_clk`. `ufs_qcom_enable_lane_clks()` enables the
+whole clock bulk (`devm_clk_bulk_get_all()`, `ref_clk` included) without
+checking `is_lane_clks_enabled`, while `ufs_qcom_disable_lane_clks()` is
+guarded. It is called from `ufs_qcom_hce_enable_notify()`,
+`ufs_qcom_resume()` and the ungate path of `ufs_qcom_setup_clocks()` (link
+in hibern8), so overlapping calls leave references that are never dropped
+and `clk8` can never be released for sleep. Same code in mainline.
+Check: `~/ufs-refclk-check.sh` (count before/after two suspends); fix:
+return early in `ufs_qcom_enable_lane_clks()` when already enabled.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
