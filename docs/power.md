@@ -132,6 +132,14 @@ PSCI state, which is when the RSC writes the RPMh sleep sets.
 `drips`, then `tools/power/sleep-drain.sh drips` for an hour (the
 `system-pd-s2idle` sum now includes the new state).
 
+**Result (16 October, `drips`, with `clk/pd_ignore_unused`, boot votes
+held):** the system domain entered DRIPS for the first time
+(`system-pd-s2idle` 0 -> 1: once, for the whole hour), `aosd`/`cxsd`/`ddr`
+still 0, and **4.67 W** (baseline 3.76 W). So the request now reaches RPMh,
+which refuses to collapse because sleep-set votes remain (boot floors,
+~155 unused clocks). Next: DRIPS with the votes released (no flags, every
+provider forced to sync, active-only UFS hold as on 15 October).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
