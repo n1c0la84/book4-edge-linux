@@ -222,6 +222,18 @@ reader) died (`xHCI host controller not responding, assume dead`: it relies
 on retention), plus `geni_i2c ... error turning SE resources:-13` on
 b94000/b80000. Not the blocker; dropped.
 
+**RPMh trace from boot (16 October, `trace_event=rpmh:rpmh_send_msg` plus a
+`stacktrace` trigger).** In s2idle Linux does vote CX/MMCX/MX to 0
+(`genpd_suspend_noirq` -> `rpmhpd_power_off`) and the buses to 0 in the sleep
+set; journald's timestamps had suggested otherwise (they are read times).
+But `xo.lvl` is voted on (3) from 9 s after boot and never changes, so the XO
+can never shut down (`aosd` 0). Clock tracing (`clk_prepare`/`clk_enable`
+transitions from a `clk_summary` baseline) at the moment CX is voted off: the
+only clock still prepared below `bi_tcxo` is
+`bi-tcxo-div2-clk` -> `gcc_gpll0` -> `gcc_qupv3_wrap1_s6_clk`, consumer
+`a98000.serial`, the Bluetooth UART (`hci_uart_qca` keeps the port open).
+Test: `~/bt-unbind-test.sh` (unbind `serial0-0`, suspend, compare counters).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
