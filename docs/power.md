@@ -211,6 +211,17 @@ real but was not what blocks XO shutdown (the earlier runs were on fresh
 boots, where the leaked count was still low). Worth sending upstream on its
 own; the deep-sleep blocker remains unidentified.
 
+**USB GDSCs (16 October).** The ten USB GDSCs are `PWRSTS_RET_ON` on X1E,
+so `gdsc_disable()` leaves them on; Windows' PEP lists exactly these ten
+as `SUPPRESSIBLE_RESOURCES` footswitches (INF blob `CSRL`).
+`tools/power/gdsc-drips` collapses them at the start of noirq suspend and
+restores them at the end of noirq resume. Result (`drips-full-gdsc`,
+23 min): all ten collapsed and restored, **4.03 W, counters still 0**, and
+on resume the runtime-suspended USB 2.0 controller (`a200000`, fingerprint
+reader) died (`xHCI host controller not responding, assume dead`: it relies
+on retention), plus `geni_i2c ... error turning SE resources:-13` on
+b94000/b80000. Not the blocker; dropped.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
