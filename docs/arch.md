@@ -284,7 +284,7 @@ CDSP's `fastrpc` is only for compute offload. Tracked in [TODO.md](TODO.md).
   no bootloader packages (Limine, systemd-boot, grub installs) in Arch.
 - `/boot` is Fedora's partition: Arch must not mount it as its own `/boot`
   for kernel packages.
-- Never `modprobe -r ath12k` or rescan PCI. Keep `cutmem` and `cma=256M`
+- Wi-Fi remove/rescan works again since 16 October ([firmware.md](firmware.md)); if Wi-Fi misbehaves, reboot. Keep `cutmem` and `cma=256M`
   (they live in Fedora's GRUB config).
 
 ## Working from Arch without rebooting into Fedora (5 October)

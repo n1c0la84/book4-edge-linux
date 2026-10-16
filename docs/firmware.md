@@ -38,6 +38,9 @@ Files go in `/usr/lib/firmware/ath12k/WCN7850/hw2.0/` (`amss.bin`, `m3.bin`,
 
     strings /usr/lib/firmware/ath12k/WCN7850/hw2.0/amss.bin | grep c5-00302
 
-Never `modprobe -r ath12k` or PCI remove/rescan after the card has had a QMI
-session: it panics in `ath12k_qmi_phy_cap_send`. If Wi-Fi misbehaves, reboot.
+Early in the bring-up, `modprobe -r ath12k` or PCI remove/rescan after the
+card had a QMI session panicked in `ath12k_qmi_phy_cap_send`. With c5-00302
+and 7.2.7 (16 October) a PCI remove of `0004:01:00.0` and a rescan of
+`0004:00:00.0` work: no panic, Wi-Fi reconnected within 25 s (the MAC
+address changes across the reload). If Wi-Fi misbehaves, reboot.
 `cma=256M` on the kernel command line is required (it cleared an ath12k DMA failure).
