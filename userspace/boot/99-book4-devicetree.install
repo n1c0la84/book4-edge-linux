@@ -78,6 +78,10 @@ TESTDTB=$(cat "${BOOK4_TESTFILE:-/etc/book4/test-dtb}" 2>/dev/null)
 read -r DEFKVER DEFDTB < "${BOOK4_DEFAULTFILE:-/etc/book4/default-dtb}" 2>/dev/null || true
 
 read -r SUBVOL2 TITLE2 < "${BOOK4_SECONDFILE:-/etc/book4/second-os}" 2>/dev/null || true
+# /etc/book4/default-os: "second" makes the second-os entry GRUB's default
+# (selected by title; the menu order stays the same). Anything else, or no
+# file: the first entry, as before.
+read -r DEFOS 2>/dev/null < "${BOOK4_DEFAULTOSFILE:-/etc/book4/default-os}" || true
 [ -n "${DEFDTB:-}" ] && [ "${DEFKVER:-}" = "$default" ] && [ -e "$BOOT$DEFDTB" ] || DEFDTB=
 
 entry() {  # $1=kver $2=title suffix $3=extra args [$4=DTB path in /boot]
@@ -98,6 +102,11 @@ gen() {
 set timeout=5
 set timeout_style=menu
 set gfxpayload=keep
+EOF
+    if [ "${DEFOS:-}" = second ] && [ -n "$SUBVOL2" ] && [ -e "$BOOT/initramfs-$default-$SUBVOL2.img" ]; then
+        printf 'set default="%s"\n' "$TITLE2 ($default)"
+    fi
+    cat <<EOF
 
 # /boot is a separate ext4 partition; find it by a file only it has
 search --no-floppy --set=bootdev --file /vmlinuz-$default
