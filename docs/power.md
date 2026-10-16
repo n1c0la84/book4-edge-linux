@@ -184,6 +184,11 @@ from a fresh host init; ath12k reloads its firmware and Wi-Fi reconnects
 after 11 s, with no remove/rescan. Next: one hour with everything
 (`drips-full`: DRIPS, no flags, providers synced, active-only UFS hold,
 `pcie_port_pm=force`, USB wakeups off).
+**Result (16 October, `drips-full`, 62 min): 3.06 W** (best so far:
+baseline 3.76 W, hold-active 3.53 W), Wi-Fi back after resume, but
+`aosd`/`cxsd`/`ddr` still 0 and the system domain entered once. With every
+known XO/CX holder released the SoC still does not collapse: the remaining
+blocker is unidentified.
 
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
