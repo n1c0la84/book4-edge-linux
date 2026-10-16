@@ -234,6 +234,17 @@ only clock still prepared below `bi_tcxo` is
 `a98000.serial`, the Bluetooth UART (`hci_uart_qca` keeps the port open).
 Test: `~/bt-unbind-test.sh` (unbind `serial0-0`, suspend, compare counters).
 
+**Clean run (fresh boot, providers synced, Bluetooth unbound):** at the
+moment of sleep no clock below `bi_tcxo` is prepared, and every APSS RPMh vote
+is off: `cx.lvl`, `mx.lvl`, `mmcx.lvl`, `xo.lvl` 0 (active, not overridden),
+every BCM 0 in the sleep set or already 0. `aosd`/`cxsd`/`ddr` still 0. So
+the remaining blocker is not a Linux (APSS DRV) vote: candidates are the
+DSPs' own RPMh votes (adsp/cdsp DRVs, invisible to this trace) or the
+hypervisor/firmware. (A runtime-PM experiment on the USB controllers leaked an
+`SN4` vote through `dwc3_qcom_resume()` -> `icc_enable()` on that boot; not
+present in the clean state.) Next: `~/dsp-stop-test.sh` (stop adsp and cdsp,
+then suspend), then EL2.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
