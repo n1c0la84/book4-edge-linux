@@ -153,6 +153,19 @@ off the APSS so the SoC can collapse with the link in L1ss; Linux does not
 use the PCIe RSC (those clocks are off). Next: `drips-nowifi`
 (`pci@1c08000` and `phy@1c0e000` disabled, USB wakeups off).
 
+**Taking the Wi-Fi link down for suspend (16 October, evening).** PCI
+remove of the card alone leaves the link up (and ASPM off), so the host
+driver keeps its resources in `suspend_noirq`. Adding Link Disable on the
+root port (`setpci -s 0004:00:00.0 CAP_EXP+10.w=0010:0010`) drops the link
+(`pciehp: Slot(0): Link Down`, `DLActive-`), and in suspend the controller
+powers down (on resume `qcom-pcie ... PCIe Gen.3 x2 link up` from a fresh
+host init). But the card does not come back: awake, clearing Link Disable
+does not retrain it, and pciehp has turned slot 0 off and refuses to power
+it on (`No such device`); after the suspend the link retrained but the
+rescan found nothing. Wi-Fi needs a reboot each time. Cleaner route: make
+`qcom_pcie_suspend_noirq()` deinit the host also when no endpoint driver
+is bound, so a sleep hook only removes the card and rescans (which works).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
