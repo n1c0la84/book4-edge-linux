@@ -132,6 +132,13 @@ PSCI state, which is when the RSC writes the RPMh sleep sets.
 `drips`, then `tools/power/sleep-drain.sh drips` for an hour (the
 `system-pd-s2idle` sum now includes the new state).
 
+#94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
+`deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
+both. Not directly comparable (8-core Purwa, different board). Jens'
+`hamoa.dtsi` on `jg/ubuntu-qcom-x1e-7.2.y` has the same empty
+`power-domain-system` (`/* TODO: system-wide idle states */`), so DRIPS has
+not been tried there either.
+
 ## Charging stalls after a plug-in while awake (6-7 October 2026)
 
 Symptom: plugged in while awake, the battery "charges" at ~1 W ("holding"):
