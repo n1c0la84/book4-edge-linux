@@ -244,6 +244,11 @@ hypervisor/firmware. (A runtime-PM experiment on the USB controllers leaked an
 `SN4` vote through `dwc3_qcom_resume()` -> `icc_enable()` on that boot; not
 present in the clean state.) Next: `~/dsp-stop-test.sh` (stop adsp and cdsp,
 then suspend), then EL2.
+**DSPs stopped (16 October):** adsp and cdsp `offline` (their own sleep
+counters advance), providers synced, Bluetooth unbound: `aosd`/`cxsd`/`ddr`
+still 0. Linux and the DSPs are both ruled out; next is the hypervisor: the
+same test at EL2 (`install/el2/el2-dtb.sh /dtb-test/book4-drips.dtb
+el2-drips -clk_ignore_unused -pd_ignore_unused`).
 
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in

@@ -6,12 +6,16 @@
 # with that DTB and id_aa64mmfr0.ecv=1). The source DTB must carry
 # __symbols__ (built with -@; the kernel's and ours do). Run on Arch:
 #
-#   bash install/el2/el2-dtb.sh [/dtb-test/book4-default-1010.dtb]   (path under /boot)
+#   bash install/el2/el2-dtb.sh [/dtb-test/book4-default-1010.dtb [NAME [ARGS...]]]
+#        (path under /boot; NAME of the test entry, default "el2"; ARGS are
+#        more test-entry.sh arguments, e.g. -clk_ignore_unused)
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(cd "$here/../.." && pwd)
 src=${1:-/dtb-test/book4-default-1010.dtb}
 dst=${src%.dtb}-el2.dtb
+name=${2:-el2}
+extra=("${@:3}")
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 if findmnt -rn -S /dev/sda4 >/dev/null; then echo "error: /dev/sda4 (/boot) is mounted; unmount it first" >&2; exit 1; fi
 
@@ -35,4 +39,4 @@ fi
 sudo install -m 644 "$work/el2.dtb" "$b$dst"; sync
 sudo umount "$b"; rmdir "$b"
 echo "== installed /boot$dst"
-bash "$repo/install/arch/test-entry.sh" add el2 +id_aa64mmfr0.ecv=1 "dtb=$dst"
+bash "$repo/install/arch/test-entry.sh" add "$name" +id_aa64mmfr0.ecv=1 "${extra[@]}" "dtb=$dst"
