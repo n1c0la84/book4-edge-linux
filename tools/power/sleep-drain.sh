@@ -28,7 +28,10 @@ c0=$(cat $bat/charge_now); t0=$(date +%s); s0=$(counters)
 echo "before: charge ${c0} uAh, $(cat $bat/capacity) %, counters: $s0"
 echo "suspending in 5 s ..."
 sleep 5
-systemctl suspend
+ok0=$(cat /sys/power/suspend_stats/success); fail0=$(cat /sys/power/suspend_stats/fail)
+systemctl suspend              # returns before the suspend starts: wait for the kernel's count
+while [ "$(cat /sys/power/suspend_stats/success)" = "$ok0" ] && [ "$(cat /sys/power/suspend_stats/fail)" = "$fail0" ]; do sleep 1; done
+[ "$(cat /sys/power/suspend_stats/fail)" = "$fail0" ] || echo "warning: the suspend FAILED (see dmesg)"
 sleep 3                        # let resume finish
 echo "resumed; waiting 30 s for the EC's battery reading to catch up ..."
 sleep 30
