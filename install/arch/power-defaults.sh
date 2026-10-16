@@ -41,6 +41,6 @@ else
 fi
 echo \"Fedora cmdline: \$(cat /etc/kernel/cmdline)\"
 sudo /etc/kernel/install.d/99-book4-devicetree.install add \"\$(cat /etc/book4/default-kernel)\"
-grep -c pcie_port_pm=force /boot/efi/EFI/fedora/grub.cfg | sed 's/^/grub.cfg lines with pcie_port_pm=force: /' || true"
+sudo grep -c pcie_port_pm=force /boot/efi/EFI/fedora/grub.cfg | sed 's/^/grub.cfg lines with pcie_port_pm=force: /' || true"
 bash "$here/fedora-shell.sh" bash -lc "$inner"
 echo "Done. Reboot (normal entry) to use the new kernel option."
