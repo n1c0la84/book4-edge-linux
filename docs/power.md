@@ -250,6 +250,26 @@ still 0. Linux and the DSPs are both ruled out; next is the hypervisor: the
 same test at EL2 (`install/el2/el2-dtb.sh /dtb-test/book4-drips.dtb
 el2-drips -clk_ignore_unused -pd_ignore_unused`).
 
+**The other RSC channels (16 October).** The apps RSC has `drv-0`, `drv-1`,
+`drv-2` (DT `reg-names`); Linux is `drv-2` (`qcom,drv-id = <2>`), the others
+are normally TrustZone and the hypervisor. A read-only `/dev/mem` dump of
+their TCSes (`~/src/rsc-peek`) gets a bus error on both (`drv-2` itself is
+refused by the strict-devmem check): their votes are invisible from EL1.
+
+**Gunyah aggregates sleep requests across VMs.** In the public Gunyah source
+(`hyp/vm/psci_osi/src/psci_osi.c`, `get_vpm_groups_aggregated_state()`) the
+physical cluster/system level is the shallowest one any VM group allows; a
+level any VM keeps at 0 stops the request there. The X1E platform code
+(`platform_psci_*`) is not public, and Windows never runs Gunyah on these
+machines, so this path is unlikely to have been validated on X1E. EL2 (no
+Gunyah) is the test.
+
+**AOP messages in qcpep8380.** `{class: lpm_mon, type: cxpc|rbsc, ...}` asks
+the AOP to monitor CX power collapse; only sent when debug config 0x7b is
+set. `{class: image, res: load_state|pwr_state}` reports subsystem images
+(Linux's qcom_aoss sends load_state too). The rest are DDR/BCM/GPU tuning.
+None looks like a missing "sleep allowed" message.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
