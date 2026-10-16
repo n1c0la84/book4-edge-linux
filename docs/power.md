@@ -178,6 +178,12 @@ including the root port, is in D3hot (`pci_host_common_d3cold_possible()`).
 No suspend today re-inited the controller, so it is not taken; the root port
 needs `bridge_d3` to be put in D3hot. Test: `pcie_port_pm=force` (GRUB entry
 `drips-pcie`), short suspend, look for a fresh `link up` after resume.
+**It works:** with `pcie_port_pm=force` the suspend logs `Timeout waiting for
+L2 entry! LTSSM: 0x11` (non-fatal), and on resume `PCIe Gen.3 x2 link up`
+from a fresh host init; ath12k reloads its firmware and Wi-Fi reconnects
+after 11 s, with no remove/rescan. Next: one hour with everything
+(`drips-full`: DRIPS, no flags, providers synced, active-only UFS hold,
+`pcie_port_pm=force`, USB wakeups off).
 
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
