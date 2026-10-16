@@ -166,6 +166,19 @@ rescan found nothing. Wi-Fi needs a reboot each time. Cleaner route: make
 `qcom_pcie_suspend_noirq()` deinit the host also when no endpoint driver
 is bound, so a sleep hook only removes the card and rescans (which works).
 
+**PHY review (16 October, book4/7.2 source).** In system suspend: UFS
+(`spm_lvl 5`, link off) powers its PHY and ref clock down in
+`ufs_qcom_setup_clocks()`; eDP's PHY exits in `msm_dp_pm_runtime_suspend()`.
+USB keeps every PHY initialised (combo and eUSB2 ref clocks, so the XO vote)
+whenever the controller may wake (`dwc3_suspend_common()`, host role,
+`device_may_wakeup`): the default `power/wakeup` is `enabled` on all three.
+PCIe: 7.2's `dw_pcie_suspend_noirq()` already sends PME_Turn_Off, takes the
+link to L2 and deinits the host, but only if every device on the bus,
+including the root port, is in D3hot (`pci_host_common_d3cold_possible()`).
+No suspend today re-inited the controller, so it is not taken; the root port
+needs `bridge_d3` to be put in D3hot. Test: `pcie_port_pm=force` (GRUB entry
+`drips-pcie`), short suspend, look for a fresh `link up` after resume.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
