@@ -140,6 +140,19 @@ which refuses to collapse because sleep-set votes remain (boot floors,
 ~155 unused clocks). Next: DRIPS with the votes released (no flags, every
 provider forced to sync, active-only UFS hold as on 15 October).
 
+**Result (16 October, `drips-synced`: no flags, all providers synced,
+active-only UFS hold):** resume fine, DRIPS entered again (also 12 338 times
+in runtime idle), `aosd`/`cxsd`/`ddr` still 0, 3.91 W over only 18 min.
+`adsp`/`cdsp` sleep ~97 % of the time, so they are not the blocker.
+`bi_tcxo` (RPMh XO, the non-`_ao` one that also votes in the sleep set) has
+10 users awake: Wi-Fi's PCIe PHY (`tcsr_pcie_2l_4_clkref_en`,
+`pcie4_pipe_clk`), the USB PHYs, UFS PHY, eDP PHY. Any one held over
+suspend prevents XO shutdown (`aosd`). The Windows PEP has a "PCIe HW DRV"
+(`PcieHwDrv`, `RSC_DRV_PCIE`, `gcc_pcie_rscc_*`) that takes PCIe's votes
+off the APSS so the SoC can collapse with the link in L1ss; Linux does not
+use the PCIe RSC (those clocks are off). Next: `drips-nowifi`
+(`pci@1c08000` and `phy@1c0e000` disabled, USB wakeups off).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
