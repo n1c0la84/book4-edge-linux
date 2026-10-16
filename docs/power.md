@@ -111,6 +111,27 @@ upstream; when it is, 1 is needed: `CONFIG_SM_VIDEOCC_8550=m`, a driver (or
 votes for UFS (the patch above) and whatever stops after it. For nights on
 battery: hibernation (TODO) or shut down.
 
+### 3. Our DT has no system-level idle state; Windows' is DRIPS (16 October)
+
+Ghidra on Qualcomm's PEP (`qcpep8380.sys` 10.9, from the Windows driver
+store) and the DSDT: the PEP registers its system-collapse callbacks
+(`PepIdleEnterSysCollapse`/`Exit`) on the LPI mode `platform.DRIPS`; they
+only timestamp and collect subsystem sleep stats. The state itself comes
+from `\_SB.SYSM._LPI`: SS1 (`0x100`), SS2 (`0x200`) and **DRIPS (`0xC300`,
+wake latency 5 ms, min residency 9 ms)**, reachable only from cluster CL5
+(`0x50`, enabled parent state 3) with cores in C4 (`0x4`). The PSCI
+parameter Windows uses for DRIPS is therefore **`0x0200C354`**, the value of
+the `domain_ss3` state tried in linux_ms_dev_kit #94.
+
+In our running DT `psci/power-domain-system` has **no `domain-idle-states`**
+(only the clusters have `0x01000044`/`0x01000054`), although the RSC and
+all three clusters are its children. So Linux never requests a system-level
+PSCI state, which is when the RSC writes the RPMh sleep sets.
+`tools/power/drips-dtb.sh IN OUT` adds DRIPS to a DTB
+(`book4-drips.dtb` from `book4-default-1010.dtb`). Test: GRUB test entry
+`drips`, then `tools/power/sleep-drain.sh drips` for an hour (the
+`system-pd-s2idle` sum now includes the new state).
+
 ## Charging stalls after a plug-in while awake (6-7 October 2026)
 
 Symptom: plugged in while awake, the battery "charges" at ~1 W ("holding"):
