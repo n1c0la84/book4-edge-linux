@@ -205,6 +205,11 @@ return early in `ufs_qcom_enable_lane_clks()` when already enabled.
 into the boot (42 after 20 minutes). Fix:
 `tools/power/ufs-qcom-lane-clks-guard.patch`, built with
 `build-ufs-patch.sh PATCH`.
+**With the fix (`ufsfix` entry, `drips-full`, 61 min): 3.11 W**, counters
+still 0. `clk8` stays at 0 across suspends with the patch, so the leak is
+real but was not what blocks XO shutdown (the earlier runs were on fresh
+boots, where the leaked count was still low). Worth sending upstream on its
+own; the deep-sleep blocker remains unidentified.
 
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
