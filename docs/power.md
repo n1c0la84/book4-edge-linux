@@ -301,6 +301,18 @@ sleep-stats array (32-byte `{type, count, last_entered, last_exited,
 accumulated}`, the layout `qcom_stats` reads) and fires if either count did
 not advance: records 0/1 are `aosd` and `cxsd`, the counters used here.
 
+**The PEP never executes DRIPS (17 October).** No PSCI call anywhere in
+`qcpep8380.sys`: its only SMC is Qualcomm's secure-IO service (SCM
+`0x2000501`/`0x2000502`, read/clear of a protected status register in one
+interrupt handler). Imports: `PoFxRegisterPluginEx`, power-setting
+callbacks, and only IRQL/timer functions from HAL. So the PEP provides policy
+(platform states, vetoes such as "Required Bus BW vote veto", stats,
+resource votes, the `CSRL` footswitches, the `LPDC` wake list); Windows'
+kernel executes the `_LPI` states through HAL -> Hyper-V -> TrustZone.
+Whatever makes TrustZone accept DRIPS under Windows but bounce it from Linux
+at EL2 is therefore in Microsoft's HAL/Hyper-V path (or TrustZone only
+accepting it from Hyper-V), not in Qualcomm's driver.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
