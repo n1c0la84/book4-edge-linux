@@ -270,6 +270,21 @@ set. `{class: image, res: load_state|pwr_state}` reports subsystem images
 (Linux's qcom_aoss sends load_state too). The rest are DDR/BCM/GPU tuning.
 None looks like a missing "sleep allowed" message.
 
+**EL2 (17 October), `test: el2-drips`** (no Gunyah, DRIPS DTB, no clk/pd
+flags, providers synced, Bluetooth unbound, DSPs never start at EL2): a
+2 min 20 s suspend, `aosd`/`cxsd`/`ddr` still 0, but `power-domain-system`
+S2idle = **2 203 027** (at EL1: 1 per suspend). A 30 s suspend
+(`~/irq-during-suspend.sh`): 965 760 system-domain entries against 58 178
+`arch_timer` and ~14 000 IPIs (both including the awake seconds around it):
+most DRIPS requests return from TrustZone immediately, without any interrupt.
+So at EL1 Gunyah keeps the system-level request to itself (one entry,
+held for the whole sleep, no collapse), and at EL2 TrustZone bounces it.
+Boot log at EL2: `psci: [Firmware Bug]: failed to set PC mode: -3`
+(DENIED), OSI mode in use. Open: a precondition Windows sets up (PDC, AOP
+handshake), the composition/sequencing of the request in OSI mode, or DRIPS
+being supported only under Hyper-V. All firmware-side; parked here.
+Practical answer for nights on battery: hibernation (TODO).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
