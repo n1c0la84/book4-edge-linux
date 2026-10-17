@@ -1,0 +1,38 @@
+From: Nicola Nicodemo <nicola084@gmail.com>
+Subject: [PATCH] scsi: ufs: qcom: Don't enable the lane clocks twice
+
+ufs_qcom_disable_lane_clks() returns early when the lane clocks are
+already off, but ufs_qcom_enable_lane_clks() lost the matching check when
+it was converted to the clk_bulk API. Since the ungate path of
+ufs_qcom_setup_clocks() also enables the lane clocks while the link is in
+hibern8, overlapping calls (with ufs_qcom_hce_enable_notify() and
+ufs_qcom_resume()) take references that are never dropped.
+
+The bulk covers every clock of the controller node, ref_clk included. On
+X1E80100 (Samsung Galaxy Book4 Edge) that is an RPMh clock buffer whose
+enable count only grows (42 after 20 minutes of uptime, 110 after a few
+hours, increasing across system suspend), so its vote can never be
+released. With this change the count stays flat across suspend/resume.
+
+Return early when the clocks are already enabled, as the disable path does.
+
+Fixes: 9caef8568831 ("scsi: ufs: qcom: Use clk_bulk APIs for managing lane clocks")
+Fixes: c1553fc105df ("scsi: ufs: ufs-qcom: Disable lane clocks during phy hibern8")
+Assisted-by: LLM
+---
+ drivers/ufs/host/ufs-qcom.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/ufs/host/ufs-qcom.c b/drivers/ufs/host/ufs-qcom.c
+--- a/drivers/ufs/host/ufs-qcom.c
++++ b/drivers/ufs/host/ufs-qcom.c
+@@ -356,6 +356,9 @@ static int ufs_qcom_enable_lane_clks(struct ufs_qcom_host *host)
+ {
+ 	int err;
+ 
++	if (host->is_lane_clks_enabled)
++		return 0;
++
+ 	err = clk_bulk_prepare_enable(host->num_clks, host->clks);
+ 	if (err)
+ 		return err;
