@@ -285,6 +285,22 @@ handshake), the composition/sequencing of the request in OSI mode, or DRIPS
 being supported only under Hyper-V. All firmware-side; parked here.
 Practical answer for nights on battery: hibernation (TODO).
 
+**PEP's `LPDC` blob (17 October)** (INF `SystemLibResources`, `AeoB` format:
+u16 type 0 int / 1 string / 3 package, u16 length; parser
+`tools/power/aeob.py`): `INTERRUPT_CONFIG`, 27 entries
+`[index, GSIV, 0, type 1|4, flags 0|8]` (`Acpi_PdcData.c`: `PdcIrq < 96`,
+`LocalIrq > 0`). It is the DRIPS wake-source list: the three tsens "uplow"
+interrupts (GSIV 538-540 = PDC 26-28 in Linux; PEP0 owns thermal) plus three
+more tsens lines Linux's `pdc-ranges` do not cover (SPI 652-654), USB
+controllers/PHYs (USB0/1/4), USB-C ports (PRT0-2) and the PMIC (PM01).
+Not a precondition for DRIPS.
+
+**How Windows defines "DRIPS reached".** The PEP's `NoHWDrips` bugcheck
+(armed with `HWDripsTimeoutSeconds`) snapshots records 0 and 1 of the AOP
+sleep-stats array (32-byte `{type, count, last_entered, last_exited,
+accumulated}`, the layout `qcom_stats` reads) and fires if either count did
+not advance: records 0/1 are `aosd` and `cxsd`, the counters used here.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
