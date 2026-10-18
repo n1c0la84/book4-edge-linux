@@ -338,6 +338,14 @@ reaches TrustZone, and the ADSP is already ruled out (stopped at EL1, absent
 at EL2). Still to try on a DRIPS boot: GPIO 44/49 as the `_DSM` drives them
 and the qseecom UEFI app unbound (`~/el2-probe.sh mods noqsee`).
 
+**DRIPS with the power-down bit at EL1 (18 October, `drips-pd`,
+`0x4200c354`):** PSCI returns 0 for all 95 requests (cores/clusters as
+before: a few `-1` on cluster states, the OSI race), system domain entered
+once, `aosd`/`cxsd`/`ddr` still 0. Under Gunyah the StateType bit changes
+nothing; the EL2 run (`el2-dripspd`) is the one that tests it against
+TrustZone. Note: the default DT reserves GPIOs `<35 1>, <44 4>`, so GPIO 44
+(`MODS`) needs a DTB with `<35 1>, <45 3>` (`book4-drips-pd-gpio44.dtb`).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
