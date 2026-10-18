@@ -346,6 +346,13 @@ nothing; the EL2 run (`el2-dripspd`) is the one that tests it against
 TrustZone. Note: the default DT reserves GPIOs `<35 1>, <44 4>`, so GPIO 44
 (`MODS`) needs a DTB with `<35 1>, <45 3>` (`book4-drips-pd-gpio44.dtb`).
 
+Kernel bug found on the way (18 October, 7.2.7): unbinding
+`qcom_qseecom.uefisecapp.0` (`efivars: Unregistered efivars operations`)
+with efivarfs still mounted, then suspending, oopses on resume in
+`efivar_lock` (`efivarfs_unfreeze_fs` -> `efivar_entry_size`, from
+`filesystems_thaw`): efivarfs resyncs without checking that the efivars
+backend still exists. The probe now unmounts efivarfs before the unbind.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
