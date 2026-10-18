@@ -325,6 +325,19 @@ millions of immediate returns at EL2. Test: the `el2-dripspd` entry
 `power_state` passed to and the value returned by `psci_cpu_suspend_enter()`
 (kprobes).
 
+**Modern Standby notifications go to the PEP too (18 October).** Besides
+the EC (`LDOS`, `RESP`) and GPIO (44 `MODS`, 49 `HPDC`) writes, every phase
+of PEP0's Modern Standby `_DSM` writes `{"MSBN", phase}` to
+`\_SB.PEP0.FLD1`, a `GenericSerialBus` field on `\_SB.ABD` (`QCOM0427`,
+`qcabd.sys`, "Qualcomm ACPI Bridge Device", channel 5), which forwards it to
+`qcpep8380.sys`. The PEP stores the phase and, on `MS:MS+`/`MS:MS-`, pauses
+or restarts one of its own timers, sends `in_standby = 1/0` to the ADSP over
+GLINK (`APPS_ADSP_PWR_LMTS_GLINK_PORT`), and fires `ExNotifyCallback`
+(`\Callback\QcDeepStandby`, Qualcomm's modem/WLAN "Deep Standby"). Nothing
+reaches TrustZone, and the ADSP is already ruled out (stopped at EL1, absent
+at EL2). Still to try on a DRIPS boot: GPIO 44/49 as the `_DSM` drives them
+and the qseecom UEFI app unbound (`~/el2-probe.sh mods noqsee`).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
