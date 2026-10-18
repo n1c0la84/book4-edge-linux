@@ -313,6 +313,18 @@ Whatever makes TrustZone accept DRIPS under Windows but bounce it from Linux
 at EL2 is therefore in Microsoft's HAL/Hyper-V path (or TrustZone only
 accepting it from Hyper-V), not in Qualcomm's driver.
 
+**Hypothesis (18 October): the request goes out as retention.**
+`psci_cpu_suspend_enter()` only does a real power-down (`cpu_suspend()` with
+a resume address) when `psci_power_state_loses_context(state)` sees the
+StateType bit (bit 30 extended format, bit 16 original). `0x0200C354` (and
+the DSDT's `0x4`/`0x50`/`0xC300`) has neither, so Linux calls CPU_SUSPEND
+with entry point 0, as a retention state. A TrustZone that needs a resume
+address for system collapse would refuse or no-op that, which matches the
+millions of immediate returns at EL2. Test: the `el2-dripspd` entry
+(`0x4200c354`). `~/el2-probe.sh` now also records histograms of the
+`power_state` passed to and the value returned by `psci_cpu_suspend_enter()`
+(kprobes).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
