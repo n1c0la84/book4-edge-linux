@@ -1,7 +1,7 @@
-From 7fb58feb21e67b56932bf2cb7e4445ba11c4d11a Mon Sep 17 00:00:00 2001
+From 7afcecdf516afe1da428f5d26484f97e23f646b5 Mon Sep 17 00:00:00 2001
 From: Stephan Gerhold <stephan@gerhold.net>
 Date: Wed, 30 Jul 2025 16:35:46 +0200
-Subject: [PATCH 21/21] wip: remoteproc: qcom_q6v5_pas: Avoid using broken
+Subject: [PATCH 23/23] wip: remoteproc: qcom_q6v5_pas: Avoid using broken
  reset when running bare-metal
 
 Some firmware versions have a split design where firmware authentication is

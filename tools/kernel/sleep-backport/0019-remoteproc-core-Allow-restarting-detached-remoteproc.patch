@@ -1,7 +1,7 @@
-From e5d930b33463237993d347028db2396c2d46b85c Mon Sep 17 00:00:00 2001
+From d823b6b23bdf47e9c9bf25aecbe9f75f6f2e903a Mon Sep 17 00:00:00 2001
 From: Stephan Gerhold <stephan.gerhold@linaro.org>
 Date: Fri, 25 Jul 2025 15:21:40 +0200
-Subject: [PATCH 19/21] remoteproc: core: Allow restarting detached remoteprocs
+Subject: [PATCH 19/23] remoteproc: core: Allow restarting detached remoteprocs
  with new firmware
 
 At the moment, the remoteproc core supports only one auto boot "strategy":

@@ -1,7 +1,7 @@
 From 1a07028072595f493dd51a508bdb67655106ca3b Mon Sep 17 00:00:00 2001
 From: Maulik Shah <maulik.shah@oss.qualcomm.com>
 Date: Tue, 7 Jul 2026 14:51:36 +0530
-Subject: [PATCH 04/21] irqchip/qcom-pdc: Configure PDC to pass through mode
+Subject: [PATCH 04/23] irqchip/qcom-pdc: Configure PDC to pass through mode
 
 All PDC hardware versions support pass-through mode in which both Direct
 SPIs and GPIO interrupts (as SPIs) are sent to the GIC without latching at

@@ -1,7 +1,7 @@
 From 80daa0dc9839e2c03db5e152594a2bcc5005e249 Mon Sep 17 00:00:00 2001
 From: Maulik Shah <maulik.shah@oss.qualcomm.com>
 Date: Tue, 7 Jul 2026 14:51:38 +0530
-Subject: [PATCH 07/21] Revert "pinctrl: qcom: x1e80100: Bypass PDC wakeup
+Subject: [PATCH 07/23] Revert "pinctrl: qcom: x1e80100: Bypass PDC wakeup
  parent for now"
 
 This reverts commit 602cb14e310a ("pinctrl: qcom: x1e80100: Bypass PDC

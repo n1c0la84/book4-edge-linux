@@ -1,7 +1,7 @@
 From 65022506bf4fc94c0e78b26379c1878fc6b7389a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@kernel.org>
 Date: Wed, 8 Jul 2026 19:54:14 +0200
-Subject: [PATCH 05/21] irqchip/qcom-pdc: Fix kernel doc for
+Subject: [PATCH 05/23] irqchip/qcom-pdc: Fix kernel doc for
  qcom_pdc_gic_secondary_set_type()
 
 Copy and pasta without fixing up the comment results in kernel doc build fail.

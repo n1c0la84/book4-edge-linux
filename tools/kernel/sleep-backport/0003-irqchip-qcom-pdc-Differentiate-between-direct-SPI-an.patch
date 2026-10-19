@@ -1,7 +1,7 @@
 From 43b7b19f4881d3130b9d68eac798ed621383957c Mon Sep 17 00:00:00 2001
 From: Maulik Shah <maulik.shah@oss.qualcomm.com>
 Date: Tue, 7 Jul 2026 14:51:35 +0530
-Subject: [PATCH 03/21] irqchip/qcom-pdc: Differentiate between direct SPI and
+Subject: [PATCH 03/23] irqchip/qcom-pdc: Differentiate between direct SPI and
  GPIO as SPI
 
 Before commit 4dc70713dc24 ("irqchip/qcom-pdc: Kill non-wakeup irqdomain")

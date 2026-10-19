@@ -1,7 +1,7 @@
-From 4bdab4a912ec87934dbd161eec014ec7d8cd4ae4 Mon Sep 17 00:00:00 2001
+From d079a4c07f2a0f3df5c446857337af324dcd8024 Mon Sep 17 00:00:00 2001
 From: Stephan Gerhold <stephan.gerhold@linaro.org>
 Date: Tue, 5 Aug 2025 17:44:32 +0200
-Subject: [PATCH 20/21] remoteproc: qcom_q6v5_pas: Attach running remoteproc if
+Subject: [PATCH 22/23] remoteproc: qcom_q6v5_pas: Attach running remoteproc if
  firmware is missing
 
 A remoteproc might be already running during boot, e.g. because it was

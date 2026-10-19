@@ -1,7 +1,7 @@
 From 2a74a4937217648848bf61fc10e741cf24958171 Mon Sep 17 00:00:00 2001
 From: Stephan Gerhold <stephan.gerhold@linaro.org>
 Date: Tue, 7 Jul 2026 14:51:37 +0530
-Subject: [PATCH 06/21] pinctrl: qcom: Acknowledge IRQs for PDC interrupt
+Subject: [PATCH 06/23] pinctrl: qcom: Acknowledge IRQs for PDC interrupt
  controller
 
 PDC needs to acknowledge incoming GPIO interrupts to clear the latched

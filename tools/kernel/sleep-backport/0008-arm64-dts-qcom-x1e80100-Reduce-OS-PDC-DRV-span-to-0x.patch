@@ -1,7 +1,7 @@
 From c5c9e285d72b72d1658688e9a0be42395d4cc653 Mon Sep 17 00:00:00 2001
 From: Mukesh Ojha <mukesh.ojha@oss.qualcomm.com>
 Date: Wed, 27 May 2026 15:13:20 +0530
-Subject: [PATCH 08/21] arm64: dts: qcom: x1e80100: Reduce OS PDC DRV span to
+Subject: [PATCH 08/23] arm64: dts: qcom: x1e80100: Reduce OS PDC DRV span to
  0x10000
 
 The OS PDC DRV register window on x1e80100 spans 0x10000 bytes. Reduce

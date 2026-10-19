@@ -1,7 +1,7 @@
 From 37b983717cddc5fb47f6beec30bca48ec06e8e7d Mon Sep 17 00:00:00 2001
 From: Ajay Kumar Nandam <ajay.nandam@oss.qualcomm.com>
 Date: Tue, 7 Jul 2026 15:13:13 +0530
-Subject: [PATCH 13/21] ASoC: codecs: lpass-{tx,rx}-macro: check clk_set_rate()
+Subject: [PATCH 13/23] ASoC: codecs: lpass-{tx,rx}-macro: check clk_set_rate()
  return value
 
 clk_set_rate() returns 0 on success or a negative errno on failure but

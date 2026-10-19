@@ -1,7 +1,7 @@
 From 0e93448f7c9bfc9efbb5b7b23d6b3752ff7bd48b Mon Sep 17 00:00:00 2001
 From: Maulik Shah <maulik.shah@oss.qualcomm.com>
 Date: Tue, 7 Jul 2026 14:51:33 +0530
-Subject: [PATCH 01/21] irqchip/qcom-pdc: Restructure version support
+Subject: [PATCH 01/23] irqchip/qcom-pdc: Restructure version support
 
 The PDC irqchip driver updates IRQ_ENABLE and IRQ_CFG for three different
 versions v2.7, v3.0 and v3.2. These registers are organized in hardware as
