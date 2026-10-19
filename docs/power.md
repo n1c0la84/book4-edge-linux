@@ -1,5 +1,33 @@
 # Power: suspend drain
 
+**Others have reached full DRIPS on X1E (found 19 October, late).**
+github.com/justririll/x1e-sleep (ASUS Vivobook S15, X1E80100, jglathe 7.2 at
+EL2 via slbounce, DSPs started by qebspil): `aosd`/`cxsd`/`ddr` for ~99.7 %
+of sleep, ~0.25 W (Windows ~0.23 W), from ~4 W. And on linux-arm-msm,
+"x1e80100: no AOSD/CXSD in suspend with APPS votes at zero" (Michael Burch,
+Dell XPS 13 9345, 8 October; replies from Konrad Dybcio and Val Packett, who
+reports aosd/cxsd since reproduced at nVHE EL2 and EL1). Their blockers that
+we never saw:
+- the firmware computes the APSS wake deadline from the **EL1 timers**: at
+  EL2 their `el1tmr` writes the next deadline into `CNTP_CVAL_EL02` before
+  power-down (and clears the CNTV UEFI leaves armed, which "made the firmware
+  abort every system-level sleep entry", our EL2 bounce); at EL1, s2idle's
+  `tick_freeze()` disarms CNTV and APSS never collapses unless CNTV is armed
+  (Burch), our EL1 "held, no collapse";
+- **GPU RSC stale votes**: inverted `GMU_STATUS_FW_START` check in
+  `a6xx_rpmh_stop()` (upstream "drm/msm/a6xx: Fix stale rpmh votes after
+  suspend", not in 7.2), "the first big sleep blocker";
+- **LPASS tx/rx macro** clock votes kept by the ADSP forever (fixed in 7.3,
+  b9b23e72ab, b05482e7ce);
+- **qcom-geni serial** keeps the BT UART's clocks/CX votes (7.3, d0cd9c8d0fd5);
+- QCE's DDR vote, a syscon TCSR clock pinning XO, and `regulator-always-on`
+  panel supplies (Vivobook: 1.43 W -> 0.25 W). The Book4 DT has
+  `VREG_OCTA_VDD`, `VREG_DISPLAY_VDD` and `VREG_EDP_3P3` always on;
+- DRIPS must be system-suspend-only (runtime DRIPS hangs the SoC after the
+  first s2idle); full AOSD resets about hourly there (CXSD-only workaround);
+  a DC ZVA erratum with CL5 can hard-reset (maybe our 14 October reset).
+Our patches and modules: tools/power, docs below. Their code: ~/src/ext/x1e-sleep.
+
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
 state" (Maulik Shah; lore `20260707-hamoa_pdc_v3-v4-0`): on Windows
