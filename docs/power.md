@@ -156,6 +156,27 @@ but it already happened"), so the proxy vote may stay in force. Test:
 qebspil built with `QEBSPIL_NO_PROXY_VOTE=1`
 (`install/el2/qebspil-no-proxy-vote.patch`, which also carries the AOSS
 `load_state` hunks of `pil.c`), swapped in with `~/qebspil-swap.sh noproxy`.
+**Result (19 October, 21:57): without the proxy vote the ADSP does not
+boot** (`qcom_q6v5_pas: reset broken and remoteproc not running during
+boot`; no battery supply, no sound card). A suspend on that boot gave
+`cxsd`/`ddr` 97.7 % but `aosd` 0 (never entered), unlike the 99.9 % of all
+three with no DSPs started by qebspil; possibly the AOSS `load_state adsp
+up` qebspil sends for a DSP that then never ran. Normal build restored.
+**What the proxy vote is** (Samsung's firmware FDT inside the UEFI capsule,
+`/soc/pil/pil_proxy_vote`): ADSP (`PIL_ADSP`, subsys 1 and 36) votes
+`/vcs/vdd_lpi_mx` and `/vcs/vdd_lpi_cx` (LMX, LCX) at level 0x100 plus
+100 MB/s on ICB master 0x19 -> slave 0; CDSP (18, 37) votes MX, CX, MXC, NSP
+plus master 0xad -> slave 0x2f. UEFI drops it on the DSP's SMP2P
+`slave-kernel` bit 2 (handover, `/soc/ssr/smp2p_proxy_unvote`), which comes
+after UEFI is gone. But UEFI can only vote through `drv-2` (`drv-0`/`drv-1`
+are secure-only), Linux's own channel, and the drain test forces
+`sync_state` (rpmhpd then sends 0 for every unused rail, LCX/LMX included;
+`state_synced` is 0 otherwise, rpmhpd waiting for the unbound video clock
+controller). So the proxy vote is most likely overwritten already, and what
+keeps CX up is the ADSP's own sleep-set vote or something Linux asks it to
+keep on. Next: the same drain with Linux's audio stack unbound and the ADSP
+running (`~/el2-audio-off-test.sh`: PipeWire stopped; sound card, LPASS
+macros, SoundWire, codecs, q6prm LPASS clocks unbound).
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
