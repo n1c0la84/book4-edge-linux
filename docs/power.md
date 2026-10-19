@@ -1,6 +1,6 @@
 # Power: suspend drain
 
-**Upstream has the missing piece (found 19 October, evening).** Linux 7.3
+**Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
 state" (Maulik Shah; lore `20260707-hamoa_pdc_v3-v4-0`): on Windows
 firmware the X1E PDC runs in **secondary controller mode, latching GPIO
@@ -28,6 +28,13 @@ are built in, the release stays `7.2.7-book4`) and adds GRUB test entry
 and held, `aosd`/`cxsd`/`ddr` 0, as before. At EL1 the PDC latch was not the
 visible blocker (Gunyah holds the request). Next: the same kernel at EL2,
 where the PDC latch would explain the ~50 us bounces (entry `el2-pdc`).
+**EL2 result (19 October, `el2-pdc`):** pass-through mode again, EL1 virtual
+timer kept disarmed (`timer_check`: 0 re-armed in 1 310 536 exits). One
+suspend: 1 288 849 accepted `0x0200c354` calls, `aosd`/`cxsd`/`ddr` 0. **The
+PDC GPIO latch is not the blocker on this machine.** (Secondary mode only
+latched GPIO interrupts; direct SPIs never were.) 7.3's x1e PDC/domain_ss3
+work is right and worth having, but it does not bring CX collapse here on
+its own.
 
 **Current status (19 October 2026).** The SoC still never reaches deep sleep
 in s2idle (`aosd`/`cxsd`/`ddr` stay 0 in every configuration tried). What
