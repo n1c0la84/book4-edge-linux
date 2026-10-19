@@ -1,0 +1,64 @@
+diff --git i/Makefile w/Makefile
+index 4977828..9f75c1e 100644
+--- i/Makefile
++++ w/Makefile
+@@ -32,6 +32,9 @@ FORMAT		:= -O efi-bsdrv-$(ARCH)
+ 
+ QEBSPIL_ALWAYS_START	?= 0
+ EFI_CFLAGS		+= -DQEBSPIL_ALWAYS_START=$(QEBSPIL_ALWAYS_START)
++ifeq ($(QEBSPIL_NO_PROXY_VOTE),1)
++EFI_CFLAGS		+= -DQEBSPIL_NO_PROXY_VOTE
++endif
+ 
+ QEBSPIL_OBJS := \
+ 	src/dtb.o \
+@@ -41,6 +44,7 @@ QEBSPIL_OBJS := \
+ 	src/pil.o \
+ 	src/pil-types.o \
+ 	src/scm.o \
++	src/qmp.o \
+ 	src/external/cache.o \
+ 	src/external/libc.o \
+ 	src/external/lkfdt.o \
+diff --git i/src/pil.c w/src/pil.c
+index 1a7d7d4..a0e4a2e 100644
+--- i/src/pil.c
++++ w/src/pil.c
+@@ -75,6 +75,7 @@ EFI_STATUS pil_prepare(struct pil *pil)
+ 	 *
+ 	 * Thus we just vote early and hope the OS will drop the vote later.
+ 	 */
++#ifndef QEBSPIL_NO_PROXY_VOTE
+ 	if (!IsZeroGuid(&pil->type->proxy_guid)) {
+ 		status = pil_proxy_vote(&pil->type->proxy_guid);
+ 		if (EFI_ERROR(status)) {
+@@ -83,6 +84,15 @@ EFI_STATUS pil_prepare(struct pil *pil)
+ 			return status;
+ 		}
+ 	}
++#else
++	/*
++	 * book4-edge-linux test: no proxy vote. qebspil never drops it (the
++	 * protocol is gone once the DSP starts at ExitBootServices) and Linux
++	 * only attaches, so it may stay in force and keep CX up in s2idle.
++	 */
++	(void)status;
++	Print(u"qebspil: no proxy vote for %a (QEBSPIL_NO_PROXY_VOTE)\n", pil->type->compatible);
++#endif
+ 
+ 	/*
+ 	 * We could move fw_check() and fw_load_metadata() here, but for now
+@@ -164,6 +174,13 @@ static EFI_STATUS pil_finish(struct pil *pil)
+ 		scm_pil_stop(pil->type->id[b - 1].lite);
+ 	}
+ 
++	/* Like Linux qcom_q6v5_prepare(): tell AOSS the image is going to run */
++	if (pil->type->load_state) {
++		/* off then on, like a Linux PAS stop + start of a firmware-started DSP */
++		qmp_send_load_state(pil->type->load_state, FALSE);
++		qmp_send_load_state(pil->type->load_state, TRUE);
++	}
++
+ 	for (enum pil_component c = 0; c < PIL_COMPONENTS; c++) {
+ 		if (!pil_has_component(pil, c))
+ 			continue;

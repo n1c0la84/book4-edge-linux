@@ -146,6 +146,16 @@ it is a DSP's sleep-set vote (or something it leaves on) that keeps CX up,
 which never happens when the DSPs are not started. Next: EL2 with only the
 ADSP started (`~/el2-adsponly-prep.sh`, entry `el2-adsponly`: no
 `qcom,broken-reset` on the CDSP, so qebspil never starts it).
+ADSP only (CDSP never started; 19 October, 21:46): `ddr` 99.2 %, `cxsd`/`aosd` 0,
+no crash. **The ADSP's presence keeps CX up**, although it sleeps. Candidate:
+qebspil votes the ADSP's rails through UEFI's PIL proxy protocol
+(`PilProxyDxe`, `pil_proxy_vote()`) and never unvotes ("we just vote early
+and hope the OS will drop the vote later"; the protocol is gone once the DSP
+starts at ExitBootServices), and Linux only attaches ("Handover signaled,
+but it already happened"), so the proxy vote may stay in force. Test:
+qebspil built with `QEBSPIL_NO_PROXY_VOTE=1`
+(`install/el2/qebspil-no-proxy-vote.patch`, which also carries the AOSS
+`load_state` hunks of `pil.c`), swapped in with `~/qebspil-swap.sh noproxy`.
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
