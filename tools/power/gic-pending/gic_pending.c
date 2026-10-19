@@ -28,7 +28,8 @@ static DEFINE_PER_CPU(void __iomem *, sgi_base);
 static bool clear;
 module_param(clear, bool, 0444);
 
-static atomic_t hits[MAX_INTID], hits_en[MAX_INTID];
+static atomic_t hits[MAX_INTID], hits_en[MAX_INTID], hits_entry[MAX_INTID];
+static atomic_t entries;
 static atomic_t cleared;
 static atomic_t exits, exits_none;
 static unsigned int nspi_words;
@@ -42,13 +43,27 @@ static int notify(struct notifier_block *nb, unsigned long action, void *v)
 
 	if (!sgi)
 		return NOTIFY_OK;
-	if (action == CPU_PM_ENTER && clear) {
-		/* pending & ~enabled -> ICPENDR (0x280) */
-		w = readl_relaxed(sgi + 0x200) & ~readl_relaxed(sgi + 0x100);
-		if (w) { writel_relaxed(w, sgi + 0x280); atomic_inc(&cleared); }
+	if (action == CPU_PM_ENTER) {
+		/* what is pending and enabled as the CPU goes down (after clearing) */
+		atomic_inc(&entries);
+		if (clear) {
+			w = readl_relaxed(sgi + 0x200) & ~readl_relaxed(sgi + 0x100);
+			if (w) { writel_relaxed(w, sgi + 0x280); atomic_inc(&cleared); }
+			for (i = 1; i < nspi_words && i < MAX_INTID / 32; i++) {
+				w = readl_relaxed(gicd + 0x200 + 4 * i) & ~readl_relaxed(gicd + 0x100 + 4 * i);
+				if (w) { writel_relaxed(w, gicd + 0x280 + 4 * i); atomic_inc(&cleared); }
+			}
+		}
+		w = readl_relaxed(sgi + 0x200) & readl_relaxed(sgi + 0x100);
+		for (b = 0; w && b < 32; b++)
+			if (w & BIT(b)) atomic_inc(&hits_entry[b]);
 		for (i = 1; i < nspi_words && i < MAX_INTID / 32; i++) {
-			w = readl_relaxed(gicd + 0x200 + 4 * i) & ~readl_relaxed(gicd + 0x100 + 4 * i);
-			if (w) { writel_relaxed(w, gicd + 0x280 + 4 * i); atomic_inc(&cleared); }
+			w = readl_relaxed(gicd + 0x200 + 4 * i);
+			if (!w)
+				continue;
+			w &= readl_relaxed(gicd + 0x100 + 4 * i);
+			for (b = 0; w && b < 32; b++)
+				if (w & BIT(b)) atomic_inc(&hits_entry[32 * i + b]);
 		}
 		return NOTIFY_OK;
 	}
@@ -119,6 +134,10 @@ static void __exit gic_pending_exit(void)
 	int i, n = 0;
 
 	cpu_pm_unregister_notifier(&nb);
+	for (i = 0; i < MAX_INTID; i++)
+		if (atomic_read(&hits_entry[i]))
+			pr_info("gic_pending:   at CPU_PM_ENTER (%d): INTID %d pending+enabled %d times\n",
+				atomic_read(&entries), i, atomic_read(&hits_entry[i]));
 	for (i = 0; i < MAX_INTID; i++)
 		if (atomic_read(&hits[i]))
 			ents[n++] = (struct ent){ i, atomic_read(&hits[i]) };
