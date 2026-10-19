@@ -400,6 +400,15 @@ switch to PC at boot) and refuses cluster/system requests from a CPU that is
 not the last in its domain. Next: OSI hierarchy + `0x0200c354` with the
 return-value probe (`el2-drips`).
 
+**EL2, OSI hierarchy, DRIPS `0x0200c354` (19 October, `el2-drips`): TrustZone
+accepts DRIPS.** `CPU_SUSPEND(0x0200c354)` returns 0 for 690 627 calls in a
+~30 s suspend (6 `DENIED`), cores and clusters as usual. The right request is
+therefore Windows' value without the StateType bit, in OS-initiated mode.
+But every accepted call returns almost at once (690 602 system-domain entries
+against ~17 000 timer and ~12 000 IPI interrupts) and `aosd`/`cxsd`/`ddr`
+stay 0: the collapse is aborted or immediately woken below Linux. Next:
+time spent inside each accepted call and the wakeup IRQ (`el2-probe.sh lat`).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
