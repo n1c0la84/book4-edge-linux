@@ -177,6 +177,21 @@ keeps CX up is the ADSP's own sleep-set vote or something Linux asks it to
 keep on. Next: the same drain with Linux's audio stack unbound and the ADSP
 running (`~/el2-audio-off-test.sh`: PipeWire stopped; sound card, LPASS
 macros, SoundWire, codecs, q6prm LPASS clocks unbound).
+**Audio stack unbound (19 October, 22:20):** sound card, wcd938x SoundWire
+devices, WSA macros, SoundWire masters and q6apm DAIs unbound (rx/tx/va
+macros forbid unbinding), ADSP and CDSP attached: `ddr` 98.8 %,
+`cxsd`/`aosd` 0. Linux still held `LPASS_HW_MACRO` and `LPASS_HW_DCODEC` at
+the ADSP (enable count 1 each, 3 each with PipeWire idle): `va_macro`
+enables its `macro`/`dcodec` clocks at probe and drops them only in
+`remove()` (runtime suspend drops only mclk/npl), so the ADSP is asked to keep
+the LPASS macro and codec hardware powered for as long as the driver is
+bound, through every suspend. Fix: patch 0024 (`lpass-va-macro` drops them
+in runtime suspend, as rx/tx do through `pm_clk`); module-only install on
+the existing kernel with `~/va-macro-prep.sh`.
+Two mistakes on the way: unbinding `lpasscc-sc8280xp`, and reading
+`/sys/kernel/debug/clk/clk_summary` once LPASS is powered down (it reads the
+hardware of every clock), each faulted and reset the machine. Read
+`/sys/kernel/debug/clk/<name>/clk_enable_count` instead (software counter).
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
