@@ -535,6 +535,16 @@ the display RSC isn't mapped for the Linux VM, so Linux can't read it or
 vote through it there. A read is only possible at EL2 (where TrustZone's own
 protection may still reset), and `rscc-dump.sh` now refuses EL1.
 
+At EL2 (19 October, staged reads): stage 0, `0xAF20000 + 0x0` =
+`0x00030000`, an RSC v3.0 ID word, so the address is right and readable
+there. Stage 1 (first 0x100 bytes): solver config `0x01040401` (hardware
+solver present), `0x80000002` (2 TCSs of 16 commands), and at `+0x20..+0x2C`
+the PDC sequencer start/match values and slave ID 1, as in Qualcomm's
+downstream display-RSC map (`qcom,tcs-offset = <0x1c00>`, one sleep and one
+wake TCS). Stage 2 (a 20 KB sweep of both regions) reset the machine, so
+`rscc_dump` now refuses it; stage 3 reads only the two TCSs (`0x1C00`,
+stride 672) and names their command addresses from cmd-db. Not yet run.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'

@@ -10,7 +10,13 @@
  * stage 0: only the ID word (+0x0) of each region; a sane RSC ID has the
  *          version in bits 23:16 / 15:8 (rpmh-rsc's RSC_DRV_ID)
  * stage 1: first 0x100 bytes (ID, solver and TCS configuration)
- * stage 2: non-zero words of the first 0x5000 bytes (TCS commands)
+ * stage 2: non-zero words of the first 0x5000 bytes. RESET the machine at
+ *          EL2 on 19 Oct (holes or protected sub-blocks); do not use.
+ * stage 3: only the two TCSs (sleep, wake) at tcs-offset 0x1c00, stride 672,
+ *          16 commands of 24 bytes (RSC v3.0 layout, as rpmh-rsc reads the
+ *          apps RSC): enable mask, then address/data of each command.
+ * Stage 1 matched Qualcomm's downstream display-RSC map (+0x20..+0x2c PDC
+ * sequencer/match/slave ID; 2 TCSs, 16 commands each, HW solver).
  * Read-only, but at EL1 under Gunyah the first read reset the machine
  * (19 Oct): the region is not mapped for the Linux VM. EL2 only.
  */
@@ -44,13 +50,54 @@ static void dump(const char *name, phys_addr_t pa)
 	iounmap(b);
 }
 
+#define TCS_OFFSET	0x1c00
+#define TCS_STRIDE	672
+#define CMD_STRIDE	24
+
+static void dump_tcs(void)
+{
+	void __iomem *b = ioremap(RSCC_DRV + TCS_OFFSET, 2 * TCS_STRIDE);
+	int t, c;
+
+	if (!b) {
+		pr_err("rscc_dump: tcs: ioremap failed\n");
+		return;
+	}
+	for (t = 0; t < 2; t++) {
+		void __iomem *tb = b + t * TCS_STRIDE;
+		u32 en = readl_relaxed(tb + 0x2c);	/* RSC_DRV_CMD_ENABLE */
+
+		pr_info("rscc_dump: tcs%d control 0x%08x status 0x%08x wait 0x%08x enable 0x%04x\n",
+			t, readl_relaxed(tb + 0x24), readl_relaxed(tb + 0x28),
+			readl_relaxed(tb + 0x20), en);
+		for (c = 0; c < 16; c++) {
+			void __iomem *cb = tb + c * CMD_STRIDE;
+			u32 msgid = readl_relaxed(cb + 0x34), addr = readl_relaxed(cb + 0x38);
+			u32 data = readl_relaxed(cb + 0x3c), st = readl_relaxed(cb + 0x40);
+
+			if (msgid || addr || data)
+				pr_info("rscc_dump: tcs%d cmd%-2d %s msgid 0x%08x addr 0x%05x data 0x%08x status 0x%08x\n",
+					t, c, en & BIT(c) ? "EN " : "off", msgid, addr, data, st);
+		}
+	}
+	iounmap(b);
+}
+
 static int __init rscc_dump_init(void)
 {
 	if (!is_kernel_in_hyp_mode()) {
 		pr_err("rscc_dump: not at EL2, refusing (it reset the machine at EL1)\n");
 		return -EPERM;
 	}
-	len = stage == 0 ? 4 : stage == 1 ? 0x100 : 0x5000;
+	if (stage == 3) {
+		dump_tcs();
+		return 0;
+	}
+	if (stage == 2) {
+		pr_err("rscc_dump: stage 2 reset the machine; use stage 3\n");
+		return -EINVAL;
+	}
+	len = stage == 0 ? 4 : 0x100;
 	pr_info("rscc_dump: stage %u, 0x%x bytes per region\n", stage, len);
 	dump("drv", RSCC_DRV);
 	dump("wrapper", RSCC_WRAPPER);
