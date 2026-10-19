@@ -251,8 +251,17 @@ into the boot (42 after 20 minutes). Fix:
 **With the fix (`ufsfix` entry, `drips-full`, 61 min): 3.11 W**, counters
 still 0. `clk8` stays at 0 across suspends with the patch, so the leak is
 real but was not what blocks XO shutdown (the earlier runs were on fresh
-boots, where the leaked count was still low). Worth sending upstream on its
-own; the deep-sleep blocker remains unidentified.
+boots, where the leaked count was still low). The deep-sleep blocker
+remains unidentified.
+**Already fixed upstream (found 19 October):** Qualcomm's
+`f07317a8d57f` ("scsi: ufs: ufs-qcom: Enable only lane clocks in lane clock
+APIs", Nitin Rawat, reviewed by Manivannan Sadhasivam), queued in
+`7.4/scsi-staging`, restores the guard and limits the lane-clock APIs to
+the three lane clocks; its message names the same effect (blocked CXO
+shutdown). No `Fixes:`/`Cc: stable`, so 7.3 doesn't get it automatically:
+after 7.4-rc1, a stable backport request (or a cherry-pick in the Anatase
+kernel) is the useful step. Our `tools/power/upstream/0001-*.patch` is
+superseded and not sent.
 
 **USB GDSCs (16 October).** The ten USB GDSCs are `PWRSTS_RET_ON` on X1E,
 so `gdsc_disable()` leaves them on; Windows' PEP lists exactly these ten

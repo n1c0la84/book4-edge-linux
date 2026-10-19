@@ -176,6 +176,11 @@ To test (should work, never verified)
       linux_ms_dev_kit #94 (19 Oct, issuecomment-6268004483); watch for replies. Display RSC read at EL2 19 Oct: empty.
       Windows-side experiments (Hyper-V off, driver bisection, standby
       trace): [windows-investigation.md](windows-investigation.md).
+- [ ] **UFS `ref_clk` leak fix for 7.3**: fixed upstream by Qualcomm's
+      `f07317a8d57f`, queued for 7.4 without `Cc: stable`. After 7.4-rc1:
+      stable backport request (email to stable@vger.kernel.org) or ask the
+      Anatase kernel to cherry-pick it. Our kernel carries our own patch
+      meanwhile ([power.md](power.md)).
 - [ ] **Hibernation** as a workaround for the drain. Scripts written 19 Oct,
       not yet run: `install/arch/hibernate-setup.sh` (16 GiB swap file in a
       `/swap` subvolume below zram; DSP stop/start sleep hook; no `resume=`:

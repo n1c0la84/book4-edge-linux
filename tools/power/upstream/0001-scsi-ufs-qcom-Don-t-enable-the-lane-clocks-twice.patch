@@ -1,3 +1,7 @@
+SUPERSEDED, NOT SENT (19 Oct 2026): fixed upstream by f07317a8d57f
+("scsi: ufs: ufs-qcom: Enable only lane clocks in lane clock APIs"),
+queued for 7.4. See docs/power.md. Kept for reference only.
+
 From: Nicola Nicodemo <nicola084@gmail.com>
 Subject: [PATCH] scsi: ufs: qcom: Don't enable the lane clocks twice
 
