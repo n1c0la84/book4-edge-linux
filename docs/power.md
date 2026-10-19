@@ -47,7 +47,13 @@ CNTV with a far, masked deadline at each CPU_PM entry where the frozen tick
 left it off), `qcom_adsp_pwr_lmts` and `aoss_cxsd_only` (x1e-sleep,
 unchanged; the latter not loaded by default). Its own release, modules and
 initramfs, so the normal kernel is untouched. Test: `~/sleep-test.sh`.
-Result: pending.
+**EL1 result (19 October):** all pieces active (PDC pass-through, SS1 +
+system-sleep-only DRIPS, both modules loaded, ADSP channel bound; `cntv_arm`
+armed CNTV at 24 CPU_PM entries). Two suspends: system domain entered once
+and held, `aosd`/`cxsd`/`ddr` 0. Same as Burch's XPS 13 at EL1. The proven
+configuration is EL2 with `el1tmr` (the real next deadline in the EL1
+physical timer), never tried here: `tools/kernel/build-sleep-modules.sh`
+adds it, entry `el2-sleep` (`~/el2-sleep-prep.sh`, `~/el2-sleep-test.sh`).
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
