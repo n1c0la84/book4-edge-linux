@@ -1,5 +1,22 @@
 # Power: suspend drain
 
+**Upstream has the missing piece (found 19 October, evening).** Linux 7.3
+contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
+state" (Maulik Shah; lore `20260707-hamoa_pdc_v3-v4-0`): on Windows
+firmware the X1E PDC runs in **secondary controller mode, latching GPIO
+interrupts as levels that upstream Linux never cleared**. 7.3 switches the
+PDC to pass-through through an SCM write where newer firmware allows it,
+handles secondary mode otherwise, acknowledges PDC IRQs in pinctrl, reverts
+the x1e "bypass PDC wakeup parent" workaround, and adds `domain_ss3`
+(`0x0200c354`, our DRIPS value) to `power-domain-system`. Commits:
+irqchip `ef631c422f2c 8766c87e9bb4 f1a5a0f4c0ea 83e089ef0d4e 60caa95aa14a
+45af2d61edf6 ad01c2b2f291 d307a7e7d939`, pinctrl `f790ea0b699d 77fbc756d9cb`,
+DT `c39df6b350ef 95f827ceb21e`. Our 7.2.7 has none of it (no
+`qcom_pdc_gic_secondary_set_type`). A latched wake at the PDC would explain
+the EL2 "accepted, returns after ~50 us" and the always-pending lines.
+Nobody has published `cxsd` counts with it yet (tested on a CRD and a
+Slim 7x for GPIO wake). Next: run it (backport to book4/7.2 or a 7.3 base).
+
 **Current status (19 October 2026).** The SoC still never reaches deep sleep
 in s2idle (`aosd`/`cxsd`/`ddr` stay 0 in every configuration tried). What
 is established, in order of the sections below:
