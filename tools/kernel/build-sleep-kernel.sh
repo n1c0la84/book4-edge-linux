@@ -6,7 +6,7 @@
 # LPASS macro and geni serial fixes, the syscon XO fix, and the Book4 panel
 # supplies no longer always-on (tools/kernel/sleep-backport/, branch
 # book4/7.2-sleep in n1c0la84/linux-book4-edge). Out-of-tree modules from
-# tools/power/sleep-modules (cntv_arm, qcom_adsp_pwr_lmts, aoss_cxsd_only)
+# tools/power/sleep-modules (cntv_arm, el1tmr, qcom_adsp_pwr_lmts, aoss_cxsd_only)
 # and icc_hold are built for it and installed under extra/.
 #
 # Its own release name, so its modules and initramfs are separate and the
@@ -49,8 +49,9 @@ esac
 [ "$(uname -r)" != "$rel" ] || { echo "error: running $rel itself; boot the normal kernel to rebuild it" >&2; exit 1; }
 
 patches=$(tar -cz -C "$here/sleep-backport" $(cd "$here/sleep-backport" && ls *.patch) | base64 -w0)
-mods=$(tar -cz -C "$repo/tools/power" sleep-modules/Makefile sleep-modules/cntv_arm.c \
-       sleep-modules/qcom_adsp_pwr_lmts.c sleep-modules/aoss_cxsd_only.c icc-hold/icc_hold.c | base64 -w0)
+# the whole sleep-modules folder (every source the Makefile names) + icc_hold
+mods=$(tar -cz --exclude='*.ko' --exclude='*.o' --exclude='*.mod*' --exclude='.*' \
+       -C "$repo/tools/power" sleep-modules icc-hold/icc_hold.c | base64 -w0)
 sum=$(cat "$here"/sleep-backport/*.patch | sha256sum | cut -c1-16)
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 
