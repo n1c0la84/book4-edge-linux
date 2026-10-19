@@ -423,6 +423,15 @@ QUP SEs at `a98000` (SPI 806, Bluetooth UART) and `894000` (SPI 813), and SPI
 they disabled-but-latched, and does clearing them (`gic-test.sh clear`) let
 the collapse through?
 
+Clearing pending-but-disabled interrupts before every entry removes six of
+the USB lines (stale edges); SPI 352, 806, 813, 156 and 533 re-assert at once
+(disabled in Linux, so a level held by the hardware). Entries still ~250 000.
+Disarming CNTV/CNTP_EL02 at every CPU_PM entry/exit (they were never found
+armed again) doesn't help either: PPI 27, enabled because KVM requests it as
+the host vtimer, is still **pending and enabled at 77 % of CPU_PM entries**
+(238 192 of 309 424) though Linux handled it once all boot. Next: disable
+and clear PPI 27 at every entry (`gic-test.sh clear ppi27`).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'

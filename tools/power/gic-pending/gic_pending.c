@@ -27,6 +27,8 @@ static void __iomem *gicd, *gicr;
 static DEFINE_PER_CPU(void __iomem *, sgi_base);
 static bool clear;
 module_param(clear, bool, 0444);
+static uint ppi_off;
+module_param(ppi_off, uint, 0444);
 
 static atomic_t hits[MAX_INTID], hits_en[MAX_INTID], hits_entry[MAX_INTID];
 static atomic_t entries;
@@ -46,6 +48,10 @@ static int notify(struct notifier_block *nb, unsigned long action, void *v)
 	if (action == CPU_PM_ENTER) {
 		/* what is pending and enabled as the CPU goes down (after clearing) */
 		atomic_inc(&entries);
+		if (ppi_off) {
+			writel_relaxed(ppi_off, sgi + 0x180);	/* GICR_ICENABLER0 */
+			writel_relaxed(ppi_off, sgi + 0x280);	/* GICR_ICPENDR0 */
+		}
 		if (clear) {
 			w = readl_relaxed(sgi + 0x200) & ~readl_relaxed(sgi + 0x100);
 			if (w) { writel_relaxed(w, sgi + 0x280); atomic_inc(&cleared); }
@@ -121,7 +127,7 @@ static int __init gic_pending_init(void)
 	nspi_words = (readl_relaxed(gicd + 0x4) & 0x1f) + 1;	/* GICD_TYPER.ITLinesNumber */
 	on_each_cpu(find_frame, NULL, 1);
 	cpu_pm_register_notifier(&nb);
-	pr_info("gic_pending: watching CPU_PM_EXIT, %u interrupt words\n", nspi_words);
+	pr_info("gic_pending: watching CPU_PM_EXIT, %u interrupt words, ppi_off=%#x\n", nspi_words, ppi_off);
 	return 0;
 }
 
