@@ -432,6 +432,18 @@ the host vtimer, is still **pending and enabled at 77 % of CPU_PM entries**
 (238 192 of 309 424) though Linux handled it once all boot. Next: disable
 and clear PPI 27 at every entry (`gic-test.sh clear ppi27`).
 
+With PPI 27 disabled it is gone, yet ~220 000 entries remain and at 97 % of
+`CPU_PM_ENTER`s nothing enabled is pending. Still asserted (disabled in
+Linux): SPI 806 (`a98000`, Bluetooth UART), SPI 813 (`894000`, the debug
+UART), SPI 156 (`pcie4`, Wi-Fi), SPI 533 (`usb_1_ss2` dp HS-PHY) and **SPI 352
+(INTID `0x180`), the Secure Processor `\_SB.SPSS` (`QCOM0C8D`)**, which Linux
+has no driver for. The PEP's `_DSM` subsystem list (`SUBI`) is adsp, cdsp,
+**spss**, and `qcsubsys_ext_spss8380.inf` sets
+`SubsysUefiLoadedImageAction=1`: UEFI loads and starts SPSS (`RSPU.bin`) and
+the Windows driver adopts it. Under Linux it would run, unattended, with
+its interrupt raised, and never be put to sleep. Next: its SMEM sleep stats
+(`tools/power/spss-check`, `~/spss-check.sh`).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
