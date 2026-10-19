@@ -36,7 +36,9 @@ is established, in order of the sections below:
 
 Windows' own DRIPS entry does no hardware setup (it only snapshots the sleep
 stats), so whatever allows the collapse is set up earlier, outside what
-Linux has been shown. Practical fix meanwhile: hibernation (end of this
+Linux has been shown. Next: find it from the Windows side, by switching things off
+there until DRIPS breaks, starting with Hyper-V itself:
+[windows-investigation.md](windows-investigation.md). Practical fix meanwhile: hibernation (end of this
 file; scripts written, restore not yet validated on this machine).
 The sections below keep the chronology; early hypotheses there are
 superseded where this summary says otherwise.

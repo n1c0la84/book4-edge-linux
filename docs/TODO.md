@@ -174,6 +174,8 @@ To test (should work, never verified)
       hibernation (install/arch/hibernate-setup.sh, then a manual
       `systemctl hibernate`, then hibernate-lid.sh); post the EL2 findings on
       linux_ms_dev_kit #94 (needs OK). Display RSC read at EL2 19 Oct: empty.
+      Windows-side experiments (Hyper-V off, driver bisection, standby
+      trace): [windows-investigation.md](windows-investigation.md).
 - [ ] **Hibernation** as a workaround for the drain. Scripts written 19 Oct,
       not yet run: `install/arch/hibernate-setup.sh` (16 GiB swap file in a
       `/swap` subvolume below zram; DSP stop/start sleep hook; no `resume=`:
