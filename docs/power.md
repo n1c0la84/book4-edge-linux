@@ -351,7 +351,21 @@ Kernel bug found on the way (18 October, 7.2.7): unbinding
 with efivarfs still mounted, then suspending, oopses on resume in
 `efivar_lock` (`efivarfs_unfreeze_fs` -> `efivar_entry_size`, from
 `filesystems_thaw`): efivarfs resyncs without checking that the efivars
-backend still exists. The probe now unmounts efivarfs before the unbind.
+backend still exists. Unmounting efivarfs in the shell is not enough (services
+keep it mounted in their own namespaces), so that test is dropped.
+
+**TrustZone's answer at EL2 (19 October, `el2-dripspd`, `0x4200c354`):**
+`psci_cpu_suspend_enter()` returns **-EOPNOTSUPP = `PSCI_RET_NOT_SUPPORTED`**
+for the system-level request 622 493 times in one 30 s suspend (plus 16
+-EPERM = `DENIED`); core and cluster states return 0 (clusters occasionally
+`DENIED`, the OSI race). Under Gunyah (EL1) the same value returns 0 and
+nothing collapses. The value passed Linux's extended-format check (bit 30
+would be rejected otherwise), so TrustZone understands the format but does
+not support a system-level power state with this StateID for the OS. Windows'
+DRIPS therefore reaches TrustZone in some other form: Hyper-V composing a
+different request, a different PSCI/SMC call, or a state TrustZone accepts
+only from the hypervisor. Next: SS1/SS2 at EL2 (`el2-ss1`, `el2-ss2`) to see
+whether any system-level StateID is supported.
 
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
