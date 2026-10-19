@@ -1,5 +1,16 @@
 # Power: suspend drain
 
+**Status (19 October 2026, 22:39): full deep sleep with the DSPs running and
+audio working.** EL2 (slbounce, `qebspil` starting ADSP and CDSP, attached
+by Linux), sleep test kernel 7.2.7-book4s, `el1tmr`, providers synced,
+patches 0024/0025: `aosd`/`cxsd`/`ddr` **97.5 %** of a 90 s suspend, both DSPs
+attached, no crash, sound working. The last blocker was Linux itself: the
+VA and WSA LPASS macros held the `LPASS_HW_MACRO`/`LPASS_HW_DCODEC` votes at
+the ADSP from probe to remove, so the ADSP kept the LPASS hardware (and CX)
+powered through every suspend (details at the end of the ADSP section).
+Open: a long drain on battery for the wattage, EFI variables at EL2, EL2 as
+the default boot, upstreaming 0024/0025.
+
 **Others have reached full DRIPS on X1E (found 19 October, late).**
 github.com/justririll/x1e-sleep (ASUS Vivobook S15, X1E80100, jglathe 7.2 at
 EL2 via slbounce, DSPs started by qebspil): `aosd`/`cxsd`/`ddr` for ~99.7 %
@@ -198,6 +209,9 @@ The other two holders are the WSA and WSA2 macros, same bug (enable at
 probe, runtime suspend drops only mclk/npl/fsgen): patch 0025, installed with
 the same script (now builds both modules). With both, Linux should hold no
 LPASS vote at the ADSP while idle.
+**0024 + 0025 (19 October, 22:39): full collapse with both DSPs attached.**
+`aosd`/`cxsd`/`ddr` 97.5 % each over ~90 s asleep, no ADSP crash, audio
+works after resume. (Battery figure not usable on such a short run.)
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
