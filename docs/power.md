@@ -72,6 +72,19 @@ board power that stays on (always-on `VREG_WCN_3P3` and `VREG_MISC_3P3`,
 the Wi-Fi card on PCIe, USB-C retimers, EC, touchscreen, keyboard backlight)
 or a panel chain that does not actually switch off. Next: find it.
 
+**With the DSPs running (19 October, evening; EL2 from the ESP, qebspil):**
+speakers work. A 2-minute suspend reached `ddr` (98.4 %) but not `cxsd` or
+`aosd`, and the **ADSP crashed during the suspend** (`fatal error received:
+EX:kernel:0x1:ipcc_irq121:0xf7`), which at EL2 cannot be recovered (no
+restart without the hypervisor): sound gone until reboot. The same crash
+happened at both suspends of the EL1 `test: sleep` boot (Linux silently
+restarted the ADSP there) and never on boots without `qcom_adsp_pwr_lmts`:
+x1e-sleep's Windows "Modern Standby" message crashes this ADSP firmware
+(Samsung's build; wrong format or wrong moment). Blacklisted
+(`/etc/modprobe.d/book4-no-pwrlmts.conf`); qcpep8380.sys opens the same
+`APPS_ADSP_PWR_LMTS_GLINK_PORT`, so the real message format can be read
+from the decompile if the ADSP turns out to hold CX without it.
+
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
 state" (Maulik Shah; lore `20260707-hamoa_pdc_v3-v4-0`): on Windows
