@@ -63,6 +63,14 @@ same day (pdc kernel at EL2, CNTV disarmed) is the deadline `el1tmr` writes
 into `CNTP_CVAL_EL02` (plus the 7.3 LPASS/geni fixes, SS1, the panel
 supplies). Next: residency and drain over a longer sleep; then the EL1 path
 or a usable EL2 setup (DSPs via qebspil, EFI variables).
+**41-minute drain at EL2 (19 October, 17:57, `~/el2-drain-test.sh`, on
+battery, DSPs not running):** 70 mAh = **1.55 W (2.9 %/h)**, against 3.1-3.8 W
+before; residency **99.9 %** in `aosd`, `cxsd` and `ddr` (2435.7 s of
+~2438 s asleep); no reset. The SoC is collapsed nearly all the time, so the
+remaining ~1.5 W (the Vivobook S15 reaches ~0.25 W) is outside the SoC:
+board power that stays on (always-on `VREG_WCN_3P3` and `VREG_MISC_3P3`,
+the Wi-Fi card on PCIe, USB-C retimers, EC, touchscreen, keyboard backlight)
+or a panel chain that does not actually switch off. Next: find it.
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
