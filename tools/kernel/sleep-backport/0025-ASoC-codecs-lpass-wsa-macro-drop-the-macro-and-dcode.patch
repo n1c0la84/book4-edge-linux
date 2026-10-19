@@ -1,0 +1,71 @@
+From 4cc701ac249a8ef1fc7c14ec04478e1ef8934dc4 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Mon, 19 Oct 2026 22:32:11 +0200
+Subject: [PATCH] ASoC: codecs: lpass-wsa-macro: drop the macro and dcodec
+ votes in runtime suspend
+
+Same as the VA macro: the WSA macro enables its "macro" and "dcodec"
+clocks (on X1E the q6prm LPASS_HW_MACRO and LPASS_HW_DCODEC votes at the
+ADSP) at probe and releases them only in remove(); runtime suspend drops
+just mclk, npl and fsgen. With both WSA macros bound the two votes stay at
+2 through system suspend on the Galaxy Book4 Edge (X1E80100).
+
+Release them in runtime suspend and take them again on resume, in the
+same order as probe.
+
+Assisted-by: Claude Opus 5.5
+---
+ sound/soc/codecs/lpass-wsa-macro.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/lpass-wsa-macro.c b/sound/soc/codecs/lpass-wsa-macro.c
+index af521e0..35a786f 100644
+--- a/sound/soc/codecs/lpass-wsa-macro.c
++++ b/sound/soc/codecs/lpass-wsa-macro.c
+@@ -2859,6 +2859,8 @@ static int wsa_macro_runtime_suspend(struct device *dev)
+ 	clk_disable_unprepare(wsa->fsgen);
+ 	clk_disable_unprepare(wsa->npl);
+ 	clk_disable_unprepare(wsa->mclk);
++	clk_disable_unprepare(wsa->dcodec);
++	clk_disable_unprepare(wsa->macro);
+ 
+ 	return 0;
+ }
+@@ -2868,10 +2870,22 @@ static int wsa_macro_runtime_resume(struct device *dev)
+ 	struct wsa_macro *wsa = dev_get_drvdata(dev);
+ 	int ret;
+ 
++	ret = clk_prepare_enable(wsa->macro);
++	if (ret) {
++		dev_err(dev, "unable to prepare macro\n");
++		return ret;
++	}
++
++	ret = clk_prepare_enable(wsa->dcodec);
++	if (ret) {
++		dev_err(dev, "unable to prepare dcodec\n");
++		goto err_dcodec;
++	}
++
+ 	ret = clk_prepare_enable(wsa->mclk);
+ 	if (ret) {
+ 		dev_err(dev, "unable to prepare mclk\n");
+-		return ret;
++		goto err_mclk;
+ 	}
+ 
+ 	ret = clk_prepare_enable(wsa->npl);
+@@ -2894,6 +2908,10 @@ static int wsa_macro_runtime_resume(struct device *dev)
+ 	clk_disable_unprepare(wsa->npl);
+ err_npl:
+ 	clk_disable_unprepare(wsa->mclk);
++err_mclk:
++	clk_disable_unprepare(wsa->dcodec);
++err_dcodec:
++	clk_disable_unprepare(wsa->macro);
+ 
+ 	return ret;
+ }
+-- 
+2.56.0
+

@@ -192,6 +192,12 @@ Two mistakes on the way: unbinding `lpasscc-sc8280xp`, and reading
 `/sys/kernel/debug/clk/clk_summary` once LPASS is powered down (it reads the
 hardware of every clock), each faulted and reset the machine. Read
 `/sys/kernel/debug/clk/<name>/clk_enable_count` instead (software counter).
+**0024 installed (19 October, 22:30):** va_macro runtime-suspended, sound
+works, `LPASS_HW_MACRO`/`DCODEC` 3 -> 2, but `ddr` 98.2 %, `cxsd`/`aosd` 0.
+The other two holders are the WSA and WSA2 macros, same bug (enable at
+probe, runtime suspend drops only mclk/npl/fsgen): patch 0025, installed with
+the same script (now builds both modules). With both, Linux should hold no
+LPASS vote at the ADSP while idle.
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
