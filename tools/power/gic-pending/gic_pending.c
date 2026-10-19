@@ -25,7 +25,11 @@
 
 static void __iomem *gicd, *gicr;
 static DEFINE_PER_CPU(void __iomem *, sgi_base);
-static atomic_t hits[MAX_INTID];
+static bool clear;
+module_param(clear, bool, 0444);
+
+static atomic_t hits[MAX_INTID], hits_en[MAX_INTID];
+static atomic_t cleared;
 static atomic_t exits, exits_none;
 static unsigned int nspi_words;
 
@@ -34,18 +38,40 @@ static int notify(struct notifier_block *nb, unsigned long action, void *v)
 	void __iomem *sgi = this_cpu_read(sgi_base);
 	bool any = false;
 	unsigned int i, b;
-	u32 w;
+	u32 w, en;
 
-	if (action != CPU_PM_EXIT || !sgi)
+	if (!sgi)
+		return NOTIFY_OK;
+	if (action == CPU_PM_ENTER && clear) {
+		/* pending & ~enabled -> ICPENDR (0x280) */
+		w = readl_relaxed(sgi + 0x200) & ~readl_relaxed(sgi + 0x100);
+		if (w) { writel_relaxed(w, sgi + 0x280); atomic_inc(&cleared); }
+		for (i = 1; i < nspi_words && i < MAX_INTID / 32; i++) {
+			w = readl_relaxed(gicd + 0x200 + 4 * i) & ~readl_relaxed(gicd + 0x100 + 4 * i);
+			if (w) { writel_relaxed(w, gicd + 0x280 + 4 * i); atomic_inc(&cleared); }
+		}
+		return NOTIFY_OK;
+	}
+	if (action != CPU_PM_EXIT)
 		return NOTIFY_OK;
 	atomic_inc(&exits);
 	w = readl_relaxed(sgi + 0x200);			/* GICR_ISPENDR0 */
+	en = readl_relaxed(sgi + 0x100);		/* GICR_ISENABLER0 */
 	for (b = 0; b < 32; b++)
-		if (w & BIT(b)) { atomic_inc(&hits[b]); any = true; }
+		if (w & BIT(b)) {
+			atomic_inc(&hits[b]); any = true;
+			if (en & BIT(b)) atomic_inc(&hits_en[b]);
+		}
 	for (i = 1; i < nspi_words && i < MAX_INTID / 32; i++) {
 		w = readl_relaxed(gicd + 0x200 + 4 * i);	/* GICD_ISPENDRn */
-		for (b = 0; w && b < 32; b++)
-			if (w & BIT(b)) { atomic_inc(&hits[32 * i + b]); any = true; }
+		if (!w)
+			continue;
+		en = readl_relaxed(gicd + 0x100 + 4 * i);	/* GICD_ISENABLERn */
+		for (b = 0; b < 32; b++)
+			if (w & BIT(b)) {
+				atomic_inc(&hits[32 * i + b]); any = true;
+				if (en & BIT(b)) atomic_inc(&hits_en[32 * i + b]);
+			}
 	}
 	if (!any)
 		atomic_inc(&exits_none);
@@ -97,12 +123,14 @@ static void __exit gic_pending_exit(void)
 		if (atomic_read(&hits[i]))
 			ents[n++] = (struct ent){ i, atomic_read(&hits[i]) };
 	sort(ents, n, sizeof(ents[0]), cmp, NULL);
-	pr_info("gic_pending: %d CPU_PM exits, %d with nothing pending\n",
-		atomic_read(&exits), atomic_read(&exits_none));
+	pr_info("gic_pending: %d CPU_PM exits, %d with nothing pending%s, %d clearing writes\n",
+		atomic_read(&exits), atomic_read(&exits_none), clear ? " (clear=1)" : "",
+		atomic_read(&cleared));
 	for (i = 0; i < n && i < 20; i++)
-		pr_info("gic_pending:   INTID %4d (%s %d) pending at %d exits\n", ents[i].id,
+		pr_info("gic_pending:   INTID %4d (%s %d) pending at %d exits, enabled at %d\n", ents[i].id,
 			ents[i].id < 16 ? "SGI" : ents[i].id < 32 ? "PPI" : "SPI",
-			ents[i].id < 32 ? ents[i].id : ents[i].id - 32, ents[i].n);
+			ents[i].id < 32 ? ents[i].id : ents[i].id - 32, ents[i].n,
+			atomic_read(&hits_en[ents[i].id]));
 	iounmap(gicr);
 	iounmap(gicd);
 }

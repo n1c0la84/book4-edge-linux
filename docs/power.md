@@ -409,6 +409,20 @@ against ~17 000 timer and ~12 000 IPI interrupts) and `aosd`/`cxsd`/`ddr`
 stay 0: the collapse is aborted or immediately woken below Linux. Next:
 time spent inside each accepted call and the wakeup IRQ (`el2-probe.sh lat`).
 
+Timing: in s2idle timekeeping is frozen, so the per-call time can't be
+measured there (~1 M calls in ~30 s gives at most ~28 us each). Awake with
+the display off, accepted DRIPS calls last 4-65 ms, but nothing collapses
+while devices are active. CPU 0 had the EL1 virtual timer left enabled and
+expired at EL2 (`CNTV_CTL_EL02=5`, `tools/power/timer-check`); disabling it
+changed nothing. `tools/power/gic-pending` (GIC pending state at every
+`CPU_PM_EXIT`) shows eleven SPIs pending at **every** return from deep idle
+(572 158 of 572 158): the dp/dm HS-PHY wake lines of all four USB
+controllers (PDC 11, 15, 49, 50, 58, 60, 61), `pcie4` msi0 (SPI 156), the
+QUP SEs at `a98000` (SPI 806, Bluetooth UART) and `894000` (SPI 813), and SPI
+352; PPI 27 (EL1 virtual timer) at 84 %. Linux never fired them. Next: are
+they disabled-but-latched, and does clearing them (`gic-test.sh clear`) let
+the collapse through?
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
