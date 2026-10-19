@@ -40,6 +40,12 @@ if findmnt -rn -S /dev/sda4 >/dev/null; then
     echo "error: /dev/sda4 (/boot) is mounted; unmount it first" >&2; exit 1
 fi
 for t in dtc mkinitcpio lsinitcpio; do command -v $t >/dev/null || { echo "error: $t missing" >&2; exit 1; }; done
+# kernel-modules-hook's boot-time cleanup deletes module trees pacman doesn't
+# own unless they belong to the running kernel (stage3-omarchy-install.sh).
+case "$(systemctl is-enabled linux-modules-cleanup.service 2>/dev/null || true)" in
+    masked|not-found|"") ;;
+    *) echo "error: linux-modules-cleanup.service is active and would delete this kernel's modules at the next boot of another kernel; run: sudo systemctl mask linux-modules-cleanup.service" >&2; exit 1 ;;
+esac
 [ "$(uname -r)" != "$rel" ] || { echo "error: running $rel itself; boot the normal kernel to rebuild it" >&2; exit 1; }
 
 patches=$(tar -cz -C "$here/sleep-backport" $(cd "$here/sleep-backport" && ls *.patch) | base64 -w0)

@@ -264,3 +264,23 @@ On this kernel s2idle does not reach the SoC low-power states, so a night with
 the lid closed empties the battery. Details and the test in
 [power.md](power.md).
 
+
+## Arch deleted a kernel's modules (19 October 2026)
+
+Omarchy's package list includes `kernel-modules-hook`, whose
+`linux-modules-cleanup.service` runs at every boot and moves each
+`/usr/lib/modules/<kver>` that is neither the running kernel nor owned by a
+pacman package to `/usr/lib/modules/.old/`, then deletes it. On this Arch no
+kernel comes from pacman (they are built from our branch and copied in), so
+the first time a second kernel version existed (the test kernel
+`7.2.7-book4s`), booting it removed `7.2.7-book4`'s modules, and the next
+normal boot failed; that boot in turn removed `7.2.7-book4s`. Both trees were
+restored from Fedora and the copies under `.old`; nothing was lost.
+
+The service is now masked (`systemctl mask linux-modules-cleanup.service`),
+which survives package reinstalls and Omarchy updates, and
+`install/arch/stage3-omarchy-install.sh` masks it on a fresh install. The
+scripts that put a kernel into Arch (`tools/kernel/build-sleep-kernel.sh`,
+`install/arch/fedora-shell.sh --sync-modules`, `install/arch/sync-kernel.sh`)
+refuse to run while it is not masked. The package's pacman hooks only act on
+pacman-installed kernels, so they never fire here.

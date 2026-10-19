@@ -37,6 +37,10 @@ fi
 cleanup() { [ $mounted_here = 1 ] && sudo umount $TOP || true; }
 trap cleanup EXIT
 [ -e "$R/etc/mkinitcpio.conf.d/book4.conf" ] || { echo "$R does not look like our Arch install." >&2; exit 1; }
+if [ -e "$R/usr/lib/systemd/system/linux-modules-cleanup.service" ] &&
+   [ "$(readlink "$R/etc/systemd/system/linux-modules-cleanup.service" 2>/dev/null)" != /dev/null ]; then
+    echo "error: Arch's linux-modules-cleanup.service is not masked; it deletes module trees pacman doesn't own. Mask it in Arch: sudo systemctl mask linux-modules-cleanup.service" >&2; exit 1
+fi
 ns pacman -Q mkinitcpio >/dev/null || { echo "mkinitcpio missing in Arch: pacman -S mkinitcpio there first." >&2; exit 1; }
 
 echo "== 2. modules $K -> Arch"

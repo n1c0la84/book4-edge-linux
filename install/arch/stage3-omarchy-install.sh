@@ -87,7 +87,16 @@ EOF
 sudo env OMARCHY_INSTALL="$INST" OMARCHY_INSTALL_LOG_FILE=/var/log/omarchy-install.log \
   /usr/bin/omarchy-apply-system --install-user "$U" --first-install
 
+# kernel-modules-hook (in Omarchy's package list) ships linux-modules-cleanup,
+# which on every boot deletes each /usr/lib/modules/<kver> that is neither the
+# running kernel nor owned by pacman. Our kernels are never pacman's, so with
+# a second kernel version each boot deleted the other one's modules (19 Oct:
+# booting 7.2.7-book4s removed 7.2.7-book4, and the normal boot failed).
+# Arch has no pacman kernel here, so the hook has nothing to do: mask it.
+sudo systemctl mask linux-modules-cleanup.service
+
 echo "== 7. checks"
+systemctl is-enabled linux-modules-cleanup.service 2>/dev/null | grep -qx masked && echo "   linux-modules-cleanup masked (good)"
 ls /etc/mkinitcpio.conf.d/ /etc/mkinitcpio.d/
 ls /etc/limine-entry-tool.d/ 2>/dev/null || echo "   no /etc/limine-entry-tool.d (good)"
 pacman -Q limine snapper grub 2>/dev/null || echo "   no limine/snapper/grub packages (good)"

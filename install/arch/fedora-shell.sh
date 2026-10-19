@@ -55,6 +55,12 @@ trap unmounts EXIT
 mounts
 
 if [ "${1:-}" = --sync-modules ]; then
+    # kernel-modules-hook's boot-time cleanup deletes module trees pacman doesn't
+    # own unless they belong to the running kernel (stage3-omarchy-install.sh).
+    case "$(systemctl is-enabled linux-modules-cleanup.service 2>/dev/null || true)" in
+        masked|not-found|"") ;;
+        *) echo "error: linux-modules-cleanup.service is active and would delete this kernel's modules at the next boot of another kernel; run: sudo systemctl mask linux-modules-cleanup.service" >&2; exit 1 ;;
+    esac
     K=${2:-$(cat $M/root/etc/book4/default-kernel)}
     [ -d $M/root/usr/lib/modules/$K/kernel ] || { echo "No modules for $K in Fedora." >&2; exit 1; }
     [ -e $M/boot/vmlinuz-$K ] || { echo "No /boot/vmlinuz-$K." >&2; exit 1; }
