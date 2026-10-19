@@ -4,12 +4,15 @@
 audio working.** EL2 (slbounce, `qebspil` starting ADSP and CDSP, attached
 by Linux), sleep test kernel 7.2.7-book4s, `el1tmr`, providers synced,
 patches 0024/0025: `aosd`/`cxsd`/`ddr` **97.5 %** of a 90 s suspend, both DSPs
-attached, no crash, sound working. The last blocker was Linux itself: the
-VA and WSA LPASS macros held the `LPASS_HW_MACRO`/`LPASS_HW_DCODEC` votes at
-the ADSP from probe to remove, so the ADSP kept the LPASS hardware (and CX)
-powered through every suspend (details at the end of the ADSP section).
+attached, no crash, sound working. The last blocker was in our 7.2 kernel:
+the VA and WSA LPASS macros held the `LPASS_HW_MACRO`/`LPASS_HW_DCODEC` votes
+at the ADSP from probe to remove, so the ADSP kept the LPASS hardware (and
+CX) powered through every suspend. Upstream fixed it in 7.3 (`cd054a6e272c`
+wsa, `eb667d0fbdd3` va, "Switch to PM clock framework for runtime PM"; we had
+backported only the rx/tx half of that series); patches 0024/0025 are now
+those two commits (details at the end of the ADSP section).
 Open: a long drain on battery for the wattage, EFI variables at EL2, EL2 as
-the default boot, upstreaming 0024/0025.
+the default boot.
 
 **Others have reached full DRIPS on X1E (found 19 October, late).**
 github.com/justririll/x1e-sleep (ASUS Vivobook S15, X1E80100, jglathe 7.2 at
@@ -212,6 +215,13 @@ LPASS vote at the ADSP while idle.
 **0024 + 0025 (19 October, 22:39): full collapse with both DSPs attached.**
 `aosd`/`cxsd`/`ddr` 97.5 % each over ~90 s asleep, no ADSP crash, audio
 works after resume. (Battery figure not usable on such a short run.)
+**Already upstream (found 19 October, 23:00):** the same fix is in 7.3,
+`cd054a6e272c` (wsa) and `eb667d0fbdd3` (va) by Ajay Kumar Nandam, patches 1-2
+of the series whose rx/tx half is our 0011/0012. 0024/0025 are now those two
+commits (cherry-picked, apply cleanly to 7.2.7); our own first versions are on
+branch `book4/7.2-sleep-own-macros`. `~/va-macro-prep.sh` swaps them in the
+build tree and rebuilds the two modules; to verify: both clock counts 0 when
+idle and the collapse as above.
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
