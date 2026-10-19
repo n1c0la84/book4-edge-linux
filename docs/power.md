@@ -30,8 +30,9 @@ is established, in order of the sections below:
   DSPs, stopping the Secure Processor (PAS 14), the PEP's `_DSM`/GPIO 44
   notifications, voting off the nine regulators Linux never votes, masking
   PPI 27. With several blockers, each could still be one of them.
-- Open lead: the display RSC (RPMh DRV 9), which UEFI leaves clocked and
-  Linux never uses. Unverified: reading it at EL1 reset the machine.
+- The display RSC (RPMh DRV 9), which UEFI leaves clocked and Linux never
+  uses, holds no commands (read at EL2; at EL1 the read resets the
+  machine). No open lead reachable from Linux remains.
 
 Windows' own DRIPS entry does no hardware setup (it only snapshots the sleep
 stats), so whatever allows the collapse is set up earlier, outside what
@@ -543,7 +544,13 @@ the PDC sequencer start/match values and slave ID 1, as in Qualcomm's
 downstream display-RSC map (`qcom,tcs-offset = <0x1c00>`, one sleep and one
 wake TCS). Stage 2 (a 20 KB sweep of both regions) reset the machine, so
 `rscc_dump` now refuses it; stage 3 reads only the two TCSs (`0x1C00`,
-stride 672) and names their command addresses from cmd-db. Not yet run.
+stride 672) and names their command addresses from cmd-db.
+
+Stage 3 (19 October, EL2): both TCSs idle (status `0x1`), no command
+enabled (`enable 0x0000`), and every MSGID/address/data word is 0: UEFI never
+programmed the display RSC, so it holds no vote. (A vote sent and then
+wiped would still be in force at the AOSS; rpmh-rsc leaves address/data in
+place after sending, so this is unlikely.) **Display RSC lead closed.**
 
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in

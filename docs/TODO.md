@@ -173,7 +173,7 @@ To test (should work, never verified)
       and everything ruled out: top of [power.md](power.md). Next: validate
       hibernation (install/arch/hibernate-setup.sh, then a manual
       `systemctl hibernate`, then hibernate-lid.sh); post the EL2 findings on
-      linux_ms_dev_kit #94 (needs OK); optional EL2 read of the display RSC.
+      linux_ms_dev_kit #94 (needs OK). Display RSC read at EL2 19 Oct: empty.
 - [ ] **Hibernation** as a workaround for the drain. Scripts written 19 Oct,
       not yet run: `install/arch/hibernate-setup.sh` (16 GiB swap file in a
       `/swap` subvolume below zram; DSP stop/start sleep hook; no `resume=`:
