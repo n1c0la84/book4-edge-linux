@@ -1,5 +1,13 @@
 # Power: suspend drain
 
+**Next diagnostic (19 October):** measure the accepted EL2
+`CPU_SUSPEND(0x0200c354)` at the SMC wrapper, with raw return codes,
+hardware-counter timing and sampled GIC/timer state. The
+[test instructions](../tools/power/psci-probe/README.md) include matched
+baseline, timing-only and sampled runs. This probe has not yet been built
+against the Book4 kernel or tested on hardware. The entries below retain
+the investigation's chronology; early hypotheses are not all current.
+
 **Latest reset investigation (3 October evening):** unbinding only the
 charging port's `samsung-emuec` before sleep avoids the unplug reset in both
 `pm_test=devices` and real s2idle. The tests implicate driver activity or the
