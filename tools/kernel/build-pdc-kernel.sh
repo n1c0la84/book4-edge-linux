@@ -17,7 +17,8 @@
 #   bash tools/kernel/build-pdc-kernel.sh
 #
 # Undo: bash install/arch/test-entry.sh remove pdc; the two files can stay.
-# Delete ~/src/patchwork-pdc in Fedora's home when done.
+# Delete ~/src/patchwork-pdc in Fedora's home when done. A changed patch set
+# makes a fresh copy (the old one is deleted first).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(cd "$here/../.." && pwd)
@@ -35,23 +36,35 @@ if findmnt -rn -S /dev/sda4 >/dev/null; then
 fi
 command -v dtc >/dev/null || { echo "error: dtc missing (pacman -S dtc)" >&2; exit 1; }
 patches=$(tar -cz -C "$here/pdc-backport" $(cd "$here/pdc-backport" && ls *.patch) | base64 -w0)
+sum=$(cat "$here"/pdc-backport/*.patch | sha256sum | cut -c1-16)
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 
 echo "== 1. build in the Fedora container (~/src/patchwork-pdc)"
 inner="set -euo pipefail
 cd ~/src
+# The copy records the checksum of the patch set applied to it. Another set
+# (or no record): throw the copy away and start from a fresh reflink copy,
+# so patches are always applied once, in order, to a pristine tree.
+if [ -e patchwork-pdc ] && [ \"\$(cat patchwork-pdc/.book4-patches 2>/dev/null)\" != $sum ]; then
+    echo '   patch set changed: fresh copy of ~/src/patchwork' >&2
+    rm -rf patchwork-pdc
+fi
 if [ ! -e patchwork-pdc ]; then
     echo '   reflink copy ~/src/patchwork -> ~/src/patchwork-pdc' >&2
     cp -a --reflink=always patchwork patchwork-pdc
+    cd patchwork-pdc
+    r=\$(make -s LOCALVERSION= kernelrelease)
+    [ \"\$r\" = $rel ] || { echo \"error: tree release is \$r, expected $rel\" >&2; exit 1; }
+    p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
+    for f in \$p/*.patch; do
+        patch -p1 --forward -s < \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
+        echo \"   applied: \$(basename \$f)\" >&2
+    done
+    echo $sum > .book4-patches
+else
+    cd patchwork-pdc
+    echo '   patches already applied (same set)' >&2
 fi
-cd patchwork-pdc
-r=\$(make -s LOCALVERSION= kernelrelease)
-[ \"\$r\" = $rel ] || { echo \"error: tree release is \$r, expected $rel\" >&2; exit 1; }
-p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
-for f in \$p/*.patch; do
-    if patch -p1 -R --dry-run -s -f < \$f >/dev/null 2>&1; then echo \"   already applied: \$(basename \$f)\" >&2
-    else patch -p1 --forward -s < \$f >&2; echo \"   applied: \$(basename \$f)\" >&2; fi
-done
 # modules: incremental, not installed; refreshes Module.symvers so test
 # modules can use what the patches export (rpmh_read)
 make -s -j\$(nproc) LOCALVERSION= Image modules qcom/$dtbname >&2
