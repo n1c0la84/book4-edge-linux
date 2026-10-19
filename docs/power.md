@@ -6,14 +6,17 @@ EL2 via slbounce, DSPs started by qebspil): `aosd`/`cxsd`/`ddr` for ~99.7 %
 of sleep, ~0.25 W (Windows ~0.23 W), from ~4 W. And on linux-arm-msm,
 "x1e80100: no AOSD/CXSD in suspend with APPS votes at zero" (Michael Burch,
 Dell XPS 13 9345, 8 October; replies from Konrad Dybcio and Val Packett, who
-reports aosd/cxsd since reproduced at nVHE EL2 and EL1). Their blockers that
-we never saw:
+reports aosd/cxsd since reproduced at nVHE EL2 and EL1). Their documented
+blockers and candidate differences for the Book4:
 - the firmware computes the APSS wake deadline from the **EL1 timers**: at
   EL2 their `el1tmr` writes the next deadline into `CNTP_CVAL_EL02` before
-  power-down (and clears the CNTV UEFI leaves armed, which "made the firmware
-  abort every system-level sleep entry", our EL2 bounce); at EL1, s2idle's
-  `tick_freeze()` disarms CNTV and APSS never collapses unless CNTV is armed
-  (Burch), our EL1 "held, no collapse";
+  power-down and clears the CNTV that UEFI leaves armed; on the Vivobook the
+  expired CNTV made firmware abort system-level entry. On the Book4,
+  `timer_check` already disarmed CNTV at EL2 without fixing the bounce, so
+  the physical timer deadline and other blockers still need testing. At EL1,
+  Burch found that `tick_freeze()` disarmed CNTV and APSS did not collapse
+  unless it was armed; the Book4's EL1 request is likewise held without
+  collapse, but its cause is not yet established;
 - **GPU RSC stale votes**: inverted `GMU_STATUS_FW_START` check in
   `a6xx_rpmh_stop()` (upstream "drm/msm/a6xx: Fix stale rpmh votes after
   suspend", not in 7.2), "the first big sleep blocker";
@@ -26,7 +29,10 @@ we never saw:
 - DRIPS must be system-suspend-only (runtime DRIPS hangs the SoC after the
   first s2idle); full AOSD resets about hourly there (CXSD-only workaround);
   a DC ZVA erratum with CL5 can hard-reset (maybe our 14 October reset).
-Our patches and modules: tools/power, docs below. Their code: ~/src/ext/x1e-sleep.
+The GPU RSC is separate from the display RSC found empty below. These fixes
+were demonstrated on other boards; the Book4 has tested the PDC series but
+not this timer/deadline and vote-fix combination. Their code is cloned at
+`~/src/ext/x1e-sleep`.
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
@@ -118,11 +124,12 @@ is established, in order of the sections below:
   machine). These Linux-side tests have not exposed the missing condition.
 
 Windows' own DRIPS entry does no hardware setup (it only snapshots the sleep
-stats), so whatever allows the collapse is set up earlier, outside what
-Linux has been shown. Next: find it from the Windows side, by switching things off
-there until DRIPS breaks, starting with Hyper-V itself:
-[windows-investigation.md](windows-investigation.md). Practical fix meanwhile: hibernation (end of this
-file; scripts written, restore not yet validated on this machine).
+stats), so whatever allows collapse is set up earlier. Next on Linux: compare
+the Book4 with the working X1E configuration above, starting with the EL1
+timer deadline and GPU RSC fix, then the remaining votes and supplies. The
+[Windows investigation](windows-investigation.md) remains useful if those
+tests do not explain the difference. Hibernation is a parallel workaround;
+its entry currently resets before writing an image (end of this file).
 The sections below keep the chronology; early hypotheses there are
 superseded where this summary says otherwise.
 

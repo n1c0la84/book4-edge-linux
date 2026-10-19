@@ -172,11 +172,14 @@ To test (should work, never verified)
       (Windows does: sleep study 8 Oct, hardware low power ~98 %). Status
       and everything ruled out: top of [power.md](power.md). The 7.3 PDC fix
       was tested at EL1 and EL2 without collapse; the display RSC was empty.
+      Other X1E machines reached full DRIPS with EL1 timer-deadline and vote
+      fixes: compare their working setup with Book4, starting with the timer
+      deadline and GPU RSC fix. The GPU RSC is separate from display RSC.
       EL2 findings posted on linux_ms_dev_kit #94 (19 Oct,
       issuecomment-6268004483); watch for replies. Hibernation is being
       debugged separately below.
-      Windows-side experiments (Hyper-V off, driver bisection, standby
-      trace): [windows-investigation.md](windows-investigation.md).
+      Windows-side experiments remain available if the Linux comparison does
+      not resolve it: [windows-investigation.md](windows-investigation.md).
 - [ ] **UFS `ref_clk` leak fix for 7.3**: fixed upstream by Qualcomm's
       `f07317a8d57f`, queued for 7.4 without `Cc: stable`. After 7.4-rc1:
       stable backport request (email to stable@vger.kernel.org) or ask the

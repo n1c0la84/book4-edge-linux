@@ -2,11 +2,11 @@
 
 Handoff for a Claude Code session running on this laptop's Windows install.
 Linux never gets the SoC into deep sleep in s2idle; Windows does (sleep
-study, 8 October: hardware low power ~98 % of each standby). Every test
-so far removed something on Linux and looked for a change. That finds
-blockers Linux *adds*. It cannot find something Windows *does* and Linux
-never does. This file sets up the opposite experiment: take things away on
-Windows until DRIPS breaks.
+study, 8 October: hardware low power ~98 % of each standby). Comparable X1E
+Linux machines now reach deep sleep with timer and vote fixes described in
+[power.md](power.md); test those on the Book4 first. This Windows experiment
+can then identify a remaining boot or driver difference by taking things
+away until DRIPS breaks.
 
 Read first: the **Current status** block at the top of [power.md](power.md)
 (one page). Then come back here.
