@@ -6,18 +6,24 @@
  * UEFI leaves disp_cc_mdss_rscc_ahb_clk on (enable count 0, hardware Y), so
  * the registers are clocked. Linux never uses this RSC (RPMh DRV 9); any
  * command words in its TCSs were left by firmware.
- *   insmod rscc_dump.ko [len=0x5000] ; dmesg | grep rscc_dump ; rmmod rscc_dump
+ *   insmod rscc_dump.ko stage=N ; dmesg | grep rscc_dump ; rmmod rscc_dump
+ * stage 0: only the ID word (+0x0) of each region; a sane RSC ID has the
+ *          version in bits 23:16 / 15:8 (rpmh-rsc's RSC_DRV_ID)
+ * stage 1: first 0x100 bytes (ID, solver and TCS configuration)
+ * stage 2: non-zero words of the first 0x5000 bytes (TCS commands)
  * Read-only, but at EL1 under Gunyah the first read reset the machine
  * (19 Oct): the region is not mapped for the Linux VM. EL2 only.
  */
 #include <linux/module.h>
 #include <linux/io.h>
+#include <asm/virt.h>
 
 #define RSCC_DRV	0x0af20000
 #define RSCC_WRAPPER	0x0af30000
 
-static uint len = 0x5000;
-module_param(len, uint, 0444);
+static uint stage;
+module_param(stage, uint, 0444);
+static uint len;
 
 static void dump(const char *name, phys_addr_t pa)
 {
@@ -31,7 +37,7 @@ static void dump(const char *name, phys_addr_t pa)
 	for (off = 0; off < len; off += 4) {
 		u32 v = readl_relaxed(b + off);
 
-		if (v && n++ < 400)
+		if ((v || stage == 0) && n++ < 400)
 			pr_info("rscc_dump: %s +0x%04x = 0x%08x\n", name, off, v);
 	}
 	pr_info("rscc_dump: %s: %u non-zero words in 0x%x bytes\n", name, n, len);
@@ -40,6 +46,12 @@ static void dump(const char *name, phys_addr_t pa)
 
 static int __init rscc_dump_init(void)
 {
+	if (!is_kernel_in_hyp_mode()) {
+		pr_err("rscc_dump: not at EL2, refusing (it reset the machine at EL1)\n");
+		return -EPERM;
+	}
+	len = stage == 0 ? 4 : stage == 1 ? 0x100 : 0x5000;
+	pr_info("rscc_dump: stage %u, 0x%x bytes per region\n", stage, len);
 	dump("drv", RSCC_DRV);
 	dump("wrapper", RSCC_WRAPPER);
 	return 0;
