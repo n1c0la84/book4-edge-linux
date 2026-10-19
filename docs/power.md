@@ -96,6 +96,24 @@ ADSP (and CDSP) before DRIPS, from qcpep8380.sys (the
 `APPS_ADSP_PWR_LMTS_GLINK_PORT` client) and x1e-sleep's SMP2P sleepstate
 bit (`adsp-sleepstate`), so the DSPs drop their votes themselves.
 
+**The ADSP message, decoded from qcpep8380.sys (19 October, night).** The PEP
+opens `APPS_ADSP_PWR_LMTS_GLINK_PORT` (SMEM edge "lpass") and sends 24-byte
+messages built at `ctx+0x1b0`, through `ctx+0x40` with the channel at `ctx+0xc0`:
+- type 0, power limits (`FUN_1400ec2a8`, re-sent on connect by
+  `FUN_1400e7480`): `{0x18, 0, 1, limit 0-2, value}`, the lowest value any
+  client requested for that limit, acknowledged with up to 3 retries;
+- type 1, Modern Standby (`FUN_1400ebb00(state)`): `{0x18, 1, 1, state, 0, 0}`,
+  byte for byte x1e-sleep's message. Sent from the `_DSM` "MSBN" handler
+  (`FUN_140455210`) on phase 7 (entry, state 1) and phase 8 (exit, state 0),
+  gated by a feature flag, followed by `\Callback\QcModernStandby`; before it
+  the PEP only stops/starts one of its own timers (`FUN_1400a5b10`/`a5728`).
+So the format was right and the timing wrong: Windows sends it as standby
+starts with every device active; x1e-sleep's module sent it from the rpmsg
+device's suspend callback, after LPASS was suspended, and the Book4 ADSP
+crashed. `qcom_adsp_pwr_lmts` v2 sends it from a PM notifier
+(`PM_SUSPEND_PREPARE` / `PM_POST_SUSPEND`, before tasks freeze and devices
+suspend). Test: `~/pwrlmts-v2.sh`, then `~/el2-drain-test.sh` at EL2.
+
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
 state" (Maulik Shah; lore `20260707-hamoa_pdc_v3-v4-0`): on Windows
