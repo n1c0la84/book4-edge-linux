@@ -139,6 +139,13 @@ both entries, 3-minute suspend, no ADSP crash, DSPs still attached; `ddr`
 98.9 %, `cxsd`/`aosd` 0. The sleepstate entries are harmless but not
 sufficient. Next: the ADSP/CDSP sleep stats across a suspend
 (`~/dsp-sleep-stats.sh`) to see which DSP never sleeps.
+Per-subsystem sleep stats over a 250 s suspend (same boot): `adsp` and `cdsp`
+each entered sleep and slept the whole time (~100 %), `apss` and `ddr` 94 %,
+`cxsd`/`aosd` 0; `adsp_island`, `gpu`, `display` 0. No DSP stays awake, so
+it is a DSP's sleep-set vote (or something it leaves on) that keeps CX up,
+which never happens when the DSPs are not started. Next: EL2 with only the
+ADSP started (`~/el2-adsponly-prep.sh`, entry `el2-adsponly`: no
+`qcom,broken-reset` on the CDSP, so qebspil never starts it).
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
