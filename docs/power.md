@@ -84,6 +84,17 @@ x1e-sleep's Windows "Modern Standby" message crashes this ADSP firmware
 (`/etc/modprobe.d/book4-no-pwrlmts.conf`); qcpep8380.sys opens the same
 `APPS_ADSP_PWR_LMTS_GLINK_PORT`, so the real message format can be read
 from the decompile if the ADSP turns out to hold CX without it.
+With the module blacklisted (same evening): the ADSP survives suspend
+(both DSPs still `attached`, sound card present); 74 s suspend: `ddr` 96.8 %,
+`cxsd`/`aosd` 0. So with the DSPs running, a DSP keeps CX up. Stopping the
+CDSP at EL2 (`echo stop`) then made it worse (`ddr` 0 % too): without the
+hypervisor a stop is a PAS shutdown that halts the DSP without its own
+power-down, so its RPMh votes most likely stay stuck; not a usable test.
+State of play: full collapse (99.9 %, 1.55 W) needs the DSPs not running at
+EL2; with them running only DDR self-refresh. Next: what Windows sends the
+ADSP (and CDSP) before DRIPS, from qcpep8380.sys (the
+`APPS_ADSP_PWR_LMTS_GLINK_PORT` client) and x1e-sleep's SMP2P sleepstate
+bit (`adsp-sleepstate`), so the DSPs drop their votes themselves.
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
