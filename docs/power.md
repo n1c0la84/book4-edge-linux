@@ -390,6 +390,16 @@ in PC mode, hence `NOT_SUPPORTED` under OSI. Test: an EL2 DTB without the
 PSCI power-domain hierarchy, with core/cluster/DRIPS as flat CPU idle states
 and the RSC flushing on the last CPU (cpu_pm) instead of the system domain.
 
+**EL2, no PSCI hierarchy (19 October, `el2-pc`, flat states C4 / CL5
+`0x01000054` / DRIPS `0x0200c354`):** TrustZone answers `DENIED` (-EPERM)
+to DRIPS 900 411 times and to CL5 9 288 395 times (23 successes); C4 returns
+0. So `0x0200C354` without the StateType bit is a state TrustZone knows (the
+earlier `NOT_SUPPORTED` was for `0x4200C354`), and `DENIED` is OSI-style
+coordination: TrustZone appears to stay in OS-initiated mode (it refused the
+switch to PC at boot) and refuses cluster/system requests from a CPU that is
+not the last in its domain. Next: OSI hierarchy + `0x0200c354` with the
+return-value probe (`el2-drips`).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
