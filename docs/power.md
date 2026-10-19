@@ -19,7 +19,8 @@ blockers and candidate differences for the Book4:
   collapse, but its cause is not yet established;
 - **GPU RSC stale votes**: inverted `GMU_STATUS_FW_START` check in
   `a6xx_rpmh_stop()` (upstream "drm/msm/a6xx: Fix stale rpmh votes after
-  suspend", not in 7.2), "the first big sleep blocker";
+  suspend", d9108bfdb746, in 7.3), "the first big sleep blocker" there;
+  Anatase 7.2.7 already carries both halves of it, so not a Book4 blocker;
 - **LPASS tx/rx macro** clock votes kept by the ADSP forever (fixed in 7.3,
   b9b23e72ab, b05482e7ce);
 - **qcom-geni serial** keeps the BT UART's clocks/CX votes (7.3, d0cd9c8d0fd5);
@@ -33,6 +34,20 @@ The GPU RSC is separate from the display RSC found empty below. These fixes
 were demonstrated on other boards; the Book4 has tested the PDC series but
 not this timer/deadline and vote-fix combination. Their code is cloned at
 `~/src/ext/x1e-sleep`.
+
+**Combined test kernel `7.2.7-book4s` (19 October; `tools/kernel/build-sleep-kernel.sh`,
+GRUB `test: sleep`, EL1):** branch `book4/7.2-sleep` = book4/7.2 + the PDC
+series and domain_ss3 + upstream 7.3 LPASS tx/rx macro PM-clock series
+(b9b23e72abef, b05482e7ce1b, b8ca90fafe6a) + upstream qcom-geni force
+suspend (d0cd9c8d0fd5) + x1e-sleep's system-sleep-only genpd state, SS1 for
+runtime idle and syscon fix + our DT change dropping `regulator-always-on`
+from the panel chain (OCTA_VDD -> DISPLAY_VDD -> EDP_3P3). Modules
+(`tools/power/sleep-modules`, under extra/): `cntv_arm` (ours: at EL1, arm
+CNTV with a far, masked deadline at each CPU_PM entry where the frozen tick
+left it off), `qcom_adsp_pwr_lmts` and `aoss_cxsd_only` (x1e-sleep,
+unchanged; the latter not loaded by default). Its own release, modules and
+initramfs, so the normal kernel is untouched. Test: `~/sleep-test.sh`.
+Result: pending.
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
