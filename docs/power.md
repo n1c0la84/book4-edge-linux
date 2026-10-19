@@ -453,6 +453,25 @@ exit and the bounces are unchanged (273 895 accepted DRIPS calls, counters
 pending-line idea: silence Bluetooth, the debug UART and Wi-Fi together
 (`~/quiet-lines-test.sh`).
 
+Unbinding Bluetooth and both UARTs and removing Wi-Fi doesn't deassert their
+lines (unbinding doesn't reset the hardware's interrupt status), and the
+bounces are unchanged (242 908). Since the GIC doesn't turn disabled
+interrupts into wake requests, and the same lines are asserted at EL1 where
+DRIPS is held, the EL2 bounce path ends here.
+
+**Windows' DRIPS entry does no setup.** The PEP's `platform.DRIPS` callback
+(`PepIdleEnterSysCollapse`, `FUN_140012ce0` -> `FUN_140020678`) only takes a
+stable snapshot of the sleep-stats records for the `NoHWDrips` check. The
+collapse depends on state set up earlier, at boot or as devices go to sleep.
+
+**Regulators Linux never votes.** `rpmh-regulator` can't read state back, so
+a regulator without a Linux consumer stays "unknown", `regulator_late_cleanup()`
+skips it, and it keeps UEFI's last vote on the HLOS DRV. 18 are in that
+state here. Nine of them are ones the PEP has off while their device sleeps
+(`l1c l1d l1i l2c` and `l3d` in `GPU0`'s active recipe, `l3c` for USB3/PCI3
+in D3, `l8b` for USB2 in D3, `l6b`/`l9b` for the SD slot). Test: vote them
+off (`tools/power/vreg-off`, `~/vreg-off-test.sh`).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
