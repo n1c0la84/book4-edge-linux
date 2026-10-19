@@ -123,6 +123,18 @@ Book4**; its ADSP firmware does not handle it. The module stays blacklisted,
 and whatever lets Windows reach DRIPS with the ADSP running is elsewhere
 (next suspect: the SMP2P sleep-state bit, x1e-sleep's `adsp-sleepstate`).
 
+**What Windows does tell the DSPs on the Book4 (qcsubsys8380.sys, decompiled
+19 October).** The PEP's `\\Callback\\QcModernStandby` notification is not
+gated by `EnablePowerLimitsInterface`. qcsubsys registers it
+(`FUN_14000ae80`), opens an outbound SMP2P entry named `"sleepstate"` towards
+each subsystem (`FUN_1400a4a80`), and writes `0` on Modern Standby entry
+(`FUN_14001eb50`) and `0x1000` (bit 12, APSS awake) on exit (`FUN_14001eef0`),
+through `FUN_140011e38`. Linux never creates that entry, so the DSPs likely
+take the CPUs as always awake. Test: outbound `sleepstate` entries in
+`smp2p-adsp` and `smp2p-cdsp` (EL2 overlay) and `book4_dsp_sleepstate`
+(ours, after x1e-sleep's untested `adsp-sleepstate`): 0x1000 at probe, 0 at
+`PM_SUSPEND_PREPARE`, 0x1000 at `PM_POST_SUSPEND`. `~/sleepstate-prep.sh`.
+
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
 state" (Maulik Shah; lore `20260707-hamoa_pdc_v3-v4-0`): on Windows

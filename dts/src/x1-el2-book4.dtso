@@ -79,3 +79,33 @@
 &sbsa_watchdog {
 	status = "disabled";
 };
+
+/*
+ * Outbound SMP2P "sleepstate" entries to the ADSP and CDSP, as Windows'
+ * qcsubsys8380.sys creates them (FUN_1400a4a80): 0x1000 (bit 12, APSS awake)
+ * while running, 0 on Modern Standby entry (\Callback\QcModernStandby, sent by
+ * the PEP independently of EnablePowerLimitsInterface). Without the entry the
+ * DSPs keep CX up through s2idle. Consumer: book4_dsp_sleepstate
+ * (tools/power/sleep-modules). Not EL2-specific; here while it is tested.
+ */
+&{/smp2p-adsp} {
+	book4_adsp_sleepstate: sleepstate-out {
+		qcom,entry-name = "sleepstate";
+		#qcom,smem-state-cells = <1>;
+	};
+};
+
+&{/smp2p-cdsp} {
+	book4_cdsp_sleepstate: sleepstate-out {
+		qcom,entry-name = "sleepstate";
+		#qcom,smem-state-cells = <1>;
+	};
+};
+
+&{/} {
+	dsp-sleepstate {
+		compatible = "book4,dsp-sleepstate";
+		qcom,smem-states = <&book4_adsp_sleepstate 0>, <&book4_cdsp_sleepstate 0>;
+		qcom,smem-state-names = "adsp", "cdsp";
+	};
+};
