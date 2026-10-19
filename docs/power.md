@@ -21,7 +21,13 @@ files in `tools/kernel/pdc-backport/`, plus a local one-line log of the PDC
 mode the firmware ends up in). `tools/kernel/build-pdc-kernel.sh` builds
 only the image and the 14" DTB in a reflink copy of the tree (the drivers
 are built in, the release stays `7.2.7-book4`) and adds GRUB test entry
-`pdc`. Result: pending.
+`pdc`.
+**EL1 result (19 October):** the firmware accepts the switch
+(`qcom-pdc: x1e: pass-through mode (SCM pass-through write: 0)`), the DT's
+`domain-sleep-0` is `0x0200c354`; one suspend: system domain entered once
+and held, `aosd`/`cxsd`/`ddr` 0, as before. At EL1 the PDC latch was not the
+visible blocker (Gunyah holds the request). Next: the same kernel at EL2,
+where the PDC latch would explain the ~50 us bounces (entry `el2-pdc`).
 
 **Current status (19 October 2026).** The SoC still never reaches deep sleep
 in s2idle (`aosd`/`cxsd`/`ddr` stay 0 in every configuration tried). What
