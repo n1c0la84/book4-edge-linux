@@ -134,6 +134,11 @@ take the CPUs as always awake. Test: outbound `sleepstate` entries in
 `smp2p-adsp` and `smp2p-cdsp` (EL2 overlay) and `book4_dsp_sleepstate`
 (ours, after x1e-sleep's untested `adsp-sleepstate`): 0x1000 at probe, 0 at
 `PM_SUSPEND_PREPARE`, 0x1000 at `PM_POST_SUSPEND`. `~/sleepstate-prep.sh`.
+Result (19 October, 21:30, EL2, both DSPs attached): the module bound to
+both entries, 3-minute suspend, no ADSP crash, DSPs still attached; `ddr`
+98.9 %, `cxsd`/`aosd` 0. The sleepstate entries are harmless but not
+sufficient. Next: the ADSP/CDSP sleep stats across a suspend
+(`~/dsp-sleep-stats.sh`) to see which DSP never sleeps.
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
