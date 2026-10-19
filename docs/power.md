@@ -54,6 +54,15 @@ and held, `aosd`/`cxsd`/`ddr` 0. Same as Burch's XPS 13 at EL1. The proven
 configuration is EL2 with `el1tmr` (the real next deadline in the EL1
 physical timer), never tried here: `tools/kernel/build-sleep-modules.sh`
 adds it, entry `el2-sleep` (`~/el2-sleep-prep.sh`, `~/el2-sleep-test.sh`).
+**EL2 result (19 October, 17:00): FULL COLLAPSE.** `test: el2-sleep`
+(book4s kernel at EL2 via slbounce, `el1tmr` loaded, DSPs not started): one
+~30 s suspend, `aosd`/`cxsd`/`ddr` 0 -> **1/1/1**; `CPU_SUSPEND(0x0200c354)`
+requested once and returned 0 (no bounces); SS1 (`0x02000154`) used 63 times
+in the awake seconds. The difference from the 1.3 M bounces earlier the
+same day (pdc kernel at EL2, CNTV disarmed) is the deadline `el1tmr` writes
+into `CNTP_CVAL_EL02` (plus the 7.3 LPASS/geni fixes, SS1, the panel
+supplies). Next: residency and drain over a longer sleep; then the EL1 path
+or a usable EL2 setup (DSPs via qebspil, EFI variables).
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
@@ -105,8 +114,10 @@ X1E (the read path was added for newer SoCs/RSCs), so the active TCS stays
 busy and every RPMh client blocks. RPMh read-back is not available to us;
 the script refuses to run.
 
-**Current status (19 October 2026).** The SoC still never reaches deep sleep
-in s2idle (`aosd`/`cxsd`/`ddr` stay 0 in every configuration tried). What
+**Current status (19 October 2026).** **Full deep sleep reached once, at EL2
+with the sleep test kernel and `el1tmr` (see "Combined test kernel" above).**
+Before that, the SoC never reached deep sleep in s2idle (`aosd`/`cxsd`/`ddr`
+stayed 0 in every configuration tried). What
 is established, in order of the sections below:
 
 - Releasing the boot votes, `pcie_port_pm=force`, USB wakeup off and
