@@ -3,6 +3,10 @@
  * Based on github.com/justririll/x1e-sleep (commit 4e84b60); changed for the
  * Galaxy Book4 Edge: the message is sent from a PM notifier, not from the
  * rpmsg device's suspend callback.
+ *
+ * DO NOT USE ON THE BOOK4: Windows never sends this message there (Samsung's
+ * qcadc8380_ext.inf sets the PEP's EnablePowerLimitsInterface=0) and the
+ * Book4 ADSP crashes on it (19 Oct, both versions). Blacklisted.
  */
 /*
  * Tell the ADSP when the system enters and leaves sleep, like Windows does.

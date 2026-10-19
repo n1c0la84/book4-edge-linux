@@ -113,6 +113,15 @@ device's suspend callback, after LPASS was suspended, and the Book4 ADSP
 crashed. `qcom_adsp_pwr_lmts` v2 sends it from a PM notifier
 (`PM_SUSPEND_PREPARE` / `PM_POST_SUSPEND`, before tasks freeze and devices
 suspend). Test: `~/pwrlmts-v2.sh`, then `~/el2-drain-test.sh` at EL2.
+**v2 crashed the ADSP the same way** (same PC, `ipcc_irq121`). The reason:
+the PEP only sends it when registry feature `EnablePowerLimitsInterface`
+(lookup item `0xaa`, default 1) is set, and Samsung's
+`qcadc8380_ext.inf` (bound to `ACPI\QCOM0C11`, present in the Book4 DSDT)
+sets `EnablePowerLimitsInterface=0` and `EnableEmiForE3=0` under
+`Services\qcpep\Parameters`. **Windows never sends this message on the
+Book4**; its ADSP firmware does not handle it. The module stays blacklisted,
+and whatever lets Windows reach DRIPS with the ADSP running is elsewhere
+(next suspect: the SMP2P sleep-state bit, x1e-sleep's `adsp-sleepstate`).
 
 **Upstream's x1e PDC fix (found 19 October, evening; tested: not the blocker here, see below).** Linux 7.3
 contains Qualcomm's series "x1e80100: Enable PDC wake GPIOs and deepest idle
