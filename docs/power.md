@@ -472,6 +472,23 @@ state here. Nine of them are ones the PEP has off while their device sleeps
 in D3, `l8b` for USB2 in D3, `l6b`/`l9b` for the SD slot). Test: vote them
 off (`tools/power/vreg-off`, `~/vreg-off-test.sh`).
 
+At EL1 (`drips-noflags`), with those nine voted off: DRIPS entered once and
+held, counters 0. Not the blocker. Side effect: on resume the USB QMP combo
+PHY `fda000` timed out (`phy initialization timed-out`), so one of them
+(probably `l3c`, 0.912 V, "USB3" in the PEP) supplies it although the DT
+has no such consumer.
+
+**Other RPMh voters.** `Resources-VRDL` names three DRVs: `HLOS_DRV` 2
+(Linux's), `DISPLAY_DRV` 9 (`/icb/arbiter/display`) and `PCIE_DRV` 16. Only
+`\_SB.PCI6` (PCIe 6A, the M.2 slot; `_STA` needs `PRP6`, which is only set by a
+hot-plug probe) uses `PCIE_DRV` in the recipes. `DISPLAY_DRV` is used by the
+display driver itself: `qcdxkm8380.sys` has `MDSS_RSCC_REGS`,
+`RsccSendVoting`, `RsccComputeAbVote`, `RsccSetVoltageVoteData`. Linux never
+uses the display RSC, yet `disp_cc_mdss_rscc_ahb_clk` and
+`disp_cc_mdss_rscc_vsync_clk` are on in hardware with enable count 0: UEFI
+started the display RSC and left it running. Next: dump its registers
+(`tools/power/rscc-dump`, `~/rscc-dump.sh`) for commands left by UEFI.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
