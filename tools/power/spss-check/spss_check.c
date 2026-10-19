@@ -12,7 +12,6 @@
 #include <linux/soc/qcom/smem.h>
 #include <linux/firmware/qcom/qcom_scm.h>
 
-#define SLEEP_STATS_ITEM	605
 #define SPSS_PAS_ID		14
 
 struct sleep_stats {
@@ -30,19 +29,23 @@ static const char * const hosts[] = {
 
 static int __init spss_check_init(void)
 {
-	unsigned int pid;
+	int pid;		/* -1 = QCOM_SMEM_HOST_ANY (global items) */
 
-	for (pid = 0; pid < 20; pid++) {
-		struct sleep_stats *s;
-		size_t sz;
+	unsigned int item;
 
-		s = qcom_smem_get(pid, SLEEP_STATS_ITEM, &sz);
-		if (IS_ERR(s))
-			continue;
-		pr_info("spss_check: host %2u %-8s sleep count %u, last entered %llu exited %llu, accumulated %llu (%zu bytes)\n",
-			pid, pid < ARRAY_SIZE(hosts) ? hosts[pid] : "?", s->count,
-			s->last_entered_at, s->last_exited_at, s->accumulated, sz);
-	}
+	for (pid = -1; pid < 20; pid++)
+		for (item = 600; item <= 640; item++) {
+			struct sleep_stats *s;
+			size_t sz;
+
+			s = qcom_smem_get(pid, item, &sz);
+			if (IS_ERR(s) || sz < sizeof(*s))
+				continue;
+			pr_info("spss_check: host %2d %-8s item %u: type %#x count %u, last entered %llu exited %llu, accumulated %llu (%zu bytes)\n",
+				pid, pid < 0 ? "global" : pid < (int)ARRAY_SIZE(hosts) ? hosts[pid] : "?", item,
+				s->stat_type, s->count, s->last_entered_at,
+				s->last_exited_at, s->accumulated, sz);
+		}
 	pr_info("spss_check: SCM available %d, PAS %d supported %d\n",
 		qcom_scm_is_available(), SPSS_PAS_ID,
 		qcom_scm_is_available() ? qcom_scm_pas_supported(SPSS_PAS_ID) : -1);
