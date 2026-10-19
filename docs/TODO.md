@@ -172,8 +172,8 @@ To test (should work, never verified)
       (Windows does: sleep study 8 Oct, hardware low power ~98 %). Status
       and everything ruled out: top of [power.md](power.md). Next: validate
       hibernation (install/arch/hibernate-setup.sh, then a manual
-      `systemctl hibernate`, then hibernate-lid.sh); post the EL2 findings on
-      linux_ms_dev_kit #94 (needs OK). Display RSC read at EL2 19 Oct: empty.
+      `systemctl hibernate`, then hibernate-lid.sh); EL2 findings posted on
+      linux_ms_dev_kit #94 (19 Oct, issuecomment-6268004483); watch for replies. Display RSC read at EL2 19 Oct: empty.
       Windows-side experiments (Hyper-V off, driver bisection, standby
       trace): [windows-investigation.md](windows-investigation.md).
 - [ ] **Hibernation** as a workaround for the drain. Scripts written 19 Oct,
