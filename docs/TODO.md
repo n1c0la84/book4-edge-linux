@@ -170,10 +170,11 @@ To test (should work, never verified)
       EL2 (no hypervisor) kept up past 48 h; [el2.md](el2.md).
 - [ ] **Suspend drain about 3.1-3.8 W; the SoC never reaches deep sleep**
       (Windows does: sleep study 8 Oct, hardware low power ~98 %). Status
-      and everything ruled out: top of [power.md](power.md). Next: validate
-      hibernation (install/arch/hibernate-setup.sh, then a manual
-      `systemctl hibernate`, then hibernate-lid.sh); EL2 findings posted on
-      linux_ms_dev_kit #94 (19 Oct, issuecomment-6268004483); watch for replies. Display RSC read at EL2 19 Oct: empty.
+      and everything ruled out: top of [power.md](power.md). The 7.3 PDC fix
+      was tested at EL1 and EL2 without collapse; the display RSC was empty.
+      EL2 findings posted on linux_ms_dev_kit #94 (19 Oct,
+      issuecomment-6268004483); watch for replies. Hibernation is being
+      debugged separately below.
       Windows-side experiments (Hyper-V off, driver bisection, standby
       trace): [windows-investigation.md](windows-investigation.md).
 - [ ] **UFS `ref_clk` leak fix for 7.3**: fixed upstream by Qualcomm's
@@ -181,17 +182,16 @@ To test (should work, never verified)
       stable backport request (email to stable@vger.kernel.org) or ask the
       Anatase kernel to cherry-pick it. Our kernel carries our own patch
       meanwhile ([power.md](power.md)).
-- [ ] **Hibernation** as a workaround for the drain. Scripts written 19 Oct,
-      not yet run: `install/arch/hibernate-setup.sh` (16 GiB swap file in a
-      `/swap` subvolume below zram; DSP stop/start sleep hook; no `resume=`:
-      the EFI variable driver is built in, so systemd's `HibernateLocation`
-      and the initramfs `systemd` hook do it), then a manual
-      `systemctl hibernate`, then `install/arch/hibernate-lid.sh` (lid on
-      battery -> hibernate, on AC -> suspend). No timed wake exists (RTC has
-      no alarm; EC wake timer tested 8 Oct: no wake), so no
-      suspend-then-hibernate. Unknown until tested: GPU, ath12k and Bluetooth
-      after a restore. Never boot Fedora while Arch is hibernated (shared
-      btrfs).
+- [ ] **Hibernation** as a workaround for the drain. Swap and
+      `HibernateLocation` are set up. The first attempt hung while stopping
+      the DSPs after the user session froze; moving that stop before the
+      freeze resolved the hang. The second attempt reached hibernation entry
+      but reset before writing a usable image. Next: use `pm_test` stages
+      (`freezer`, `devices`, `platform`, `processors`, `core`, `test_resume`)
+      to isolate the reset, then retry a full hibernate and validate restore
+      before installing the lid policy. See [power.md](power.md#hibernation-the-practical-fix).
+      No timed wake exists (RTC has no alarm; EC wake timer tested 8 Oct:
+      no wake). Never boot Fedora while Arch is hibernated (shared btrfs).
 - [x] **Charger plugged in during sleep now charges** (`patches/0003`,
       5 Oct, Fedora): wakes, negotiates, sleeps again. Same on
       Arch/Omarchy (5 Oct): logind re-suspends 29 s after the wake.

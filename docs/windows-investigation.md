@@ -25,14 +25,17 @@ Read first: the **Current status** block at the top of [power.md](power.md)
   for the whole suspend, but the SoC never collapses (`aosd`/`cxsd`/`ddr`
   counters stay 0).
 - Linux at EL2 (slbounce, no Gunyah): TrustZone accepts `0x0200C354` and
-  returns within ~50-100 us, ~16 000 times a second, with no interrupt
-  visible in the GIC.
-- Ruled out on Linux, one at a time: Linux's own RPMh votes (all 0 at
-  sleep), DSPs, Secure Processor, PEP `_DSM`/GPIO 44 notifications, the
-  regulators Linux never votes, the display RSC (empty), visible interrupts.
+  returns within ~27-107 us on most calls, ~16 000 times a second. A few
+  calls remain active for nearly the whole suspend. CPU 0 has pending PPI 27;
+  on sampled calls from other CPUs no enabled pending interrupt was visible
+  in the GIC at the SMC boundary.
+- Tests that did not produce collapse individually: Linux's own RPMh votes
+  (all 0 at sleep), DSPs, Secure Processor, PEP `_DSM`/GPIO 44 notifications, the
+  regulators Linux never votes, and the display RSC (empty). GIC snapshots
+  also found fast returns on CPUs with no visible pending enabled interrupt.
 
-The open question is what Windows has that Linux lacks: (a) Hyper-V instead
-of Gunyah, or (b) a driver or PEP action that puts some block to sleep.
+The open question is which Windows boot or standby condition permits DRIPS:
+the EL2 environment, firmware mode, or a driver/PEP action are candidates.
 
 ## Ground rules for this session
 
@@ -86,10 +89,12 @@ From the last session note: duration, **HW Drips %**, SW Drips %, top
 offenders. Expected ~98 % HW. If it isn't, stop and investigate why first:
 the comparison below needs a working baseline.
 
-## 2. The decisive experiment: Windows without Hyper-V (under Gunyah)
+## 2. Test whether Windows needs Hyper-V for DRIPS
 
-With the hypervisor not launched, Windows on Snapdragon runs at EL1 under
-Gunyah, like Linux.
+Disabling Hyper-V tests whether Windows still reaches DRIPS without it. The
+`HypervisorPresent` check below confirms the Microsoft hypervisor is absent;
+it does not by itself establish that Gunyah owns EL2 or that Windows uses the
+same PSCI path as Linux.
 
 1. BitLocker: have the recovery key (account.microsoft.com, Devices,
    Recovery keys) **or** suspend protection for the reboots:
@@ -106,8 +111,8 @@ Gunyah, like Linux.
 
 | HW DRIPS without Hyper-V | Meaning | Next |
 |---|---|---|
-| still ~98 % | Gunyah is not the blocker; a Windows driver/PEP action is | experiment 3A |
-| ~0 % | the hypervisor is the blocker | experiment 3B |
+| still ~98 % | Hyper-V is not required in this Windows configuration; another boot or standby difference remains | experiment 3A |
+| ~0 % | disabling Hyper-V removed a condition needed for DRIPS; the specific condition is not yet identified | experiment 3B |
 
 ## 3A. Driver bisection (if DRIPS survives without Hyper-V)
 
@@ -130,13 +135,15 @@ Disable-PnpDevice -InstanceId '<id>' -Confirm:$false   # test
 Enable-PnpDevice  -InstanceId '<id>' -Confirm:$false   # undo
 ```
 
-The device whose removal drops HW DRIPS to ~0 is doing the thing Linux
-doesn't. Then trace what its driver does on standby entry (section 4).
+If removing one device drops HW DRIPS to ~0 and re-enabling it restores DRIPS,
+trace that driver's standby actions (section 4). This establishes a Windows
+dependency, but still needs comparison with Linux to identify the missing
+action.
 
-## 3B. Hyper-V is needed (if DRIPS dies without it)
+## 3B. DRIPS fails with Hyper-V disabled
 
-Then the difference is between Hyper-V and Gunyah, and Linux's only route
-is EL2. Useful from Windows:
+Restore Hyper-V and repeat the baseline to confirm the change is reversible.
+Then determine which boot or power-management behavior changed. Useful leads:
 
 - Trace standby entry with Hyper-V on (section 4) and look for hypervisor
   events around DRIPS.

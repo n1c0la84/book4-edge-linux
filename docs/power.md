@@ -63,9 +63,14 @@ is established, in order of the sections below:
   state. With it, at EL1 under Gunyah the system domain is entered once per
   suspend and held, with no collapse.
 - At EL2 (slbounce, no Gunyah) with the OSI hierarchy, TrustZone **accepts**
-  `0x0200C354` (returns 0) but returns from it within about 50-100 us,
-  roughly 16 000 times per second of suspend (`tools/power/psci-probe`,
-  timed at the SMC with the 19.2 MHz counter, which keeps running in s2idle).
+  `0x0200C354` (returns 0). Most calls return within about 27-107 us,
+  roughly 16 000 times per second of suspend. The timed probe also put five
+  calls in its 28-56 s histogram bucket and the sampled probe put three
+  there; several CPUs appear to remain inside a successful PSCI call for
+  nearly the whole suspend. The 19.2 MHz counter in `tools/power/psci-probe`
+  measured 31-32 s in these requested ~30 s suspends, but no external
+  stopwatch reading was recorded to validate suspend-time counter behavior.
+  The overall mean call latency includes the long calls and is not typical.
   The variant with the StateType bit, `0x4200C354`, is `NOT_SUPPORTED`. A
   working PC-mode test was never achieved (the switch to PC failed), so
   PC vs OSI is still open.
@@ -73,16 +78,16 @@ is established, in order of the sections below:
   (`CNTV_CTL_EL02=5`, an EL2-boot artifact; KVM keeps PPI 27 enabled) PPI 27
   is pending and enabled at every call. But other CPUs bounce just as fast
   with no pending+enabled interrupt visible in the GIC right at the SMC
-  (CPU 11: 65 983 calls, 0 of 257 samples). That rules out visible GIC
-  interrupts as the general cause; secure interrupts and PDC/AOSS-side wake
-  or abort reasons are not observable from here.
+  (CPU 11: 65 983 calls, 0 of 257 samples). A pending+enabled GIC interrupt
+  was not visible at those sampled boundaries; interrupts between snapshots,
+  secure interrupts and PDC/AOSS-side wake or abort reasons remain possible.
 - Things tried that did not change the result on their own: stopping the
   DSPs, stopping the Secure Processor (PAS 14), the PEP's `_DSM`/GPIO 44
   notifications, voting off the nine regulators Linux never votes, masking
   PPI 27. With several blockers, each could still be one of them.
 - The display RSC (RPMh DRV 9), which UEFI leaves clocked and Linux never
   uses, holds no commands (read at EL2; at EL1 the read resets the
-  machine). No open lead reachable from Linux remains.
+  machine). These Linux-side tests have not exposed the missing condition.
 
 Windows' own DRIPS entry does no hardware setup (it only snapshots the sleep
 stats), so whatever allows the collapse is set up earlier, outside what
@@ -506,14 +511,15 @@ return-value probe (`el2-drips`).
 accepts DRIPS.** `CPU_SUSPEND(0x0200c354)` returns 0 for 690 627 calls in a
 ~30 s suspend (6 `DENIED`), cores and clusters as usual. The right request is
 therefore Windows' value without the StateType bit, in OS-initiated mode.
-But every accepted call returns almost at once (690 602 system-domain entries
-against ~17 000 timer and ~12 000 IPI interrupts) and `aosd`/`cxsd`/`ddr`
-stay 0: the collapse is aborted or immediately woken below Linux. Next:
-time spent inside each accepted call and the wakeup IRQ (`el2-probe.sh lat`).
+The 690 602 system-domain entries against ~17 000 timer and ~12 000 IPI
+interrupts suggest most calls return quickly, and `aosd`/`cxsd`/`ddr` stay 0.
+The later PSCI probe measured the quick returns directly, alongside a few
+calls that lasted nearly the whole suspend. Next at the time: measure each
+call and inspect the wakeup IRQ (`el2-probe.sh lat`).
 
-Timing: in s2idle timekeeping is frozen, so the per-call time can't be
-measured there (~1 M calls in ~30 s gives at most ~28 us each). Awake with
-the display off, accepted DRIPS calls last 4-65 ms, but nothing collapses
+Timing at that stage used frozen s2idle timekeeping, so it could not measure
+per-call latency there. The later `psci-probe` used the architected counter
+instead. Awake with the display off, accepted DRIPS calls last 4-65 ms, but nothing collapses
 while devices are active. CPU 0 had the EL1 virtual timer left enabled and
 expired at EL2 (`CNTV_CTL_EL02=5`, `tools/power/timer-check`); disabling it
 changed nothing. `tools/power/gic-pending` (GIC pending state at every
