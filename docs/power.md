@@ -36,6 +36,15 @@ latched GPIO interrupts; direct SPIs never were.) 7.3's x1e PDC/domain_ss3
 work is right and worth having, but it does not bring CX collapse here on
 its own.
 
+**RPMh read-back (19 October, set up):** linux-next's `rpmh_read()`
+(`edbafe65eef2`, Maulik Shah, "useful for clients … to know the settings
+applied during bootloader stage", plus `e284de4dfc01`) added to the test
+kernel (`pdc-backport/0011-0012`). `tools/power/rpmh-read` reads all 256
+cmd-db addresses (ARC, BCM, VRM +0/+4/+8) through the APSS RSC, as booted and
+after releasing the boot votes (`~/rpmh-read-test.sh`). It most likely
+returns Linux's own DRV's setting, so it shows bootloader votes on our
+channel that no Linux driver ever touched. Result pending.
+
 **Current status (19 October 2026).** The SoC still never reaches deep sleep
 in s2idle (`aosd`/`cxsd`/`ddr` stay 0 in every configuration tried). What
 is established, in order of the sections below:

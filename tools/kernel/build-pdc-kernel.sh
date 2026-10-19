@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
 # Test kernel with Qualcomm's x1e PDC secondary-mode series and domain_ss3
-# from Linux 7.3 (tools/kernel/pdc-backport/, the same commits as branch
+# from Linux 7.3, and rpmh_read() from linux-next (tools/kernel/pdc-backport/, the same commits as branch
 # book4/7.2-pdc in n1c0la84/linux-book4-edge), built from Arch in the
 # Fedora container. ~/src/patchwork in Fedora's home is reflink-copied to
 # ~/src/patchwork-pdc (instant, shared extents on btrfs), the patches are
@@ -52,8 +52,11 @@ for f in \$p/*.patch; do
     if patch -p1 -R --dry-run -s -f < \$f >/dev/null 2>&1; then echo \"   already applied: \$(basename \$f)\" >&2
     else patch -p1 --forward -s < \$f >&2; echo \"   applied: \$(basename \$f)\" >&2; fi
 done
-make -s -j\$(nproc) LOCALVERSION= Image qcom/$dtbname >&2
+# modules: incremental, not installed; refreshes Module.symvers so test
+# modules can use what the patches export (rpmh_read)
+make -s -j\$(nproc) LOCALVERSION= Image modules qcom/$dtbname >&2
 grep -q ' qcom_pdc_gic_secondary_set_type\$' System.map || { echo 'error: the PDC series is not in the image' >&2; exit 1; }
+grep -q 'rpmh_read' Module.symvers || { echo 'error: rpmh_read not exported' >&2; exit 1; }
 [ \"\$(cat include/config/kernel.release)\" = $rel ]
 tar -cz -C arch/arm64/boot Image dts/qcom/$dtbname | base64 -w0"
 # no suspend while building (a lid close would interrupt the container)

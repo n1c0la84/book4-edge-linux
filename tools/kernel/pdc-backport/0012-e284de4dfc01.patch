@@ -1,0 +1,70 @@
+From e284de4dfc0132764ef0e051a7024932b130c5e7 Mon Sep 17 00:00:00 2001
+From: Maulik Shah <maulik.shah@oss.qualcomm.com>
+Date: Wed, 7 Oct 2026 15:35:49 +0530
+Subject: soc: qcom: rpmh-rsc: Update CMD_MSGID_LEN to 4 bytes for read request
+
+Newer SoC like hawi with RSC version v4.5 support 4 byte message read
+request instead of default 8 byte on older SoCs. The write request
+continues to be 8 bytes.
+
+The CMD_MSGID_LEN field is [3:0] bits. Describe the length bits as a
+GENMASK() and use FIELD_PREP() when programming 4-byte or 8-byte message
+length.
+
+Tested-by: Mukesh Ojha <mukesh.ojha@oss.qualcomm.com> #Hawi
+Signed-off-by: Maulik Shah <maulik.shah@oss.qualcomm.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Reviewed-by: Abel Vesa <abel.vesa@oss.qualcomm.com>
+Link: https://patch.msgid.link/20261007-rsc_read-v3-1-7501c014fb37@oss.qualcomm.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ drivers/soc/qcom/rpmh-rsc.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/soc/qcom/rpmh-rsc.c b/drivers/soc/qcom/rpmh-rsc.c
+index c4542318eac47b..daf5a254058752 100644
+--- a/drivers/soc/qcom/rpmh-rsc.c
++++ b/drivers/soc/qcom/rpmh-rsc.c
+@@ -7,6 +7,7 @@
+ #define pr_fmt(fmt) "%s " fmt, KBUILD_MODNAME
+ 
+ #include <linux/atomic.h>
++#include <linux/bitfield.h>
+ #include <linux/cpu_pm.h>
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
+@@ -86,7 +87,7 @@ enum {
+ #define TCS_AMC_MODE_TRIGGER		BIT(24)
+ 
+ /* TCS CMD register bit mask */
+-#define CMD_MSGID_LEN			8
++#define CMD_MSGID_LEN			GENMASK(3, 0)
+ #define CMD_MSGID_RESP_REQ		BIT(8)
+ #define CMD_MSGID_WRITE			BIT(16)
+ #define CMD_STATUS_ISSUED		BIT(8)
+@@ -499,13 +500,20 @@ static void __tcs_buffer_write(struct rsc_drv *drv, int tcs_id, int cmd_id,
+ 			       const struct tcs_request *msg)
+ {
+ 	u32 msgid;
+-	u32 cmd_msgid = CMD_MSGID_LEN;
++	u32 cmd_msgid;
+ 	u32 cmd_enable = 0;
+ 	struct tcs_cmd *cmd;
+ 	int i, j;
+ 
+ 	/* Convert all commands to RR when the request has wait_for_compl set */
+-	cmd_msgid |= msg->wait_for_compl ? CMD_MSGID_RESP_REQ : 0;
++	cmd_msgid = msg->wait_for_compl ? CMD_MSGID_RESP_REQ : 0;
++
++	if (msg->is_read && (drv->ver.major > 4 ||
++			     (drv->ver.major == 4 && drv->ver.minor >= 5)))
++		cmd_msgid |= FIELD_PREP(CMD_MSGID_LEN, 4);
++	else
++		cmd_msgid |= FIELD_PREP(CMD_MSGID_LEN, 8);
++
+ 	if (!msg->is_read)
+ 		cmd_msgid |= CMD_MSGID_WRITE;
+ 
+-- 
+cgit 1.3.1-korg
+
