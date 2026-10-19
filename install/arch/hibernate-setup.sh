@@ -5,10 +5,13 @@
 #
 #   1. a 16 GiB swap file in its own btrfs subvolume (/swap), priority below
 #      zram, so it is only used for the hibernation image;
-#   2. a systemd sleep hook that stops the ADSP/CDSP before hibernating and
+#   2. a systemd service that stops the ADSP/CDSP before hibernating and
 #      starts them after resume: their firmware is gone after power-off and
 #      qcom_q6v5_pas cannot restore it (battery, charging, USB-C and audio go
-#      through the ADSP).
+#      through the ADSP). It runs before systemd-hibernate.service, i.e.
+#      before systemd freezes the user session: stopping the ADSP removes the
+#      sound card, which waits for PipeWire to close it, and a frozen
+#      PipeWire never does (a system-sleep hook deadlocked that way, 19 Oct).
 #
 # Nothing else is needed: the EFI variable driver (qseecom/uefisecapp) is
 # built in, so systemd records the image location in the HibernateLocation
@@ -26,7 +29,9 @@ size=16g
 sub=/swap
 file=$sub/swapfile
 fstab="$file none swap defaults,pri=0 0 0"
-hook=/usr/lib/systemd/system-sleep/book4-dsp
+oldhook=/usr/lib/systemd/system-sleep/book4-dsp   # 19 Oct version, deadlocks
+helper=/usr/local/lib/book4/dsp-ctl
+unit=/etc/systemd/system/book4-dsp-hibernate.service
 
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
 [ "$(findmnt -no FSTYPE /)" = btrfs ] || { echo "/ is not btrfs." >&2; exit 1; }
@@ -36,7 +41,9 @@ sudo -v
 if [ "$undo" = undo ]; then
     sudo swapoff "$file" 2>/dev/null || true
     sudo sed -i "\|^$file |d" /etc/fstab
-    sudo rm -f "$file" "$hook"
+    sudo systemctl disable book4-dsp-hibernate.service 2>/dev/null || true
+    sudo rm -f "$file" "$oldhook" "$helper" "$unit"
+    sudo systemctl daemon-reload
     [ -d "$sub" ] && sudo btrfs subvolume delete "$sub"
     echo "Hibernation setup removed."
     swapon --show
@@ -52,24 +59,43 @@ grep -q "^$file " /etc/fstab || echo "$fstab" | sudo tee -a /etc/fstab >/dev/nul
 swapon --show=NAME --noheadings | grep -qx "$file" || sudo swapon "$file"
 swapon --show
 
-echo "== 2. sleep hook $hook"
-sudo tee "$hook" >/dev/null <<'EOF'
+echo "== 2. DSP stop/start around hibernation ($unit)"
+sudo rm -f "$oldhook"
+sudo mkdir -p "$(dirname "$helper")"
+sudo tee "$helper" >/dev/null <<'EOF'
 #!/bin/sh
-# Book4 (install/arch/hibernate-setup.sh): the DSP firmware does not survive
-# power-off and qcom_q6v5_pas cannot restore it, so stop the remoteprocs
-# before hibernating and start them again after resume.
-# $1 = pre|post, $2 = suspend|hibernate|hybrid-sleep|suspend-then-hibernate
-case "$2" in hibernate|hybrid-sleep) ;; *) exit 0 ;; esac
+# Book4 (install/arch/hibernate-setup.sh): stop|start the remoteprocs (ADSP,
+# CDSP). Their firmware does not survive power-off and qcom_q6v5_pas cannot
+# restore it, so they are stopped before hibernating and started after resume.
 for r in /sys/class/remoteproc/remoteproc*; do
     [ -e "$r/state" ] || continue
     case "$1" in
-    pre)  [ "$(cat "$r/state")" = running ] && echo stop > "$r/state" ;;
-    post) [ "$(cat "$r/state")" = offline ] && echo start > "$r/state" ;;
+    stop)  [ "$(cat "$r/state")" = running ] && echo stop > "$r/state" ;;
+    start) [ "$(cat "$r/state")" = offline ] && echo start > "$r/state" ;;
     esac
 done
 exit 0
 EOF
-sudo chmod 755 "$hook"
+sudo chmod 755 "$helper"
+sudo tee "$unit" >/dev/null <<EOF
+# Book4 (install/arch/hibernate-setup.sh)
+[Unit]
+Description=Book4: stop the DSPs before hibernation, start them after resume
+Before=systemd-hibernate.service
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=$helper stop
+ExecStop=$helper start
+
+[Install]
+WantedBy=hibernate.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl enable book4-dsp-hibernate.service
+systemctl list-dependencies --plain hibernate.target | grep -E 'book4|systemd-hibernate' | sed 's/^/   /' || true
 
 echo "== 3. checks"
 k=$(uname -r)

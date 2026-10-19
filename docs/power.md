@@ -1293,3 +1293,13 @@ command line. The PMIC RTC has no wake alarm, so `suspend-then-hibernate` is
 impossible; `install/arch/hibernate-lid.sh` hibernates on lid close on
 battery, suspends on AC, and hibernates at critical battery. Never boot
 Fedora while Arch is hibernated: both mount the same btrfs filesystem.
+
+First try (19 October): the swap file and the `HibernateLocation` path work
+(the next boot's initramfs looked for the image at the swap file's offset,
+found none, cleared the variable). But the DSP stop ran from a
+`system-sleep` hook, after systemd had frozen the user session: stopping the
+ADSP removes the sound card, which waits for PipeWire to close it, and the
+frozen PipeWire never does, so the machine hung before writing the image.
+The DSPs are now stopped by `book4-dsp-hibernate.service`, ordered before
+`systemd-hibernate.service` (before the freeze) and started again on resume
+(`StopWhenUnneeded`).
