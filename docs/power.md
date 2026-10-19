@@ -15,7 +15,13 @@ DT `c39df6b350ef 95f827ceb21e`. Our 7.2.7 has none of it (no
 `qcom_pdc_gic_secondary_set_type`). A latched wake at the PDC would explain
 the EL2 "accepted, returns after ~50 us" and the always-pending lines.
 Nobody has published `cxsd` counts with it yet (tested on a CRD and a
-Slim 7x for GPIO wake). Next: run it (backport to book4/7.2 or a 7.3 base).
+Slim 7x for GPIO wake). **Backport (19 October):** the nine commits apply
+cleanly to `book4/7.2` (branch `book4/7.2-pdc` in our kernel fork, patch
+files in `tools/kernel/pdc-backport/`, plus a local one-line log of the PDC
+mode the firmware ends up in). `tools/kernel/build-pdc-kernel.sh` builds
+only the image and the 14" DTB in a reflink copy of the tree (the drivers
+are built in, the release stays `7.2.7-book4`) and adds GRUB test entry
+`pdc`. Result: pending.
 
 **Current status (19 October 2026).** The SoC still never reaches deep sleep
 in s2idle (`aosd`/`cxsd`/`ddr` stay 0 in every configuration tried). What

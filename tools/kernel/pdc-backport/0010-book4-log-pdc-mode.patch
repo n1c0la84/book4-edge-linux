@@ -1,0 +1,30 @@
+From 9d38390d31cea7aac9a7874bd48c3c9bbea280c8 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Mon, 19 Oct 2026 15:23:26 +0200
+Subject: [PATCH] irqchip/qcom-pdc: book4: log the x1e PDC mode
+
+Debugging aid for the backport: say whether the firmware accepted the
+switch to pass-through mode or the PDC stays in secondary (latching) mode.
+Not for upstream.
+
+Assisted-by: Claude:claude-opus-5-5
+---
+ drivers/irqchip/qcom-pdc.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/irqchip/qcom-pdc.c b/drivers/irqchip/qcom-pdc.c
+index ce6d80c..efce33f 100644
+--- a/drivers/irqchip/qcom-pdc.c
++++ b/drivers/irqchip/qcom-pdc.c
+@@ -725,6 +725,8 @@ static int qcom_pdc_probe(struct platform_device *pdev, struct device_node *pare
+ 			pdc->unmask_gpio = pdc_unmask_gpio_cfg;
+ 			pdc->clear_gpio = pdc_clear_gpio_cfg;
+ 		}
++		pr_info("qcom-pdc: x1e: %s mode (SCM pass-through write: %d)\n",
++			ret ? "secondary (latching)" : "pass-through", ret);
+ 	}
+ 
+ 	irq_param = pdc_reg_read(pdc->regs->irq_param_reg, 0);
+-- 
+2.56.0
+

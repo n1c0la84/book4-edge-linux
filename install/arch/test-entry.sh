@@ -8,10 +8,11 @@
 # Run as your user (sudo inside), with /boot (sda4) not mounted elsewhere;
 # a mounted ESP (e.g. the /efi automount) is fine, it is only read.
 #
-#   bash install/arch/test-entry.sh add NAME [-ARG ...] [+ARG ...] [dtb=/PATH] [initrd=/PATH]
+#   bash install/arch/test-entry.sh add NAME [-ARG ...] [+ARG ...] [dtb=/PATH] [initrd=/PATH] [kernel=/PATH]
 #        -ARG removes ARG (exact word, or KEY for KEY=...), +ARG appends it,
 #        dtb=/dtb-test/x.dtb replaces the device tree (path under /boot),
-#        initrd=/initramfs-x.img the initramfs (path under /boot)
+#        initrd=/initramfs-x.img the initramfs (path under /boot),
+#        kernel=/vmlinuz-x the kernel image (path under /boot)
 #   bash install/arch/test-entry.sh list
 #   bash install/arch/test-entry.sh remove NAME
 #   bash install/arch/test-entry.sh clear
@@ -109,7 +110,10 @@ for a in "$@"; do
     initrd=/*) p=${a#initrd=}
         [ -e "$boot$p" ] || { echo "error: $p does not exist under /boot" >&2; exit 1; }
         initrd="(\$bootdev)$p" ;;
-    *) echo "error: '$a': use -ARG, +ARG, dtb=/PATH or initrd=/PATH" >&2; exit 1 ;;
+    kernel=/*) p=${a#kernel=}
+        [ -e "$boot$p" ] || { echo "error: $p does not exist under /boot" >&2; exit 1; }
+        words[0]="(\$bootdev)$p" ;;
+    *) echo "error: '$a': use -ARG, +ARG, dtb=/PATH, initrd=/PATH or kernel=/PATH" >&2; exit 1 ;;
   esac
 done
 
