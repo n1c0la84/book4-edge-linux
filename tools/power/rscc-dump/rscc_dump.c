@@ -7,7 +7,8 @@
  * the registers are clocked. Linux never uses this RSC (RPMh DRV 9); any
  * command words in its TCSs were left by firmware.
  *   insmod rscc_dump.ko [len=0x5000] ; dmesg | grep rscc_dump ; rmmod rscc_dump
- * Read-only.
+ * Read-only, but at EL1 under Gunyah the first read reset the machine
+ * (19 Oct): the region is not mapped for the Linux VM. EL2 only.
  */
 #include <linux/module.h>
 #include <linux/io.h>

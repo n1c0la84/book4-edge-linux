@@ -489,6 +489,12 @@ uses the display RSC, yet `disp_cc_mdss_rscc_ahb_clk` and
 started the display RSC and left it running. Next: dump its registers
 (`tools/power/rscc-dump`, `~/rscc-dump.sh`) for commands left by UEFI.
 
+At EL1 the dump reset the machine on its first read (the previous boot's
+journal ends right after the module build; nothing was logged). Under Gunyah
+the display RSC isn't mapped for the Linux VM, so Linux can't read it or
+vote through it there. A read is only possible at EL2 (where TrustZone's own
+protection may still reset), and `rscc-dump.sh` now refuses EL1.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
