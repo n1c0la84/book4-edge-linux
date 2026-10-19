@@ -367,6 +367,29 @@ different request, a different PSCI/SMC call, or a state TrustZone accepts
 only from the hypervisor. Next: SS1/SS2 at EL2 (`el2-ss1`, `el2-ss2`) to see
 whether any system-level StateID is supported.
 
+**Hyper-V and Windows' kernel (19 October).** `hvaa64.exe` (no public
+PDB) and `ntoskrnl.exe` (public PDB) contain the same Microsoft PSCI library
+(`PsciLibraryInit`, `PscipInitDiscoverFeatures`, `PsciCpuSuspend`,
+`PsciDecodeStateId`; Hyper-V's PSCI function table at `0xf800000066e0`).
+- Windows: `HalpProcessorHaltPsciCpuSuspend(&power_state)` ->
+  `PsciCpuSuspend(power_state, entry iff StateType bit, ctx)`, value
+  unchanged, sent as HVC (`HalpPowerPsciHvcHandler`) under Hyper-V.
+- Hyper-V: idle request type 5 -> `FUN_f8000022adc8` ->
+  `FUN_f800002f6a68` = `CPU_SUSPEND(0xC4000001, power_state, ...)`, value
+  unchanged (`FUN_f800002f6a40` only decodes the StateType bit). A core going
+  offline uses `CPU_SUSPEND(0x10003)` or `CPU_DEFAULT_SUSPEND`.
+- PSCI calls Hyper-V ever makes: CPU_ON/OFF/SUSPEND/DEFAULT_SUSPEND/FREEZE,
+  SYSTEM_OFF/RESET/RESET2, MEM_PROTECT; **never SET_SUSPEND_MODE** (only
+  probed with PSCI_FEATURES; OSI is treated as unavailable without it). In
+  ntoskrnl `PsciSetSuspendMode` is reached only from
+  `HaliSetSystemInformation` class 0x11 (no caller found yet).
+So under Windows TrustZone most likely stays in its default
+(platform-coordinated) mode, while Linux at EL2 switches it to OS-initiated
+mode (`cpuidle-psci`). Hypothesis: Qualcomm's TrustZone supports DRIPS only
+in PC mode, hence `NOT_SUPPORTED` under OSI. Test: an EL2 DTB without the
+PSCI power-domain hierarchy, with core/cluster/DRIPS as flat CPU idle states
+and the RSC flushing on the last CPU (cpu_pm) instead of the system domain.
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
