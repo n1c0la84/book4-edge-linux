@@ -10,7 +10,10 @@ if (( EUID == 0 )); then
   echo "Run as your user, not as root." >&2
   exit 1
 fi
-IGNORE="omarchy omarchy-settings omarchy-keyring mise-bin google-chrome"
+# mkinitcpio: held since 13 October (was ~/ignore-mkinitcpio.sh); the kernel
+# has no pkgbase or presets here, so its package hooks never run anyway and
+# the initramfs is built by our scripts
+IGNORE="omarchy omarchy-settings omarchy-keyring mise-bin google-chrome mkinitcpio"
 SRC=$HOME/src/yay
 
 echo "== 1. IgnorePkg for the hand-installed packages"

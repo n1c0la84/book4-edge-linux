@@ -14,6 +14,9 @@
 #
 #   bash install/el2/esp-install.sh            install / update
 #   bash install/el2/esp-install.sh entry-off  remove only the boot entry
+#   bash install/el2/esp-install.sh default    put the entry first in the boot order
+#   bash install/el2/esp-install.sh default-off  put it back at the end
+#        (the GRUB half of "EL2 by default" is install/el2/sleep-setup.sh)
 #
 # Inputs (built or staged on this machine, see docs/el2.md):
 #   ~/src/el2-usb/stage/EFI/BOOT/BOOTAA64.EFI  UEFI Shell (pbatard UEFI-Shell 26H1)
@@ -47,6 +50,15 @@ if [ "${1:-}" = entry-off ]; then
     n=$(entry); [ -n "$n" ] && sudo efibootmgr -q -b "$n" -B && echo "removed Boot$n ($LABEL)" || echo "no '$LABEL' entry"
     exit 0
 fi
+case "${1:-}" in default|default-off)
+    n=$(entry); [ -n "$n" ] || { echo "error: no '$LABEL' entry; run this script without arguments first" >&2; exit 1; }
+    order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
+    rest=$(tr ',' '\n' <<<"$order" | grep -vx "$n" | paste -sd, -)
+    if [ "$1" = default ]; then new="$n${rest:+,}$rest"; else new="$rest${rest:+,}$n"; fi
+    sudo efibootmgr -q -o "$new"
+    echo "boot order: $order -> $(sudo efibootmgr | sed -n 's/^BootOrder: //p') (Boot$n = $LABEL)"
+    exit 0 ;;
+esac
 
 for f in "$shell" "$qeb" "$slb" "$tcb" "$fw"/qcadsp8380.mbn "$fw"/adsp_dtbs.elf "$fw"/qccdsp8380.mbn "$fw"/cdsp_dtbs.elf; do
     [ -s "$f" ] || { echo "error: missing $f" >&2; exit 1; }

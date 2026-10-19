@@ -127,4 +127,4 @@ bash "$repo/install/arch/test-entry.sh" remove sleep >/dev/null 2>&1 || true
 bash "$repo/install/arch/test-entry.sh" add sleep -clk_ignore_unused -pd_ignore_unused \
     kernel=/vmlinuz-$rel initrd=/initramfs-$rel-arch.img dtb=/dtb-test/book4-sleep.dtb
 echo
-echo "Reboot (no slbounce stick), pick 'test: sleep', then: bash ~/sleep-test.sh"
+echo "Reboot (no slbounce stick), pick 'test: sleep', then: bash tools/experiments/sleep-test.sh (EL1; for EL2 see docs/el2.md)"

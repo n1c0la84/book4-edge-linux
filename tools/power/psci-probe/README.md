@@ -44,7 +44,7 @@ See [the EL2 boot instructions](../../../docs/el2.md#how-to-boot-it) if needed.
 
 Use a fresh boot because earlier timer/GIC/regulator/SPSS experiments may
 leave hardware state changed even after their modules are unloaded. Do not
-run `~/el2-probe.sh` or other tracing experiments concurrently.
+run `tools/experiments/el2-probe.sh` or other tracing experiments concurrently.
 
 ```sh
 sudo bash tools/power/psci-probe/run.sh check

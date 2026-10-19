@@ -95,4 +95,4 @@ bash "$repo/install/arch/test-entry.sh" add pdc -clk_ignore_unused -pd_ignore_un
 echo
 echo "Reboot (no slbounce stick), pick 'test: pdc', then:"
 echo "  journalctl -k -b | grep -E 'qcom-pdc|PDC'     # which PDC mode the firmware gave us"
-echo "  bash ~/el2-probe.sh                            # one suspend, wake it after ~30 s"
+echo "  bash tools/experiments/el2-probe.sh                            # one suspend, wake it after ~30 s"

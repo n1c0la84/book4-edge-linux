@@ -43,7 +43,7 @@ the EL2 environment, firmware mode, or a driver/PEP action are candidates.
   study and energy reports contain the computer name, app names and
   sometimes network names; the repo must not contain personal data (MAC
   and IP addresses, SSIDs, user names). Linux can read that folder
-  read-only (`~/mount-ro.sh`).
+  read-only (`install/arch/mount-ro.sh`).
 - Commit only extracted numbers and conclusions, in **Results** at the end
   of this file, and push.
 - Ask before every change to boot configuration, BitLocker or device state,

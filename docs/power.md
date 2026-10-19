@@ -60,14 +60,14 @@ from the panel chain (OCTA_VDD -> DISPLAY_VDD -> EDP_3P3). Modules
 CNTV with a far, masked deadline at each CPU_PM entry where the frozen tick
 left it off), `qcom_adsp_pwr_lmts` and `aoss_cxsd_only` (x1e-sleep,
 unchanged; the latter not loaded by default). Its own release, modules and
-initramfs, so the normal kernel is untouched. Test: `~/sleep-test.sh`.
+initramfs, so the normal kernel is untouched. Test: `tools/experiments/sleep-test.sh`.
 **EL1 result (19 October):** all pieces active (PDC pass-through, SS1 +
 system-sleep-only DRIPS, both modules loaded, ADSP channel bound; `cntv_arm`
 armed CNTV at 24 CPU_PM entries). Two suspends: system domain entered once
 and held, `aosd`/`cxsd`/`ddr` 0. Same as Burch's XPS 13 at EL1. The proven
 configuration is EL2 with `el1tmr` (the real next deadline in the EL1
 physical timer), never tried here: `tools/kernel/build-sleep-modules.sh`
-adds it, entry `el2-sleep` (`~/el2-sleep-prep.sh`, `~/el2-sleep-test.sh`).
+adds it, entry `el2-sleep` (`tools/experiments/el2-sleep-prep.sh`, `tools/experiments/el2-sleep-test.sh`).
 **EL2 result (19 October, 17:00): FULL COLLAPSE.** `test: el2-sleep`
 (book4s kernel at EL2 via slbounce, `el1tmr` loaded, DSPs not started): one
 ~30 s suspend, `aosd`/`cxsd`/`ddr` 0 -> **1/1/1**; `CPU_SUSPEND(0x0200c354)`
@@ -77,7 +77,7 @@ same day (pdc kernel at EL2, CNTV disarmed) is the deadline `el1tmr` writes
 into `CNTP_CVAL_EL02` (plus the 7.3 LPASS/geni fixes, SS1, the panel
 supplies). Next: residency and drain over a longer sleep; then the EL1 path
 or a usable EL2 setup (DSPs via qebspil, EFI variables).
-**41-minute drain at EL2 (19 October, 17:57, `~/el2-drain-test.sh`, on
+**41-minute drain at EL2 (19 October, 17:57, `tools/power/el2-drain-test.sh`, on
 battery, DSPs not running):** 70 mAh = **1.55 W (2.9 %/h)**, against 3.1-3.8 W
 before; residency **99.9 %** in `aosd`, `cxsd` and `ddr` (2435.7 s of
 ~2438 s asleep); no reset. The SoC is collapsed nearly all the time, so the
@@ -126,7 +126,7 @@ starts with every device active; x1e-sleep's module sent it from the rpmsg
 device's suspend callback, after LPASS was suspended, and the Book4 ADSP
 crashed. `qcom_adsp_pwr_lmts` v2 sends it from a PM notifier
 (`PM_SUSPEND_PREPARE` / `PM_POST_SUSPEND`, before tasks freeze and devices
-suspend). Test: `~/pwrlmts-v2.sh`, then `~/el2-drain-test.sh` at EL2.
+suspend). Test: `tools/experiments/pwrlmts-v2.sh`, then `tools/power/el2-drain-test.sh` at EL2.
 **v2 crashed the ADSP the same way** (same PC, `ipcc_irq121`). The reason:
 the PEP only sends it when registry feature `EnablePowerLimitsInterface`
 (lookup item `0xaa`, default 1) is set, and Samsung's
@@ -147,18 +147,18 @@ through `FUN_140011e38`. Linux never creates that entry, so the DSPs likely
 take the CPUs as always awake. Test: outbound `sleepstate` entries in
 `smp2p-adsp` and `smp2p-cdsp` (EL2 overlay) and `book4_dsp_sleepstate`
 (ours, after x1e-sleep's untested `adsp-sleepstate`): 0x1000 at probe, 0 at
-`PM_SUSPEND_PREPARE`, 0x1000 at `PM_POST_SUSPEND`. `~/sleepstate-prep.sh`.
+`PM_SUSPEND_PREPARE`, 0x1000 at `PM_POST_SUSPEND`. `tools/experiments/sleepstate-prep.sh`.
 Result (19 October, 21:30, EL2, both DSPs attached): the module bound to
 both entries, 3-minute suspend, no ADSP crash, DSPs still attached; `ddr`
 98.9 %, `cxsd`/`aosd` 0. The sleepstate entries are harmless but not
 sufficient. Next: the ADSP/CDSP sleep stats across a suspend
-(`~/dsp-sleep-stats.sh`) to see which DSP never sleeps.
+(`tools/power/dsp-sleep-stats.sh`) to see which DSP never sleeps.
 Per-subsystem sleep stats over a 250 s suspend (same boot): `adsp` and `cdsp`
 each entered sleep and slept the whole time (~100 %), `apss` and `ddr` 94 %,
 `cxsd`/`aosd` 0; `adsp_island`, `gpu`, `display` 0. No DSP stays awake, so
 it is a DSP's sleep-set vote (or something it leaves on) that keeps CX up,
 which never happens when the DSPs are not started. Next: EL2 with only the
-ADSP started (`~/el2-adsponly-prep.sh`, entry `el2-adsponly`: no
+ADSP started (`tools/experiments/el2-adsponly-prep.sh`, entry `el2-adsponly`: no
 `qcom,broken-reset` on the CDSP, so qebspil never starts it).
 ADSP only (CDSP never started; 19 October, 21:46): `ddr` 99.2 %, `cxsd`/`aosd` 0,
 no crash. **The ADSP's presence keeps CX up**, although it sleeps. Candidate:
@@ -169,7 +169,7 @@ starts at ExitBootServices), and Linux only attaches ("Handover signaled,
 but it already happened"), so the proxy vote may stay in force. Test:
 qebspil built with `QEBSPIL_NO_PROXY_VOTE=1`
 (`install/el2/qebspil-no-proxy-vote.patch`, which also carries the AOSS
-`load_state` hunks of `pil.c`), swapped in with `~/qebspil-swap.sh noproxy`.
+`load_state` hunks of `pil.c`), swapped in with `tools/experiments/qebspil-swap.sh noproxy`.
 **Result (19 October, 21:57): without the proxy vote the ADSP does not
 boot** (`qcom_q6v5_pas: reset broken and remoteproc not running during
 boot`; no battery supply, no sound card). A suspend on that boot gave
@@ -189,7 +189,7 @@ are secure-only), Linux's own channel, and the drain test forces
 controller). So the proxy vote is most likely overwritten already, and what
 keeps CX up is the ADSP's own sleep-set vote or something Linux asks it to
 keep on. Next: the same drain with Linux's audio stack unbound and the ADSP
-running (`~/el2-audio-off-test.sh`: PipeWire stopped; sound card, LPASS
+running (`tools/experiments/el2-audio-off-test.sh`: PipeWire stopped; sound card, LPASS
 macros, SoundWire, codecs, q6prm LPASS clocks unbound).
 **Audio stack unbound (19 October, 22:20):** sound card, wcd938x SoundWire
 devices, WSA macros, SoundWire masters and q6apm DAIs unbound (rx/tx/va
@@ -264,7 +264,7 @@ its own.
 applied during bootloader stage", plus `e284de4dfc01`) added to the test
 kernel (`pdc-backport/0011-0012`). `tools/power/rpmh-read` reads all 256
 cmd-db addresses (ARC, BCM, VRM +0/+4/+8) through the APSS RSC, as booted and
-after releasing the boot votes (`~/rpmh-read-test.sh`). It most likely
+after releasing the boot votes (`tools/experiments/rpmh-read-test.sh`). It most likely
 returns Linux's own DRV's setting, so it shows bootloader votes on our
 channel that no Linux driver ever touched. **Result: loading the module
 hung the whole machine** (EL1, `test: pdc`; nothing reached the journal after
@@ -523,7 +523,7 @@ guarded. It is called from `ufs_qcom_hce_enable_notify()`,
 `ufs_qcom_resume()` and the ungate path of `ufs_qcom_setup_clocks()` (link
 in hibern8), so overlapping calls leave references that are never dropped
 and `clk8` can never be released for sleep. Same code in mainline.
-Check: `~/ufs-refclk-check.sh` (count before/after two suspends); fix:
+Check: `tools/experiments/ufs-refclk-check.sh` (count before/after two suspends); fix:
 return early in `ufs_qcom_enable_lane_clks()` when already enabled.
 **Confirmed:** `clk8` count 106 -> 106 -> 110 over two suspends, a few hours
 into the boot (42 after 20 minutes). Fix:
@@ -565,7 +565,7 @@ transitions from a `clk_summary` baseline) at the moment CX is voted off: the
 only clock still prepared below `bi_tcxo` is
 `bi-tcxo-div2-clk` -> `gcc_gpll0` -> `gcc_qupv3_wrap1_s6_clk`, consumer
 `a98000.serial`, the Bluetooth UART (`hci_uart_qca` keeps the port open).
-Test: `~/bt-unbind-test.sh` (unbind `serial0-0`, suspend, compare counters).
+Test: `tools/experiments/bt-unbind-test.sh` (unbind `serial0-0`, suspend, compare counters).
 
 **Clean run (fresh boot, providers synced, Bluetooth unbound):** at the
 moment of sleep no clock below `bi_tcxo` is prepared, and every APSS RPMh vote
@@ -575,7 +575,7 @@ the remaining blocker is not a Linux (APSS DRV) vote: candidates are the
 DSPs' own RPMh votes (adsp/cdsp DRVs, invisible to this trace) or the
 hypervisor/firmware. (A runtime-PM experiment on the USB controllers leaked an
 `SN4` vote through `dwc3_qcom_resume()` -> `icc_enable()` on that boot; not
-present in the clean state.) Next: `~/dsp-stop-test.sh` (stop adsp and cdsp,
+present in the clean state.) Next: `tools/experiments/dsp-stop-test.sh` (stop adsp and cdsp,
 then suspend), then EL2.
 **DSPs stopped (16 October):** adsp and cdsp `offline` (their own sleep
 counters advance), providers synced, Bluetooth unbound: `aosd`/`cxsd`/`ddr`
@@ -607,7 +607,7 @@ None looks like a missing "sleep allowed" message.
 flags, providers synced, Bluetooth unbound, DSPs never start at EL2): a
 2 min 20 s suspend, `aosd`/`cxsd`/`ddr` still 0, but `power-domain-system`
 S2idle = **2 203 027** (at EL1: 1 per suspend). A 30 s suspend
-(`~/irq-during-suspend.sh`): 965 760 system-domain entries against 58 178
+(`tools/experiments/irq-during-suspend.sh`): 965 760 system-domain entries against 58 178
 `arch_timer` and ~14 000 IPIs (both including the awake seconds around it):
 most DRIPS requests return from TrustZone immediately, without any interrupt.
 So at EL1 Gunyah keeps the system-level request to itself (one entry,
@@ -654,7 +654,7 @@ the DSDT's `0x4`/`0x50`/`0xC300`) has neither, so Linux calls CPU_SUSPEND
 with entry point 0, as a retention state. A TrustZone that needs a resume
 address for system collapse would refuse or no-op that, which matches the
 millions of immediate returns at EL2. Test: the `el2-dripspd` entry
-(`0x4200c354`). `~/el2-probe.sh` now also records histograms of the
+(`0x4200c354`). `tools/experiments/el2-probe.sh` now also records histograms of the
 `power_state` passed to and the value returned by `psci_cpu_suspend_enter()`
 (kprobes).
 
@@ -669,7 +669,7 @@ GLINK (`APPS_ADSP_PWR_LMTS_GLINK_PORT`), and fires `ExNotifyCallback`
 (`\Callback\QcDeepStandby`, Qualcomm's modem/WLAN "Deep Standby"). Nothing
 reaches TrustZone, and the ADSP is already ruled out (stopped at EL1, absent
 at EL2). Still to try on a DRIPS boot: GPIO 44/49 as the `_DSM` drives them
-and the qseecom UEFI app unbound (`~/el2-probe.sh mods noqsee`).
+and the qseecom UEFI app unbound (`tools/experiments/el2-probe.sh mods noqsee`).
 
 **DRIPS with the power-down bit at EL1 (18 October, `drips-pd`,
 `0x4200c354`):** PSCI returns 0 for all 95 requests (cores/clusters as
@@ -776,7 +776,7 @@ has no driver for. The PEP's `_DSM` subsystem list (`SUBI`) is adsp, cdsp,
 `SubsysUefiLoadedImageAction=1`: UEFI loads and starts SPSS (`RSPU.bin`) and
 the Windows driver adopts it. Under Linux it would run, unattended, with
 its interrupt raised, and never be put to sleep. Next: its SMEM sleep stats
-(`tools/power/spss-check`, `~/spss-check.sh`).
+(`tools/power/spss-check`, `tools/experiments/spss-check.sh`).
 
 SMEM has no per-subsystem sleep stats here (every host falls back to the
 same global items 602-631, none of them sleep stats). TrustZone does manage
@@ -785,7 +785,7 @@ SPSS as PAS 14 (`qcom_scm_pas_supported(14)` = 1), and
 exit and the bounces are unchanged (273 895 accepted DRIPS calls, counters
 0). SPSS is not why TrustZone returns at once. Last check of the
 pending-line idea: silence Bluetooth, the debug UART and Wi-Fi together
-(`~/quiet-lines-test.sh`).
+(`tools/experiments/quiet-lines-test.sh`).
 
 Unbinding Bluetooth and both UARTs and removing Wi-Fi doesn't deassert their
 lines (unbinding doesn't reset the hardware's interrupt status), and the
@@ -804,7 +804,7 @@ skips it, and it keeps UEFI's last vote on the HLOS DRV. 18 are in that
 state here. Nine of them are ones the PEP has off while their device sleeps
 (`l1c l1d l1i l2c` and `l3d` in `GPU0`'s active recipe, `l3c` for USB3/PCI3
 in D3, `l8b` for USB2 in D3, `l6b`/`l9b` for the SD slot). Test: vote them
-off (`tools/power/vreg-off`, `~/vreg-off-test.sh`).
+off (`tools/power/vreg-off`, `tools/experiments/vreg-off-test.sh`).
 
 At EL1 (`drips-noflags`), with those nine voted off: DRIPS entered once and
 held, counters 0. Not the blocker. Side effect: on resume the USB QMP combo
@@ -821,7 +821,7 @@ display driver itself: `qcdxkm8380.sys` has `MDSS_RSCC_REGS`,
 uses the display RSC, yet `disp_cc_mdss_rscc_ahb_clk` and
 `disp_cc_mdss_rscc_vsync_clk` are on in hardware with enable count 0: UEFI
 started the display RSC and left it running. Next: dump its registers
-(`tools/power/rscc-dump`, `~/rscc-dump.sh`) for commands left by UEFI.
+(`tools/power/rscc-dump`, `tools/experiments/rscc-dump.sh`) for commands left by UEFI.
 
 At EL1 the dump reset the machine on its first read (the previous boot's
 journal ends right after the module build; nothing was logged). Under Gunyah
@@ -1541,4 +1541,4 @@ Second try (19 October): the service stopped both DSPs, then
 image was on disk (the next boot did not try to resume and `/swap/swapfile`
 still had a plain swap signature). Next: `pm_test` stages (`freezer`,
 `devices`, `platform`, `processors`, `core`, then `test_resume`) to find the
-step that resets (`~/hibernate-pmtest.sh STAGE`).
+step that resets (`tools/experiments/hibernate-pmtest.sh STAGE`).

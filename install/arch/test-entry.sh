@@ -4,7 +4,7 @@
 # Each entry is a copy of the generated entry for the running subvolume (same
 # kernel, DTB and initramfs) with changed kernel arguments or DTB. They live in
 # /boot/book4-extra.cfg, which the boot hook's grub.cfg sources, so neither
-# Fedora nor the ESP is touched. Never the default entry.
+# Fedora nor the ESP is touched. Not the default unless set with "default".
 # Run as your user (sudo inside), with /boot (sda4) not mounted elsewhere;
 # a mounted ESP (e.g. the /efi automount) is fine, it is only read.
 #
@@ -16,6 +16,9 @@
 #   bash install/arch/test-entry.sh list
 #   bash install/arch/test-entry.sh remove NAME
 #   bash install/arch/test-entry.sh clear
+#   bash install/arch/test-entry.sh default NAME|none
+#        make test entry NAME GRUB's default (a "set default" line in the same
+#        file, which overrides the boot hook's default), or drop that line
 #
 # Example: add synced -clk_ignore_unused -pd_ignore_unused +fw_devlink.sync_state=timeout
 # NAME becomes part of the menu title: "<entry title> - test: NAME".
@@ -26,7 +29,7 @@ EXTRA=book4-extra.cfg
 ESPCFG=EFI/fedora/grub.cfg
 
 cmd=${1:-}; shift || true
-case "$cmd" in add|remove) [ -n "${1:-}" ] || cmd=help ;; list|clear) ;; *) cmd=help ;; esac
+case "$cmd" in add|remove|default) [ -n "${1:-}" ] || cmd=help ;; list|clear) ;; *) cmd=help ;; esac
 if [ "$cmd" = help ]; then sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1; fi
 
 if [ -n "${BOOK4_TESTROOT:-}" ]; then   # self-test: plain directories, no mounts, no sudo
@@ -52,11 +55,15 @@ else
 fi
 file=$boot/$EXTRA
 
-# Entries are blocks that start with "# test-entry: NAME" and end with "}".
-drop() { [ -e "$file" ] && awk -v n="$1" '
+# Entries are blocks that start with "# test-entry: NAME" and end with "}";
+# the default is one line ending in "# test-entry-default NAME".
+DEFMARK="# test-entry-default"
+drop() { [ -e "$file" ] && awk -v n="$1" -v m="$DEFMARK" '
   /^# test-entry: / { skip = ($3 == n) }
+  index($0, m " ") && $NF == n { next }
   !skip { print }
   skip && /^}/ { skip = 0 }' "$file" || true; }
+nodefault() { [ -e "$file" ] && grep -vF "$DEFMARK " "$file" || true; }
 write() { # stdin -> $file, atomically; an empty result removes the file
   local tmp; tmp=$(mktemp)
   cat > "$tmp"
@@ -70,10 +77,16 @@ write() { # stdin -> $file, atomically; an empty result removes the file
 
 case "$cmd" in
 list)
-  if [ -e "$file" ]; then grep -E '^(# test-entry|menuentry|    linux|    devicetree)' "$file"; else echo "(no test entries)"; fi
+  if [ -e "$file" ]; then grep -E '^(# test-entry|menuentry|    linux|    devicetree|set default)' "$file"; else echo "(no test entries)"; fi
   exit 0 ;;
 clear)
   $SUDO rm -f "$file"; sync; echo "removed all test entries"; exit 0 ;;
+default)
+  if [ "$1" = none ]; then nodefault | write; echo "GRUB default: the boot hook's again"; exit 0; fi
+  t=$(awk -v n="$1" '$0 == "# test-entry: " n { getline; if (sub(/^menuentry "/, "")) { sub(/" \{$/, ""); print }; exit }' "$file" 2>/dev/null)
+  [ -n "$t" ] || { echo "error: no test entry '$1'" >&2; exit 1; }
+  { nodefault; printf '\nset default="%s"   %s %s\n' "$t" "$DEFMARK" "$1"; } | write
+  echo "GRUB default: \"$t\""; exit 0 ;;
 remove)
   drop "$1" | write; echo "removed test entry '$1'"; exit 0 ;;
 esac

@@ -17,7 +17,7 @@ side; [omarchy.md](omarchy.md) has the background and the two routes.
   `rootflags=subvol=arch`. `/etc/book4/default-os` = `second` (on Fedora)
   makes it GRUB's default (16 October: Arch is the daily system; also needed
   for hibernation, since Fedora must never mount the shared btrfs while Arch
-  is hibernated). `~/boot-defaults.sh` sets it up from Arch.
+  is hibernated). `install/arch/boot-defaults.sh` sets it up from Arch.
 - Test boot entries are managed from Arch with
   [`install/arch/test-entry.sh`](../install/arch/test-entry.sh): copies of the
   Arch entry with changed kernel arguments, DTB or initramfs, kept in
