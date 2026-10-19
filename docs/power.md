@@ -444,6 +444,15 @@ the Windows driver adopts it. Under Linux it would run, unattended, with
 its interrupt raised, and never be put to sleep. Next: its SMEM sleep stats
 (`tools/power/spss-check`, `~/spss-check.sh`).
 
+SMEM has no per-subsystem sleep stats here (every host falls back to the
+same global items 602-631, none of them sleep stats). TrustZone does manage
+SPSS as PAS 14 (`qcom_scm_pas_supported(14)` = 1), and
+`qcom_scm_pas_shutdown(14)` returns 0, but SPI 352 stays pending at every
+exit and the bounces are unchanged (273 895 accepted DRIPS calls, counters
+0). SPSS is not why TrustZone returns at once. Last check of the
+pending-line idea: silence Bluetooth, the debug UART and Wi-Fi together
+(`~/quiet-lines-test.sh`).
+
 #94 on 15 October (Slim 5x, x1p42100, jglathe 7.2.9-jg-0): s2idle 2.05 W,
 `deep` (PSCI system suspend, resumes there) 1.89 W, `qcom_stats` still 0 in
 both. Not directly comparable (8-core Purwa, different board). Jens'
