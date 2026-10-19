@@ -60,7 +60,7 @@ trap 'exit 143' TERM
 
 check_module() {
     local file=$1 release
-    [[ -f $file ]] || die "Missing $file; build it first."
+    [[ -f $file ]] || die "Missing $file; run: bash $(dirname "$file")/build.sh"
     release=$(modinfo -F vermagic "$file")
     [[ ${release%% *} == "$(uname -r)" ]] || die "Module/kernel version mismatch: $file"
 }
@@ -143,8 +143,11 @@ prepared() {
 }
 
 preflight
+# Check the artifact for the entire sequence, before preparation changes any
+# device state or the first baseline is collected. Baseline never loads it.
+check_module "$module"
 if [[ $mode == check ]]; then
-    echo "EL2 boot, OSI initialization, hierarchical 0x0200c354 and s2idle confirmed."
+    echo "EL2 boot, OSI initialization, hierarchical 0x0200c354, s2idle and module artifact confirmed."
     echo "This check has not changed hardware or requested suspend."
     exit 0
 fi
@@ -167,7 +170,6 @@ if [[ $mode == prepare ]]; then
     exit 0
 fi
 prepared
-if [[ $mode != baseline ]]; then check_module "$module"; fi
 mkdir -p "$output_root"
 out=$(mktemp -d "$output_root/$(date +%Y%m%d-%H%M%S)-$mode.XXXXXX")
 {
@@ -190,12 +192,18 @@ cat "$dbg/psci" > "$out/psci-features.txt"
 cat /sys/firmware/fdt > "$out/running.dtb"
 sha256sum "$out/running.dtb" > "$out/dtb-sha256.txt"
 snapshot() {
-    local dest=$1 s p
+    local dest=$1 s p wakeup_irq
     mkdir "$dest"
     cat "$pd" > "$dest/system-domain.txt"
     cat /proc/interrupts > "$dest/interrupts.txt"
     cat /sys/power/suspend_stats/{success,fail} > "$dest/suspend-counts.txt"
-    cat /sys/power/pm_wakeup_irq > "$dest/wakeup-irq.txt"
+    # This optional diagnostic returns ENODATA when no wake IRQ was recorded,
+    # including before the first suspend. Keep the error without aborting.
+    if wakeup_irq=$(cat /sys/power/pm_wakeup_irq 2> "$dest/wakeup-irq-error.txt"); then
+        printf '%s\n' "$wakeup_irq" > "$dest/wakeup-irq.txt"
+    else
+        printf 'unavailable (see wakeup-irq-error.txt)\n' > "$dest/wakeup-irq.txt"
+    fi
     for s in aosd cxsd ddr; do cat "$dbg/qcom_stats/$s" > "$dest/$s.txt"; done
     cat "$dbg/clk/clk_summary" > "$dest/clocks.txt"
     if [[ -f $dbg/interconnect/interconnect_summary ]]; then

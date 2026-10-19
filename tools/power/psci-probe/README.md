@@ -54,6 +54,8 @@ sudo bash tools/power/psci-probe/run.sh prepare
 `check` is read-only. It checks the actual boot log for EL2 and successful
 OSI topology initialization, DT state/phandle linkage, SMC conduit, 12 online
 CPUs, s2idle, and absence of the other experimental modules/dynamic probes.
+It also requires the built probe artifact to match the running kernel,
+before either preparation or a baseline can start. Baseline does not load it.
 The early “failed to set PC mode” message is compatible with this experiment;
 the later successful OSI initialization is required. This is not a new
 firmware mode query or a mode-changing experiment.
@@ -121,6 +123,11 @@ Directories are returned to the invoking user's ownership. They contain:
 - running DTB/hash, kernel command line, boot ID, module list and source hashes;
 - dmesg before/after and PSCI feature information;
 - awake counter calibration and counter readings spanning the test.
+
+`pm_wakeup_irq` may return “No data available” before the first suspend or
+when no wake IRQ was recorded. This is saved as an unavailable diagnostic
+with its error text; it does not abort the measurement. Required sleep
+counters and suspend completion checks still fail the run on errors.
 
 The module brackets **`__invoke_psci_fn_smc`**, not `CPU_PM_ENTER` or the
 outer cpuidle entry. It filters function ID `0xc4000001`, state `0x0200c354`,
