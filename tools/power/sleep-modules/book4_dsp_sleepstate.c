@@ -41,7 +41,7 @@ struct dsp_ss {
 	bool awake;
 };
 
-static DEFINE_MUTEX(ss_lock);
+static DEFINE_MUTEX(dsp_ss_lock);
 static struct dsp_ss *g_ss;
 
 static void ss_write(struct dsp_ss *s, bool awake)
@@ -64,12 +64,12 @@ static int ss_pm_notify(struct notifier_block *nb, unsigned long ev, void *unuse
 {
 	struct dsp_ss *s = container_of(nb, struct dsp_ss, nb);
 
-	mutex_lock(&ss_lock);
+	mutex_lock(&dsp_ss_lock);
 	if (ev == PM_SUSPEND_PREPARE)
 		ss_write(s, false);
 	else if (ev == PM_POST_SUSPEND)
 		ss_write(s, true);
-	mutex_unlock(&ss_lock);
+	mutex_unlock(&dsp_ss_lock);
 	return NOTIFY_DONE;
 }
 
@@ -80,12 +80,12 @@ static int awake_set(const char *val, const struct kernel_param *kp)
 
 	if (ret)
 		return ret;
-	mutex_lock(&ss_lock);
+	mutex_lock(&dsp_ss_lock);
 	if (g_ss)
 		ss_write(g_ss, v);
 	else
 		ret = -ENODEV;
-	mutex_unlock(&ss_lock);
+	mutex_unlock(&dsp_ss_lock);
 	return ret;
 }
 
@@ -128,10 +128,10 @@ static int ss_probe(struct platform_device *pdev)
 	if (ret)
 		goto put;
 	platform_set_drvdata(pdev, s);
-	mutex_lock(&ss_lock);
+	mutex_lock(&dsp_ss_lock);
 	g_ss = s;
 	ss_write(s, true);	/* Windows writes 0x1000 once the subsystem is up */
-	mutex_unlock(&ss_lock);
+	mutex_unlock(&dsp_ss_lock);
 	dev_info(&pdev->dev, "sleepstate for %s%s%s\n", s->state[0] ? "adsp" : "",
 		 s->state[0] && s->state[1] ? " and " : "", s->state[1] ? "cdsp" : "");
 	return 0;
@@ -150,9 +150,9 @@ static void ss_remove(struct platform_device *pdev)
 	struct dsp_ss *s = platform_get_drvdata(pdev);
 	int i;
 
-	mutex_lock(&ss_lock);
+	mutex_lock(&dsp_ss_lock);
 	g_ss = NULL;
-	mutex_unlock(&ss_lock);
+	mutex_unlock(&dsp_ss_lock);
 	unregister_pm_notifier(&s->nb);
 	for (i = 0; i < ARRAY_SIZE(names); i++)
 		if (s->state[i])
