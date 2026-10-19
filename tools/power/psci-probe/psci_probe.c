@@ -261,7 +261,7 @@ static ssize_t stop_write(struct file *f, const char __user *buf,
 static const struct file_operations stop_fops = {
 	.owner = THIS_MODULE,
 	.write = stop_write,
-	.llseek = no_llseek,
+	.llseek = noop_llseek,
 };
 
 static void print_snapshot(struct seq_file *m, const char *side,
