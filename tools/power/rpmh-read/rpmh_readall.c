@@ -6,6 +6,10 @@
  * bootloader voted; our RPMh traces could never show those.
  *   insmod rpmh_readall.ko addrs=0x30000,0x50000,...
  * Read-only. Stops after 3 consecutive failed reads.
+ *
+ * DO NOT LOAD on X1E: on 19 Oct 2026 (7.2.7 + edbafe65eef2/e284de4dfc01,
+ * EL1) the first read hung the whole machine: the read never completes, the
+ * active TCS stays busy and every RPMh client blocks behind it.
  */
 #include <linux/module.h>
 #include <linux/of.h>

@@ -43,7 +43,12 @@ kernel (`pdc-backport/0011-0012`). `tools/power/rpmh-read` reads all 256
 cmd-db addresses (ARC, BCM, VRM +0/+4/+8) through the APSS RSC, as booted and
 after releasing the boot votes (`~/rpmh-read-test.sh`). It most likely
 returns Linux's own DRV's setting, so it shows bootloader votes on our
-channel that no Linux driver ever touched. Result pending.
+channel that no Linux driver ever touched. **Result: loading the module
+hung the whole machine** (EL1, `test: pdc`; nothing reached the journal after
+the module build). Most likely the first read request never completes on
+X1E (the read path was added for newer SoCs/RSCs), so the active TCS stays
+busy and every RPMh client blocks. RPMh read-back is not available to us;
+the script refuses to run.
 
 **Current status (19 October 2026).** The SoC still never reaches deep sleep
 in s2idle (`aosd`/`cxsd`/`ddr` stay 0 in every configuration tried). What
