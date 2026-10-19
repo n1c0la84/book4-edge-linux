@@ -1,7 +1,7 @@
 From 9bc9de7e46f8d74819298cedef5d49d2430f9897 Mon Sep 17 00:00:00 2001
 From: Nicola Nicodemo <nicola084@gmail.com>
 Date: Mon, 19 Oct 2026 16:27:51 +0200
-Subject: [PATCH 16/18] arm64: dts: qcom: hamoa: add SS1, make DRIPS
+Subject: [PATCH 16/21] arm64: dts: qcom: hamoa: add SS1, make DRIPS
  system-sleep-only
 
 Add platform.SS1 (0x02000154, from ACPI \_SB.SYSM._LPI) for runtime idle and

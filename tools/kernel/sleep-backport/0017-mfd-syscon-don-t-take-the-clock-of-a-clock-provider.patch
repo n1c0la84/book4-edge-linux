@@ -1,7 +1,7 @@
 From f749e47eaf276c714ee933e7a029a9a6164159be Mon Sep 17 00:00:00 2001
 From: Nicola Nicodemo <nicola084@gmail.com>
 Date: Mon, 19 Oct 2026 16:27:51 +0200
-Subject: [PATCH 17/18] mfd: syscon: don't take the clock of a clock provider
+Subject: [PATCH 17/21] mfd: syscon: don't take the clock of a clock provider
 
 The clocks of a clock provider (the X1E TCSR block) are its parents, not a
 register clock; keeping bi_tcxo prepared pins an RPMh XO vote in suspend.

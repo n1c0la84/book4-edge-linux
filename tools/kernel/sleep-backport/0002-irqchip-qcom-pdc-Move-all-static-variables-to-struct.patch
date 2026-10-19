@@ -1,7 +1,7 @@
 From babede1fd19110d44bd902a1878cbbb8821f4fb6 Mon Sep 17 00:00:00 2001
 From: Maulik Shah <maulik.shah@oss.qualcomm.com>
 Date: Tue, 7 Jul 2026 14:51:34 +0530
-Subject: [PATCH 02/18] irqchip/qcom-pdc: Move all static variables to struct
+Subject: [PATCH 02/21] irqchip/qcom-pdc: Move all static variables to struct
  pdc_desc
 
 There are multiple static variables used in the driver. Move all to struct

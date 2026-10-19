@@ -112,3 +112,37 @@ issues [#11](https://github.com/TravMurav/slbounce/issues/11) (tcblaunch
 versions) and [#12](https://github.com/TravMurav/slbounce/issues/12)
 (GRUB); [HP OmniBook X 14 notes](https://github.com/LukeMech/hp-omnibook-x14-fe0)
 (X1E at EL2: DT changes, `id_aa64mmfr0.ecv=1`, what breaks).
+
+## EL2 from the internal ESP, with the DSPs (19 October 2026, set up)
+
+Same chain as the stick, plus qebspil, installed on the internal ESP by
+[`install/el2/esp-install.sh`](../install/el2/esp-install.sh) (as on the
+ThinkPad T14s in github.com/rengare/t14s_x1e_linux):
+
+    F10 -> "Book4 EL2 (slbounce)" -> \EFI\book4-el2\Shellaa64.efi + startup.nsh
+        -> load qebspilaa64.efi   (starts ADSP/CDSP at ExitBootServices, only
+                                    remoteprocs marked qcom,broken-reset)
+        -> load slbounce.efi      (Secure-Launch to EL2 at ExitBootServices,
+                                    only for a DTB with the GPU zap shader off)
+        -> \EFI\fedora\grubaa64.efi
+
+- New on the ESP, nothing existing touched: `\EFI\book4-el2\` (UEFI Shell,
+  [`startup-esp.nsh`](../install/el2/startup-esp.nsh) as `startup.nsh`,
+  qebspil, slbounce, tcblaunch.exe) and the plain DSP firmware in
+  `\firmware\qcom\x1e80100\SAMSUNG\galaxy-book4-edge\` (where qebspil
+  looks, from the DT `firmware-name`). Firmware boot entry appended to the
+  boot order, so the default boot is unchanged.
+- qebspil: github.com/stephan-gh/qebspil 8e4d9e6 plus justririll's AOSS
+  `load_state` patch (x1e-sleep: without it the ADSP stops answering after the
+  first DDR low-power mode). AOSS MSGRAM `0x0c300000` and IPCC `0x408000`
+  checked against our DT.
+- slbounce: TravMurav/slbounce c090a8c plus
+  [`slbounce-tcblaunch-fallback.patch`](../install/el2/slbounce-tcblaunch-fallback.patch)
+  (also looks for `\EFI\book4-el2\tcblaunch.exe`, so it need not sit at the
+  ESP root).
+- Kernel: Stephan Gerhold's remoteproc attach patches (c98799e6d087,
+  bcfa27d44c7d, 1be5a8de0719 in jglathe's 7.2 tree) on `book4/7.2-sleep`;
+  the EL2 overlay marks the DSPs `qcom,broken-reset` (Linux attaches to the
+  running DSPs; it cannot release their reset without the hypervisor).
+- Still missing at EL2: EFI variables (qseecom -22), hence the RTC offset and
+  systemd's `HibernateLocation`.

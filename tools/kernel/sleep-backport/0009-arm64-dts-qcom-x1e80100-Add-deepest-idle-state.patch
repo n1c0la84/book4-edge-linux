@@ -1,7 +1,7 @@
 From 0291d72b78e63f59b1412f2ca43418942ccce864 Mon Sep 17 00:00:00 2001
 From: Maulik Shah <maulik.shah@oss.qualcomm.com>
 Date: Wed, 15 Jul 2026 18:31:30 +0530
-Subject: [PATCH 09/18] arm64: dts: qcom: x1e80100: Add deepest idle state
+Subject: [PATCH 09/21] arm64: dts: qcom: x1e80100: Add deepest idle state
 
 CPU subsystem deepest idle state can lead SoC to low power mode like CxPC
 (chip rail power collapse). SoC deepest low power mode requires the PDC

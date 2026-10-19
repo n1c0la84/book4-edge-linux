@@ -1,0 +1,14 @@
+diff --git i/src/bounce_main.c w/src/bounce_main.c
+index 944db09..437ce7f 100644
+--- i/src/bounce_main.c
++++ w/src/bounce_main.c
+@@ -217,6 +217,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+ 	}
+ 
+ 	file = FileOpen(volume, L"tcblaunch.exe");
++	/* book4-edge-linux: installed on the ESP, everything is in one folder */
++	if (!file)
++		file = FileOpen(volume, L"EFI\\book4-el2\\tcblaunch.exe");
+ 	if (!file) {
+ 		Print(L"Opening file \"tcblaunch.exe\" failed.\n");
+ 		return EFI_INVALID_PARAMETER;

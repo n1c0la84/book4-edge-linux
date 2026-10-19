@@ -1,7 +1,7 @@
 From 2b98bcb80b60172e20e66243f9d0e163e15568d2 Mon Sep 17 00:00:00 2001
 From: Ajay Kumar Nandam <ajay.nandam@oss.qualcomm.com>
 Date: Tue, 7 Jul 2026 15:13:12 +0530
-Subject: [PATCH 12/18] ASoC: codecs: lpass-rx-macro: switch to PM clock
+Subject: [PATCH 12/21] ASoC: codecs: lpass-rx-macro: switch to PM clock
  framework for runtime PM
 
 Convert the LPASS RX macro codec driver to runtime PM clock management

@@ -4,8 +4,9 @@
  * x1 specific modifications required to boot in EL2.
  *
  * Book4 Edge variant (book4-edge-linux): without the ADSP/CDSP iommus,
- * which cause an apps-SMMU fault storm and a hard lockup on X1E laptops;
- * the DSPs cannot start at EL2 without the hypervisor anyway.
+ * which cause an apps-SMMU fault storm and a hard lockup on X1E laptops.
+ * Linux cannot start the DSPs at EL2 by itself; qebspil starts them from
+ * UEFI and Linux attaches (qcom,broken-reset, below).
  */
 
 /dts-v1/;
@@ -54,6 +55,21 @@
 
 &pcie_smmu {
 	status = "okay";
+};
+
+/*
+ * The ADSP/CDSP are started before Linux by qebspil (UEFI, see
+ * install/el2/): at EL2 Linux can authenticate firmware but not release the
+ * reset, so it attaches to the running DSPs (Stephan Gerhold's
+ * qcom,broken-reset, as in jglathe's x1-el2.dtso). qebspil starts only the
+ * remoteprocs marked like this, so EL1 boots are unaffected.
+ */
+&remoteproc_adsp {
+	qcom,broken-reset;
+};
+
+&remoteproc_cdsp {
+	qcom,broken-reset;
 };
 
 /*

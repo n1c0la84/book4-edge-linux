@@ -1,7 +1,7 @@
 From 68a64daf5986311352109405a22f86cf26edd6c8 Mon Sep 17 00:00:00 2001
 From: Praveen Talari <praveen.talari@oss.qualcomm.com>
 Date: Thu, 2 Jul 2026 17:11:50 +0530
-Subject: [PATCH 14/18] serial: qcom-geni: add force suspend/resume to system
+Subject: [PATCH 14/21] serial: qcom-geni: add force suspend/resume to system
  sleep callbacks
 
 During system sleep the hardware resources (clocks, interconnect) are

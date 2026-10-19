@@ -1,7 +1,7 @@
 From 7db6605893b30127b22f8450747b0c88afa50c2a Mon Sep 17 00:00:00 2001
 From: Nicola Nicodemo <nicola084@gmail.com>
 Date: Mon, 19 Oct 2026 16:27:51 +0200
-Subject: [PATCH 15/18] pmdomain: allow a domain idle state to be used only for
+Subject: [PATCH 15/21] pmdomain: allow a domain idle state to be used only for
  system sleep
 
 A 'system-sleep-only' domain idle state is skipped by the runtime genpd
