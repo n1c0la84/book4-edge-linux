@@ -1,0 +1,81 @@
+From 7db6605893b30127b22f8450747b0c88afa50c2a Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Mon, 19 Oct 2026 16:27:51 +0200
+Subject: [PATCH 15/18] pmdomain: allow a domain idle state to be used only for
+ system sleep
+
+A 'system-sleep-only' domain idle state is skipped by the runtime genpd
+governor but still used by genpd_sync_power_off() in system suspend. On X1E,
+DRIPS (0x0200c354) from runtime idle hangs the SoC after the first s2idle;
+Windows also enters DRIPS only in Modern Standby.
+
+From github.com/justririll/x1e-sleep (sleep/pmdomain-system-sleep-only.patch, commit 4e84b60), not upstream.
+Taken for testing on the Galaxy Book4 Edge; see book4-edge-linux docs/power.md.
+---
+ .../devicetree/bindings/power/domain-idle-state.yaml      | 8 ++++++++
+ drivers/pmdomain/core.c                                   | 1 +
+ drivers/pmdomain/governor.c                               | 4 ++++
+ include/linux/pm_domain.h                                 | 1 +
+ 4 files changed, 14 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/power/domain-idle-state.yaml b/Documentation/devicetree/bindings/power/domain-idle-state.yaml
+index 4dd4f59..b692f0d 100644
+--- a/Documentation/devicetree/bindings/power/domain-idle-state.yaml
++++ b/Documentation/devicetree/bindings/power/domain-idle-state.yaml
+@@ -59,6 +59,14 @@ patternProperties:
+         description:
+           A string used as a descriptive name for the idle state.
+ 
++      system-sleep-only:
++        type: boolean
++        description:
++          The state may only be entered as part of system-wide suspend
++          (e.g. s2idle), never from runtime idle. For platforms whose
++          firmware only supports the state, or only reaches it reliably,
++          when the system is suspended.
++
+     required:
+       - compatible
+       - entry-latency-us
+diff --git a/drivers/pmdomain/core.c b/drivers/pmdomain/core.c
+index 842c416..c312757 100644
+--- a/drivers/pmdomain/core.c
++++ b/drivers/pmdomain/core.c
+@@ -3584,6 +3584,7 @@ static int genpd_parse_state(struct genpd_power_state *genpd_state,
+ 		genpd_state->residency_ns = 1000LL * residency;
+ 
+ 	of_property_read_string(state_node, "idle-state-name", &genpd_state->name);
++	genpd_state->system_sleep_only = of_property_read_bool(state_node, "system-sleep-only");
+ 
+ 	genpd_state->power_on_latency_ns = 1000LL * exit_latency;
+ 	genpd_state->power_off_latency_ns = 1000LL * entry_latency;
+diff --git a/drivers/pmdomain/governor.c b/drivers/pmdomain/governor.c
+index 96737ab..a06b193 100644
+--- a/drivers/pmdomain/governor.c
++++ b/drivers/pmdomain/governor.c
+@@ -183,6 +183,10 @@ static bool __default_power_down_ok(struct dev_pm_domain *pd,
+ 	s64 min_off_time_ns;
+ 	s64 off_on_time_ns;
+ 
++	/* Some states may only be entered from system-wide suspend. */
++	if (genpd->states[state].system_sleep_only)
++		return false;
++
+ 	off_on_time_ns = genpd->states[state].power_off_latency_ns +
+ 		genpd->states[state].power_on_latency_ns;
+ 
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index f925614..96192bb 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -184,6 +184,7 @@ struct genpd_power_state {
+ 	u64 above;
+ 	u64 below;
+ 	u64 usage_s2idle;
++	bool system_sleep_only;
+ 	struct fwnode_handle *fwnode;
+ 	u64 idle_time;
+ 	void *data;
+-- 
+2.56.0
+

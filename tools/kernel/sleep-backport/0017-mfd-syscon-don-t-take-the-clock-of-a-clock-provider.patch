@@ -1,0 +1,39 @@
+From f749e47eaf276c714ee933e7a029a9a6164159be Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Mon, 19 Oct 2026 16:27:51 +0200
+Subject: [PATCH 17/18] mfd: syscon: don't take the clock of a clock provider
+
+The clocks of a clock provider (the X1E TCSR block) are its parents, not a
+register clock; keeping bi_tcxo prepared pins an RPMh XO vote in suspend.
+
+From github.com/justririll/x1e-sleep (sleep/syscon-skip-clock-of-clock-providers.patch, commit 4e84b60), not upstream.
+Taken for testing on the Galaxy Book4 Edge; see book4-edge-linux docs/power.md.
+---
+ drivers/mfd/syscon.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mfd/syscon.c b/drivers/mfd/syscon.c
+index 21a7fcd..ee9ceca 100644
+--- a/drivers/mfd/syscon.c
++++ b/drivers/mfd/syscon.c
+@@ -123,7 +123,16 @@ static struct syscon *of_syscon_register(struct device_node *np, bool check_res)
+ 	}
+ 
+ 	if (check_res) {
+-		clk = of_clk_get(np, 0);
++		/*
++		 * The "clocks" of a clock provider (e.g. the X1E TCSR block) are
++		 * its parent clocks, not a register clock. Attaching one keeps it
++		 * prepared forever, which pins an RPMh XO vote and blocks the SoC
++		 * from turning the crystal off in suspend.
++		 */
++		if (of_property_present(np, "#clock-cells"))
++			clk = ERR_PTR(-ENOENT);
++		else
++			clk = of_clk_get(np, 0);
+ 		if (IS_ERR(clk)) {
+ 			ret = PTR_ERR(clk);
+ 			/* clock is optional */
+-- 
+2.56.0
+

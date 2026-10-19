@@ -1,0 +1,1 @@
+obj-m := cntv_arm.o qcom_adsp_pwr_lmts.o aoss_cxsd_only.o

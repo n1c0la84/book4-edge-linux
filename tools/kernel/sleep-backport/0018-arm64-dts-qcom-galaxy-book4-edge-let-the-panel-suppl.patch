@@ -1,0 +1,54 @@
+From 510d00b0ff95a33f1bf8410b3137c279d979d6a0 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Mon, 19 Oct 2026 16:28:14 +0200
+Subject: [PATCH 18/18] arm64: dts: qcom: galaxy-book4-edge: let the panel
+ supplies turn off
+
+VREG_OCTA_VDD -> VREG_DISPLAY_VDD -> VREG_EDP_3P3 feed the eDP panel, whose
+driver switches VREG_EDP_3P3 through runtime PM. With regulator-always-on the
+whole chain stays powered through s2idle. Keep regulator-boot-on so the panel
+is up from boot as before; drop regulator-always-on so the chain follows the
+panel. Same fix as the Vivobook S15 in github.com/justririll/x1e-sleep,
+where it cut sleep drain from 1.43 W to 0.25 W.
+
+Assisted-by: Claude:claude-opus-5-5
+---
+ arch/arm64/boot/dts/qcom/x1-samsung-galaxy-book4-edge.dtsi  | 2 --
+ arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi | 1 -
+ 2 files changed, 3 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/x1-samsung-galaxy-book4-edge.dtsi b/arch/arm64/boot/dts/qcom/x1-samsung-galaxy-book4-edge.dtsi
+index dc396ec..73b9c59 100644
+--- a/arch/arm64/boot/dts/qcom/x1-samsung-galaxy-book4-edge.dtsi
++++ b/arch/arm64/boot/dts/qcom/x1-samsung-galaxy-book4-edge.dtsi
+@@ -178,7 +178,6 @@ vreg_octa_vdd: regulator-octa-vdd {
+ 		startup-delay-us = <1000>;
+ 		regulator-enable-ramp-delay = <1000>;
+ 
+-		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
+ 
+@@ -200,7 +199,6 @@ vreg_display_vdd: regulator-display-vdd {
+ 
+ 		vin-supply = <&vreg_octa_vdd>;
+ 
+-		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
+ 
+diff --git a/arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi b/arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi
+index 2521ddc..6615d30 100644
+--- a/arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi
++++ b/arch/arm64/boot/dts/qcom/x1e-samsung-galaxy-book4-edge.dtsi
+@@ -59,7 +59,6 @@ vreg_edp_3p3: regulator-edp-3p3 {
+ 
+ 		vin-supply = <&vreg_display_vdd>;
+ 
+-		regulator-always-on;
+ 		regulator-boot-on;
+ 	};
+ 
+-- 
+2.56.0
+
