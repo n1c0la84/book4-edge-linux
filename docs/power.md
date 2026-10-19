@@ -1161,3 +1161,17 @@ Then three policies (`policy0/4/8`, 4 cores each), driver `scmi`, governor
 **2 435 106k** (about 850 000k without the driver). The fallback kernel
 7.2.0-61 ships `scmi-cpufreq.ko.xz` too. `boost` is 0 (the X1E-80-100 can
 boost one or two cores to about 4 GHz); left off, an option to try.
+
+## Hibernation (the practical fix)
+
+Until the SoC collapses in s2idle, a night of suspend empties the battery.
+`install/arch/hibernate-setup.sh` adds a 16 GiB swap file in its own btrfs
+subvolume (priority below zram) and a systemd sleep hook that stops the
+ADSP/CDSP before hibernating and starts them after resume (their firmware
+doesn't survive power-off). The EFI variable driver is built in, so systemd
+stores the image location in `HibernateLocation` and Arch's initramfs
+(mkinitcpio `systemd` hook) resumes from it, with no `resume=` on the shared
+command line. The PMIC RTC has no wake alarm, so `suspend-then-hibernate` is
+impossible; `install/arch/hibernate-lid.sh` hibernates on lid close on
+battery, suspends on AC, and hibernates at critical battery. Never boot
+Fedora while Arch is hibernated: both mount the same btrfs filesystem.
