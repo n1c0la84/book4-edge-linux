@@ -54,13 +54,17 @@ done
 strings -el "$slb" | grep -c 'book4-el2' >/dev/null ||
     { echo "error: $slb lacks the \\EFI\\book4-el2\\ tcblaunch fallback; rebuild slbounce" >&2; exit 1; }
 
-esp=$(mktemp -d)
-cleanup() { sync; sudo umount "$esp" 2>/dev/null || true; rmdir "$esp"; }
-trap cleanup EXIT
-if findmnt -rn -S $ESPDEV >/dev/null; then
-    echo "error: $ESPDEV is mounted ($(findmnt -rn -o TARGET -S $ESPDEV)); unmount it first" >&2; exit 1
+# Reuse a mount if there is one (Arch's /efi automount), else mount it here.
+esp=$(findmnt -rn -o TARGET -S $ESPDEV | head -1 || true)
+own=
+if [ -z "$esp" ]; then
+    esp=$(mktemp -d); own=1
+    sudo mount -o umask=0077,shortname=winnt $ESPDEV "$esp"
 fi
-sudo mount -o umask=0077,shortname=winnt $ESPDEV "$esp"
+cleanup() { sync; [ -n "$own" ] && { sudo umount "$esp" 2>/dev/null || true; rmdir "$esp"; }; true; }
+trap cleanup EXIT
+findmnt -rn -o OPTIONS -T "$esp" | grep -c '^rw' >/dev/null || { echo "error: the ESP is mounted read-only at $esp" >&2; exit 1; }
+echo "ESP at $esp"
 need=$(( $(du -cb "$shell" "$qeb" "$slb" "$tcb" "$fw"/qcadsp8380.mbn "$fw"/adsp_dtbs.elf "$fw"/qccdsp8380.mbn "$fw"/cdsp_dtbs.elf | tail -1 | cut -f1) / 1024 + 1024 ))
 free=$(sudo df -k --output=avail "$esp" | tail -1 | tr -d ' ')
 echo "ESP: ${free} KiB free, need ~${need} KiB"
