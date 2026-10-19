@@ -146,3 +146,10 @@ ThinkPad T14s in github.com/rengare/t14s_x1e_linux):
   running DSPs; it cannot release their reset without the hypervisor).
 - Still missing at EL2: EFI variables (qseecom -22), hence the RTC offset and
   systemd's `HibernateLocation`.
+
+**Works (19 October, evening):** F10 -> "Book4 EL2 (slbounce)" -> GRUB
+"test: el2-sleep": `7.2.7-book4s`, all CPUs started at EL2, ADSP and CDSP
+`attached` (qebspil started them; "attaching to adsp ... now attached"),
+APR/GPR services and the sound card up. Through the same firmware entry the
+default GRUB entry still boots the normal kernel at EL1 with the DSPs started
+by Linux, so the chain is safe as a general entry.
