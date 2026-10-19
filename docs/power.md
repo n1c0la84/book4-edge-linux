@@ -1303,3 +1303,10 @@ frozen PipeWire never does, so the machine hung before writing the image.
 The DSPs are now stopped by `book4-dsp-hibernate.service`, ordered before
 `systemd-hibernate.service` (before the freeze) and started again on resume
 (`StopWhenUnneeded`).
+
+Second try (19 October): the service stopped both DSPs, then
+`PM: hibernation: hibernation entry`, then the machine reset before a usable
+image was on disk (the next boot did not try to resume and `/swap/swapfile`
+still had a plain swap signature). Next: `pm_test` stages (`freezer`,
+`devices`, `platform`, `processors`, `core`, then `test_resume`) to find the
+step that resets (`~/hibernate-pmtest.sh STAGE`).
