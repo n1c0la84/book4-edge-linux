@@ -168,29 +168,23 @@ To test (should work, never verified)
       clock including suspend; no log, no pstore). Suspect: a timer in
       Qualcomm's hypervisor, which Windows never runs. Test: one boot at
       EL2 (no hypervisor) kept up past 48 h; [el2.md](el2.md).
-- [ ] **Suspend drain is about 3.8 W** (7 %/h, measured 14 Oct; the older
-      "1.7 W" was a miscalculation) on both kernels and desktops. The SoC
-      never reaches deep sleep on Linux; **under Windows it does** (sleep
-      study, 8 Oct: hardware low power ~98 % of each sleep). Two causes (15
-      Oct): the boot votes are never released (videocc and QCE drivers
-      missing, GMU), and the PSCI system power domain is never entered in
-      s2idle, an open upstream problem on all Snapdragon X laptops.
-      Releasing the votes also needs UFS resume fixes. Parked until upstream
-      moves; [power.md](power.md#why-the-soc-never-reaches-deep-sleep-14-15-october-2026).
-- [ ] **Hibernation** as a workaround for the drain. Both kernels have
-      `CONFIG_HIBERNATION=y`, lockdown is off. Needs a ~20 GB btrfs swap file
-      (current swap is zram), `resume=` + `resume_offset=` in the boot hook's
-      command line, and the resume module in the initramfs. Unknown: whether
-      ADSP/CDSP, GPU and ath12k survive a restore on X1E. The RTC cannot wake
-      this machine, but the EC has a wake timer (`EC2.sys`
-      `IOCTL_START_WAKEUP`, see [power.md](power.md)) that could make
-      suspend-then-hibernate possible. Command decoded (8 Oct,
-      [ec-protocol.md](ec-protocol.md#wake-timer-raw-target-0x62-decoded-8-october-2026)):
-      `{03, T/60, T%60}` on 0x62, T 0-255 in an unknown unit. Next, on
-      Linux: `sudo python3 tools/ec/wake-timer.py once 90 --sleep` to find
-      the unit and whether the EC can wake the machine from s2idle.
-      EC wake timer tested 8 Oct: no wake and no EC interrupt (see
-      [ec-protocol.md](ec-protocol.md#wake-timer-raw-target-0x62-decoded-8-october-2026)); parked.
+- [ ] **Suspend drain about 3.1-3.8 W; the SoC never reaches deep sleep**
+      (Windows does: sleep study 8 Oct, hardware low power ~98 %). Status
+      and everything ruled out: top of [power.md](power.md). Next: validate
+      hibernation (install/arch/hibernate-setup.sh, then a manual
+      `systemctl hibernate`, then hibernate-lid.sh); post the EL2 findings on
+      linux_ms_dev_kit #94 (needs OK); optional EL2 read of the display RSC.
+- [ ] **Hibernation** as a workaround for the drain. Scripts written 19 Oct,
+      not yet run: `install/arch/hibernate-setup.sh` (16 GiB swap file in a
+      `/swap` subvolume below zram; DSP stop/start sleep hook; no `resume=`:
+      the EFI variable driver is built in, so systemd's `HibernateLocation`
+      and the initramfs `systemd` hook do it), then a manual
+      `systemctl hibernate`, then `install/arch/hibernate-lid.sh` (lid on
+      battery -> hibernate, on AC -> suspend). No timed wake exists (RTC has
+      no alarm; EC wake timer tested 8 Oct: no wake), so no
+      suspend-then-hibernate. Unknown until tested: GPU, ath12k and Bluetooth
+      after a restore. Never boot Fedora while Arch is hibernated (shared
+      btrfs).
 - [x] **Charger plugged in during sleep now charges** (`patches/0003`,
       5 Oct, Fedora): wakes, negotiates, sleeps again. Same on
       Arch/Omarchy (5 Oct): logind re-suspends 29 s after the wake.

@@ -1,12 +1,44 @@
 # Power: suspend drain
 
-**Next diagnostic (19 October):** measure the accepted EL2
-`CPU_SUSPEND(0x0200c354)` at the SMC wrapper, with raw return codes,
-hardware-counter timing and sampled GIC/timer state. The
-[test instructions](../tools/power/psci-probe/README.md) include matched
-baseline, timing-only and sampled runs. This probe has not yet been built
-against the Book4 kernel or tested on hardware. The entries below retain
-the investigation's chronology; early hypotheses are not all current.
+**Current status (19 October 2026).** The SoC still never reaches deep sleep
+in s2idle (`aosd`/`cxsd`/`ddr` stay 0 in every configuration tried). What
+is established, in order of the sections below:
+
+- Releasing the boot votes, `pcie_port_pm=force`, USB wakeup off and
+  Bluetooth unbound bring every APSS (drv-2) RPMh vote Linux makes to 0 at
+  sleep; best measured drain about 3.1 W (hour-long runs; differences of a
+  few percent between runs are within the method's error). That is
+  necessary, not sufficient.
+- Windows' DRIPS is PSCI `0x0200C354`; our DT had no system-level idle
+  state. With it, at EL1 under Gunyah the system domain is entered once per
+  suspend and held, with no collapse.
+- At EL2 (slbounce, no Gunyah) with the OSI hierarchy, TrustZone **accepts**
+  `0x0200C354` (returns 0) but returns from it within about 50-100 us,
+  roughly 16 000 times per second of suspend (`tools/power/psci-probe`,
+  timed at the SMC with the 19.2 MHz counter, which keeps running in s2idle).
+  The variant with the StateType bit, `0x4200C354`, is `NOT_SUPPORTED`. A
+  working PC-mode test was never achieved (the switch to PC failed), so
+  PC vs OSI is still open.
+- Interrupts: on the one CPU with a leftover EL1 virtual timer
+  (`CNTV_CTL_EL02=5`, an EL2-boot artifact; KVM keeps PPI 27 enabled) PPI 27
+  is pending and enabled at every call. But other CPUs bounce just as fast
+  with no pending+enabled interrupt visible in the GIC right at the SMC
+  (CPU 11: 65 983 calls, 0 of 257 samples). That rules out visible GIC
+  interrupts as the general cause; secure interrupts and PDC/AOSS-side wake
+  or abort reasons are not observable from here.
+- Things tried that did not change the result on their own: stopping the
+  DSPs, stopping the Secure Processor (PAS 14), the PEP's `_DSM`/GPIO 44
+  notifications, voting off the nine regulators Linux never votes, masking
+  PPI 27. With several blockers, each could still be one of them.
+- Open lead: the display RSC (RPMh DRV 9), which UEFI leaves clocked and
+  Linux never uses. Unverified: reading it at EL1 reset the machine.
+
+Windows' own DRIPS entry does no hardware setup (it only snapshots the sleep
+stats), so whatever allows the collapse is set up earlier, outside what
+Linux has been shown. Practical fix meanwhile: hibernation (end of this
+file; scripts written, restore not yet validated on this machine).
+The sections below keep the chronology; early hypotheses there are
+superseded where this summary says otherwise.
 
 **Latest reset investigation (3 October evening):** unbinding only the
 charging port's `samsung-emuec` before sleep avoids the unplug reset in both
@@ -14,9 +46,9 @@ charging port's `samsung-emuec` before sleep avoids the unplug reset in both
 USB state it manages, without identifying a faulty function. See
 [the test matrix and reproduction scripts](#further-isolation-3-october-evening-charging-port-driver-unbind-succeeds).
 
-**Latest drain investigation (14-15 October):** the SoC never reaches deep
-sleep for two independent reasons; the first is ours and understood, the
-second is an open upstream problem on all Snapdragon X laptops. See
+**Drain investigation as of 14-15 October (superseded by the status
+above):** two causes were identified then; the second ("the system domain
+is never entered") was fixed by adding DRIPS to the DT. See
 [Why the SoC never reaches deep sleep](#why-the-soc-never-reaches-deep-sleep-14-15-october-2026).
 
 ## Why the SoC never reaches deep sleep (14-15 October 2026)
