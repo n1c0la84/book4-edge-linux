@@ -8,7 +8,12 @@ within each section. What is already done is listed at the end.
 **Now (20 October):**
 
 - [ ] **EFI variables at EL2** (qseecom fails with -22): the RTC offset and
-      hibernation depend on them. The one real gap of the daily setup.
+      hibernation depend on them. The one real gap of the daily setup. The
+      first call that passes TrustZone a buffer (the `uefisecapp` lookup) is
+      refused; without Gunyah, TZ memory likely needs SHM bridges (Konrad
+      Dybcio, QCS6490 thread, January 2026). The next sleep kernel build sets
+      `CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE` (falls back to generic if TZ says
+      no); test: `qcom_qseecom` probes and `/sys/firmware/efi/efivars` fills.
 - [ ] **A long drain with the DSPs running** (over an hour on battery,
       `tools/power/el2-drain-test.sh`): the wattage in CXSD-only sleep, and
       that it survives the hour. The hourly AOSD reset **does** happen here
@@ -27,8 +32,15 @@ within each section. What is already done is listed at the end.
       [power.md](power.md); low priority now that s2idle sleeps deeply.
 - [ ] **Fedora's role** (undecided): build host only, or retire it and move
       `/boot`, GRUB and the kernel builds to Arch.
-- [ ] The rest of the board's ~1.5 W in deep sleep (always-on 3.3 V rails,
-      Wi-Fi): [power.md](power.md).
+- [ ] **The rest of the board's ~1.5 W in deep sleep** (the Vivobook S15 is
+      at ~0.17-0.25 W). First lead: Windows pulls GPIO 44 (`MODS`, the EC's
+      standby input) low at Modern Standby; Linux never does, and on 3 October
+      driving it visibly changed the EC in sleep. Test without a rebuild:
+      `tools/power/el2-mods-test.sh` (entry "el2-mods"), drain vs the daily
+      entry. Next candidates: `VREG_MISC_3P3` (touchscreen) and `VREG_WCN_3P3`
+      (Wi-Fi/BT chip) are always-on; three PMIC LDOs (l7b, l10b, l12b) too,
+      with no consumer in the DT. A Windows battery-standby figure (one hour
+      lid closed, `powercfg /sleepstudy`) would give the target.
 
 ## Test of 10 October (DT 0005/0006, emuec orientation 0005)
 
@@ -190,24 +202,21 @@ To test (should work, never verified)
       clock including suspend; no log, no pstore). Suspect: a timer in
       Qualcomm's hypervisor, which Windows never runs. Test: one boot at
       EL2 (no hypervisor) kept up past 48 h; [el2.md](el2.md).
-- [ ] **Suspend drain about 3.1-3.8 W; the SoC never reaches deep sleep**
-      (Windows does: sleep study 8 Oct, hardware low power ~98 %). Status
-      and everything ruled out: top of [power.md](power.md). The 7.3 PDC fix
-      was tested at EL1 and EL2 without collapse; the display RSC was empty.
-      Other X1E machines reached full DRIPS with EL1 timer-deadline and vote
-      fixes: compare their working setup with Book4, starting with the timer
-      deadline and GPU RSC fix. The GPU RSC is separate from display RSC.
-      EL2 findings posted on linux_ms_dev_kit #94 (19 Oct,
-      issuecomment-6268004483); watch for replies. Hibernation is being
-      debugged separately below.
-      Windows-side experiments remain available if the Linux comparison does
-      not resolve it: [windows-investigation.md](windows-investigation.md).
+- [x] **Suspend drain: the SoC never reached deep sleep** (3.1-3.8 W).
+      **Solved at EL2 (19 October):** `el1tmr`, the 7.3 PDC/LPASS/geni
+      fixes, the panel supplies and the VA/WSA macro votes; 97.5-99.9 % in
+      `aosd`/`cxsd`/`ddr`, 1.55 W without the DSPs. Daily since 20 October
+      (`install/el2/sleep-setup.sh`). At EL1 under Gunyah it still never
+      collapses. The rest of the board's power is under "Now" above;
+      everything tried on the way: [power.md](power.md).
 - [ ] **UFS `ref_clk` leak fix for 7.3**: fixed upstream by Qualcomm's
       `f07317a8d57f`, queued for 7.4 without `Cc: stable`. After 7.4-rc1:
       stable backport request (email to stable@vger.kernel.org) or ask the
       Anatase kernel to cherry-pick it. Our kernel carries our own patch
       meanwhile ([power.md](power.md)).
-- [ ] **Hibernation** as a workaround for the drain. Swap and
+- [ ] **Hibernation** (EL1 only: at EL2 there are no EFI variables, so no
+      `HibernateLocation`; with deep sleep at EL2 it is no longer needed for
+      nights on battery). Swap and
       `HibernateLocation` are set up. The first attempt hung while stopping
       the DSPs after the user session froze; moving that stop before the
       freeze resolved the hang. The second attempt reached hibernation entry
@@ -346,8 +355,9 @@ Not yet reported:
 
 ## Arch and Omarchy
 
-- [ ] **Make the Arch/Omarchy setup reproducible end to end**: stage 1-2 and
-      the Omarchy stage 3 scripts exist in `install/arch/`, but
+- [ ] **Make the Arch/Omarchy setup reproducible end to end**: the whole
+      order is in [install.md](install.md) (20 October), every step a script;
+      the sequence has never run on an empty disk, and
       `stage3-omarchy-install.sh` as a whole has not been run. [arch.md](arch.md).
 - [ ] **Rescue USB stick** (`install/arch/rescue-usb.sh`): a generic live
       USB cannot boot this machine (no `cutmem`, no device tree, no Anatase
