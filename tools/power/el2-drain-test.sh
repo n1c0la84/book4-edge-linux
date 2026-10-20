@@ -24,6 +24,9 @@ echo "   book4-el2-sleep.service: $(systemctl is-active book4-el2-sleep.service 
 echo "   DSPs: $(for r in /sys/class/remoteproc/*; do printf '%s=%s ' $(cat $r/name) $(cat $r/state); done)"
 echo "   LPASS votes at the ADSP: $(for c in LPASS_HW_MACRO LPASS_HW_DCODEC; do printf '%s=%s ' $c "$(sudo cat /sys/kernel/debug/clk/$c/clk_enable_count 2>/dev/null || echo -)"; done)"
 grep -q '^el1tmr ' /proc/modules || sudo modprobe el1tmr
+# aoss_cxsd_only (no AOSD) is loaded by the service; aosd then stays 0 and
+# cxsd/ddr are the numbers that count.
+echo "   AOSD: $(grep -q '^aoss_cxsd_only ' /proc/modules && echo 'off (aoss_cxsd_only)' || echo allowed)"
 grep -q '^icc_hold ' /proc/modules || sudo modprobe icc_hold nodes=/soc@0/ufshc@1d84000 tag=3
 for p in $(find /sys/devices -name state_synced 2>/dev/null); do
   [ "$(cat "$p")" = 1 ] || printf 1 | sudo tee "$p" >/dev/null

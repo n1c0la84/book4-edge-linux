@@ -13,9 +13,13 @@
 #   1. book4-el2-sleep.service (only on kernel command lines with
 #      id_aa64mmfr0.ecv=1, i.e. the EL2 entries, and only for a kernel that
 #      has el1tmr): loads el1tmr (next timer deadline into CNTP_CVAL_EL02 for
-#      the firmware), holds the UFS interconnect paths with icc_hold (UFS
-#      fails to resume once the boot floors drop otherwise), waits for the
-#      sound card, then forces sync_state on every provider (videocc/QCE have
+#      the firmware) and aoss_cxsd_only (no AOSD, the XO-off level: in it the
+#      machine hard-resets about N hours + ~1 min after boot, here 19 Oct
+#      and on x1e-sleep's Vivobook; CX collapse and DDR self-refresh stay
+#      allowed, x1e-sleep measured ~0.17 W over 16.9 h that way; to allow
+#      AOSD, Environment=BOOK4_AOSD=1 in a drop-in for the service), holds
+#      the UFS interconnect paths with icc_hold (UFS fails to resume once the
+#      boot floors drop otherwise), waits for the sound card, then forces sync_state on every provider (videocc/QCE have
 #      no driver here, so it never runs by itself and the boot votes stay).
 #   2. qcom_adsp_pwr_lmts blacklisted: its Modern Standby message crashes the
 #      Book4's ADSP (Samsung's INF disables it on Windows too).
@@ -72,6 +76,8 @@ sudo tee "$helper" >/dev/null <<'EOF'
 # Book4 (install/el2/sleep-setup.sh): prepare s2idle deep sleep at EL2.
 set -eu
 modprobe el1tmr
+# No AOSD: the SoC hard-resets in it about hourly (sleep-setup.sh header).
+[ "${BOOK4_AOSD:-0}" = 1 ] || modprobe aoss_cxsd_only
 modprobe icc_hold nodes=/soc@0/ufshc@1d84000 tag=3
 # Without a verified hold, releasing the boot votes breaks UFS on resume.
 dmesg | grep -q 'icc_hold: holding [1-9][0-9]* paths (tag 3)' ||
@@ -84,7 +90,7 @@ n=0
 for p in $(find /sys/devices -name state_synced); do
     [ "$(cat "$p")" = 1 ] || { printf 1 > "$p"; n=$((n + 1)); }
 done
-echo "el1tmr loaded, UFS held, sync_state forced on $n provider(s)"
+echo "el1tmr loaded, AOSD $([ -d /sys/module/aoss_cxsd_only ] && echo off || echo allowed), UFS held, sync_state forced on $n provider(s)"
 EOF
 sudo chmod 755 "$helper"
 sudo tee "$unit" >/dev/null <<EOF

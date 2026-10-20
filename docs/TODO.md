@@ -9,9 +9,13 @@ within each section. What is already done is listed at the end.
 
 - [ ] **EFI variables at EL2** (qseecom fails with -22): the RTC offset and
       hibernation depend on them. The one real gap of the daily setup.
-- [ ] **A long drain with the DSPs running** (30-60 min on battery,
-      `tools/power/el2-drain-test.sh`): the wattage; and whether the hourly
-      AOSD reset x1e-sleep saw happens here (fallback: `aoss_cxsd_only`).
+- [ ] **A long drain with the DSPs running** (over an hour on battery,
+      `tools/power/el2-drain-test.sh`): the wattage in CXSD-only sleep, and
+      that it survives the hour. The hourly AOSD reset **does** happen here
+      (19-20 October night); `aoss_cxsd_only` is now loaded at every EL2 boot.
+- [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset
+      at N hours + ~1 min after boot. Not ours to solve alone; follow
+      x1e-sleep and #94.
 - [ ] **Verify sleep-backport 0024/0025** (upstream's VA/WSA macro commits
       in place of our first versions): both LPASS vote counts 0 when idle,
       the collapse as before, sound working.

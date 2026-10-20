@@ -13,6 +13,15 @@ backported only the rx/tx half of that series); patches 0024/0025 are now
 those two commits (details at the end of the ADSP section).
 Open: a long drain on battery for the wattage, EFI variables at EL2, EL2 as
 the default boot.
+**The hourly AOSD reset is here too (night of 19-20 October):** the EL2 boot
+of 22:35:41 suspended at 23:21 (lid) and hard-reset in its sleep at about
+23:36, an hour and a minute after boot, exactly x1e-sleep's open issue
+(resets at "N hours + ~38 s after boot", only in AOSD; cause unknown). The
+firmware's default path then booted EL1, which suspended again with the lid
+shut; the RTC came back at 2024-05-29 until NTP. Workaround, as x1e-sleep's
+default: `aoss_cxsd_only` (AOSS told not to enter AOSD; CX collapse and DDR
+self-refresh stay allowed; x1e-sleep: ~0.17 W over a 16.9 h night), now
+loaded by `book4-el2-sleep.service` (`install/el2/sleep-setup.sh`).
 
 **Others have reached full DRIPS on X1E (found 19 October, late).**
 github.com/justririll/x1e-sleep (ASUS Vivobook S15, X1E80100, jglathe 7.2 at
