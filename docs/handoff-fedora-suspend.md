@@ -17,7 +17,7 @@ next resume. On 4-5 October (Arch, 0002 installed) the lid was closed at
 with a full battery: no charging in sleep, the battery ran down at ~6 %/h,
 and the firmware charged it while off.
 
-Experiment: [`patches-experimental/0004`](../drivers/anatase/patches-experimental/0004-samsung-emuec-wake-on-plug-in-into-empty-port.patch),
+Experiment: [`patches-experimental/0004`](../drivers/anatase/patches/0003-samsung-emuec-wake-on-plug-in-into-empty-port.patch),
 on top of `patches/0001` and `0002`. While quiesced it arms the masked
 interrupt as a wake source **only on a port that was empty at suspend**; a
 plug-in wakes the system, `PM_POST_SUSPEND` resyncs (PD contract), and the
@@ -33,7 +33,7 @@ absolute path, the script changes into the tree):
 
 ```sh
 cd ~/book4-edge-linux && git pull --ff-only
-EMUEC_EXTRA_PATCHES=$HOME/book4-edge-linux/drivers/anatase/patches-experimental/0004-samsung-emuec-wake-on-plug-in-into-empty-port.patch \
+EMUEC_EXTRA_PATCHES=$HOME/book4-edge-linux/drivers/anatase/patches/0003-samsung-emuec-wake-on-plug-in-into-empty-port.patch \
   bash install/update-emuec-module.sh
 bash install/arch/sync-kernel.sh      # same module for Arch
 ```

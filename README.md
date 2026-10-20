@@ -1,26 +1,32 @@
 # Linux on the Samsung Galaxy Book4 Edge (14", Snapdragon X Elite)
 
-Working notes, configuration and drivers for running a mainline-based Linux
-distribution on the **Samsung Galaxy Book4 Edge 14" (NP940XMA, X1E80100)**.
-**Developed on Fedora:** everything here was first developed and tested on
-Fedora 45 (aarch64). Since 1 October it runs a kernel built from Anatase's
-`anatase-7.2` tree plus our patches, published as the branch
-[`book4/7.2` of n1c0la84/linux-book4-edge](https://github.com/n1c0la84/linux-book4-edge/tree/book4/7.2)
-(see [docs/kernel.md](docs/kernel.md));
-it is the **default** boot entry, and the stock Fedora kernel 7.2.0-61 with the
-DKMS drivers stays in the menu as the fallback ("(other)"). The pieces are written so they can be
-carried to other distributions; since 3 October **Arch Linux ARM with Omarchy 4.0.4**
-runs next to Fedora on the same kernel ([docs/arch.md](docs/arch.md)).
+Working notes, configuration, drivers and kernel patches for running Linux on
+the **Samsung Galaxy Book4 Edge 14" (NP940XMA, X1E80100)**.
 
-![fastfetch on the Galaxy Book4 Edge 14": Fedora 45, kernel 7.2.7-book4, KDE Plasma 6.7.5 on Wayland, Snapdragon X Elite X1E-80-100, Adreno X1-85, 2880x1800 at 120 Hz](docs/images/fastfetch.png)
+**How the reference machine runs (20 October 2026):** **Arch Linux ARM with
+Omarchy** as the daily system, booted **at EL2** (Linux as its own
+hypervisor, no Qualcomm Gunyah) with our sleep kernel `7.2.7-book4s`, which
+reaches **full SoC deep sleep in s2idle with the audio DSPs running**
+([docs/power.md](docs/power.md)). **Fedora** stays installed next to it on the
+same disk as the build host: it owns `/boot` and GRUB, and Arch builds
+kernels in a Fedora container. Both run kernels built from Anatase's
+`anatase-7.2` tree plus our patches, published as
+[n1c0la84/linux-book4-edge](https://github.com/n1c0la84/linux-book4-edge)
+([docs/kernel.md](docs/kernel.md)).
+
+- **Set it up from scratch:** [docs/install.md](docs/install.md)
+- **Keep it updated:** [docs/updates.md](docs/updates.md)
+- **Open points:** [docs/TODO.md](docs/TODO.md)
 
 ![fastfetch on the Galaxy Book4 Edge 14": Omarchy 4.0.4 on Arch Linux ARM (aarch64), kernel 7.2.7-book4, Hyprland 0.56.2, foot, Tokyo Night theme, 8 GiB zram swap](docs/images/fastfetch-omarchy.png)
 
 This builds on the **[Anatase](https://github.com/anatase-org/patchwork)**
-project (branch `anatase-7.2`), whose device tree and EC/Type-C drivers we use,
-and adds what we found and fixed independently.
+project (branch `anatase-7.2`), whose device tree and EC/Type-C drivers we
+use; on [justririll/x1e-sleep](https://github.com/justririll/x1e-sleep) for
+deep sleep; and on Stephan Gerhold's qebspil and Nikita Travkin's slbounce
+for EL2 ([CREDITS.md](CREDITS.md)).
 
-## Status (1 October 2026, 14" model)
+## Status (20 October 2026, 14" model)
 
 | Area | State | How |
 |---|---|---|
@@ -39,94 +45,44 @@ and adds what we found and fixed independently.
 | Speakers, all four (2 woofers + 2 tweeters) | works | default DTB with the tweeters ([sent to Anatase](https://github.com/anatase-org/kernel-anatase/issues/4)), UCM profile, PipeWire crossover (tweeters get highs only) + limiter; quieter than Windows by design (no speaker protection on Linux): [docs/audio.md](docs/audio.md) |
 | Internal microphones | works | DMIC0/1, gain raised in the UCM profile |
 | Headphones, headset mic | profile present, untested | |
-| Suspend (s2idle): lid close/open, power key | works, but **about 3.8 W** (7 %/h, a full battery lasts ~14 h) | `mem_sleep_default=s2idle`; lid and power key suspend and wake, on both kernels. The SoC never reaches deep sleep (status and what has been ruled out: [docs/power.md](docs/power.md)); hibernation is the workaround being set up. Shut down for a night on battery until it is validated. Plugging in or unplugging the charger during sleep is fine since 4 October with [our patch 0002](drivers/anatase/patches) (it reset the machine before); a charger plugged in during sleep starts charging when the lid opens |
+| Suspend (s2idle): lid close/open, power key | **full SoC deep sleep at EL2** (`aosd`/`cxsd`/`ddr` 97.5-99.9 % of the time asleep; 1.55 W measured without the DSPs, with them still to measure); at EL1 about 3.1-3.8 W, the SoC never reaches deep sleep | EL2 + `el1tmr` + the 7.3 PDC/LPASS/geni fixes + the boot votes released at boot (`book4-el2-sleep.service`): [docs/power.md](docs/power.md), set up by [install/el2/sleep-setup.sh](install/el2/sleep-setup.sh). Plugging in or unplugging the charger during sleep is fine since 4 October with [our patch 0002](drivers/anatase/patches) |
 | `deep` suspend | never resumes | do not use |
-| Linux at EL2 (KVM, no Qualcomm hypervisor) | **works, experimental** | booted from a USB stick with [slbounce](https://github.com/TravMurav/slbounce) before the normal GRUB, EL2 DTB entry; no internal audio (Bluetooth audio works), RTC or UEFI variables at EL2: [docs/el2.md](docs/el2.md) |
+| Linux at EL2 (KVM, no Qualcomm hypervisor) | **works, the default boot** | from the internal ESP, no stick: UEFI Shell + [qebspil](https://github.com/stephan-gh/qebspil) (starts the ADSP/CDSP; Linux attaches) + [slbounce](https://github.com/TravMurav/slbounce) before GRUB; audio, battery, USB-C work. **Missing at EL2: EFI variables**, hence no RTC offset (clock from NTP) and no hibernation: [docs/el2.md](docs/el2.md) |
+| Hibernation | set up, **resume resets the machine** (EL1); not available at EL2 | swap file + `HibernateLocation`; not in use: [docs/TODO.md](docs/TODO.md) |
 | External monitor (USB-C DisplayPort, HDMI) | not tested yet | DT and `samsung-emuec` support DP alt-mode; HDMI goes through an `rtd2171` bridge (`simple_bridge`) |
 | Touchscreen | works (KDE Plasma, Anatase kernel) | Goodix `27C6:0123` via `i2c_hid_of`: a direct-touch multitouch device (`INPUT_PROP_DIRECT`, MT slots), which KWin uses as touch. Our earlier "no touch input" came from reading the `mouse0` handler and the two "UNKNOWN" interfaces; GNOME and the Fedora kernel not re-checked |
 | Webcam | **works, experimental** (Anatase kernel + camera DTB) | OV02C10 on CCI0, CAMSS, libcamera software ISP: first frames 2 October, 1920x1092 at ~40 fps. Works in Chrome via PipeWire (one flag). Privacy LED (TLMM 110) lights while streaming. Default on the reference machine via `/etc/book4/default-dtb`: [docs/camera.md](docs/camera.md) |
 | Fingerprint reader | **works, experimental** (Fedora; sudo confirmed, lock screen waits for it) | EgisTec `1c7a:05a1` in the power button, on `usb_2` ([dts/patches/0004](dts/patches)); needs libfprint with SDCP (unmerged MR !547, built by [install/fingerprint-libfprint.sh](install/fingerprint-libfprint.sh)), then [install/fingerprint.sh](install/fingerprint.sh). Rest the finger, do not click: [docs/TODO.md](docs/TODO.md) |
-| EFI variables / NVRAM boot entries | works (Anatase kernel) | QSEECOM allowlist; 197 variables, `efibootmgr` reads the boot order; not working on the Fedora kernel |
-| RTC | works (Anatase kernel), but loses time if the battery runs flat | kept in UTC (offset in the `RTCInfo` EFI variable); sets the system clock 1.9 s into boot, before the network; Windows needs `RealTimeIsUniversal=1`, see [docs/kernel.md](docs/kernel.md) |
-
-**Open points** (to test, not working, to report): [docs/TODO.md](docs/TODO.md).
+| EFI variables / NVRAM boot entries | works at EL1 (Anatase kernel); **not at EL2** | QSEECOM allowlist; 197 variables, `efibootmgr` reads the boot order; not working on the Fedora kernel |
+| RTC | works at EL1 (Anatase kernel), but loses time if the battery runs flat; at EL2 the clock comes from NTP | kept in UTC (offset in the `RTCInfo` EFI variable); sets the system clock 1.9 s into boot, before the network; Windows needs `RealTimeIsUniversal=1`, see [docs/kernel.md](docs/kernel.md) |
 
 **Who else is working on this machine**, what they already have and what is
 genuinely ours: [docs/related-work.md](docs/related-work.md).
-**Carrying this to Arch / Omarchy Dragon** (no Samsung there as far as we know):
-[docs/omarchy.md](docs/omarchy.md).
-**Arch Linux ARM** next to Fedora on the same disk (toward Omarchy), in progress:
-[docs/arch.md](docs/arch.md).
-**The Anatase kernel**: why it is worth running, how it is built and installed,
-and what it fixed here: [docs/kernel.md](docs/kernel.md).
-
-## Updating the system
-
-**Read [docs/updates.md](docs/updates.md) before `dnf update`.** A GRUB package
-update overwrites the boot configuration this machine needs; `install/guard-grub.sh`
-makes that safe.
-
-What has actually been done so far (1 October 2026):
-
-- **GRUB only:** `grub2*` upgraded from 2.12-76 to 2.12-81 with the guard in
-  place. The guard restored `grub.cfg` (`cutmem` and `devicetree` present) and
-  the machine booted normally afterwards.
-- **Full update, kernel and firmware held back:**
-  `sudo dnf update --exclude='kernel*' --exclude='*firmware*'` on 1 October,
-  1265 package changes (systemd 262, Mesa 26.2.3, PipeWire 1.6.9, ...), running
-  the Anatase kernel. `grub.cfg` kept `cutmem`; our Wi-Fi firmware, audio
-  topology alias and UCM profile were untouched, and the machine rebooted and
-  worked normally afterwards. Kernel and firmware packages (45) remain pending
-  by choice.
+**Arch / Omarchy** on this machine: [docs/arch.md](docs/arch.md),
+[docs/omarchy.md](docs/omarchy.md). **EL2**: [docs/el2.md](docs/el2.md).
+**The kernel**: [docs/kernel.md](docs/kernel.md); what we send or could send
+upstream: [docs/upstream.md](docs/upstream.md).
 
 ## Layout
 
-    docs/         how it works, how we got here, and who else is working on it
-    (firmware)    nothing shipped: docs/firmware.md says what to extract from Windows
-    dts/          the device trees we boot (compiled, with provenance)
+    docs/            how it works, how we got here, who else is working on it;
+                     install.md (from scratch) and updates.md (staying current)
+    dts/             the device trees we boot, and the EL2 overlay (dts/src)
     drivers/
-      anatase/    Anatase's battery + Type-C drivers, pristine, plus our patches (DKMS)
-      book4-ec/   our own EC battery driver - superseded, kept as a record
-      book4-kbd-backlight/  keyboard backlight driver - experimental, disabled
-    userspace/    boot hook, udev/modprobe/dracut snippets, Bluetooth, audio
-    tools/        EC test tool, disassembly annotator, Windows registry helper
-    install/      install-fedora.sh, install-anatase-kernel.sh, guard-grub.sh, helpers;
-                  arch/ for Arch Linux ARM in a second btrfs subvolume
-    LICENSES/     full licence texts (see LICENSE)
-
-## Installing (Fedora)
-
-This is how the reference machine is set up. Every step was tested on it; the
-scripts as a whole have not been run on a fresh install, so read them first.
-
-0. **A system that boots** this machine: [docs/bootstrap.md](docs/bootstrap.md),
-   and the DSP firmware copied from Windows: [docs/firmware.md](docs/firmware.md).
-1. **Base layer and fallback kernel**:
-
-       bash install/install-fedora.sh [BLUETOOTH_ADDRESS]
-
-   Installs the boot hook, the keyboard/dracut/modprobe snippets, the audio
-   profile, the Bluetooth address service and `mem_sleep_default=s2idle`, plus
-   Anatase's drivers via DKMS and their device tree for the **stock Fedora
-   kernel**. That alone gives a working laptop (battery, USB-C, charging,
-   audio), minus the keyboard backlight, EFI variables and the clock.
-2. **Recommended: the Anatase kernel** (adds the keyboard backlight, EFI
-   variables, the clock, and keeps kernel, drivers and device tree in step).
-   Build it as in [docs/kernel.md](docs/kernel.md) (about 25 minutes on the
-   laptop), then:
-
-       bash install/install-anatase-kernel.sh
-
-   It is added to the GRUB menu next to the Fedora kernel; once tested, make
-   it the default with `echo <version> | sudo tee /etc/book4/default-kernel`
-   and re-run the boot hook.
-3. **Before any `dnf update`**: `bash install/guard-grub.sh` once, and read
-   [docs/updates.md](docs/updates.md).
-
-Smaller helpers: `install/update-boot-hook.sh` and `install/update-audio.sh`
-reinstall those pieces from the repo; `install/install-kbd-backlight.sh` and
-`install/disable-kbd-backlight.sh` belong to our experimental keyboard
-backlight driver, which the Anatase kernel makes unnecessary.
+      anatase/       Anatase's battery + Type-C drivers, pristine, plus our patches (DKMS)
+      book4-ec/      our own EC battery driver: superseded, kept as a record
+      book4-kbd-backlight/  keyboard backlight driver: experimental, disabled
+    userspace/       boot hook, udev/modprobe/dracut snippets, Bluetooth, audio, Omarchy patches
+    install/         Fedora: install-fedora.sh, install-anatase-kernel.sh, guard-grub.sh, ...
+      arch/          Arch Linux ARM and Omarchy in a second btrfs subvolume, boot entries
+      el2/           EL2 boot chain on the ESP, the daily deep-sleep setup
+    tools/
+      kernel/        the sleep kernel: backported patches and build scripts
+      power/         suspend/deep-sleep tools and the out-of-tree sleep modules
+      experiments/   the one-off tests of October 2026 (a record, not maintained)
+      ec/, audio/, display/, backup/   smaller tools
+    (firmware)       nothing shipped: docs/firmware.md says what to extract from Windows
+    LICENSES/        full licence texts (see LICENSE)
 
 ## Credits
 

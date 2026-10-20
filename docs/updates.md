@@ -1,4 +1,62 @@
-# System updates (`dnf update`)
+# Updating the system
+
+Arch is the daily system (since 16 October) and gets updated often; Fedora
+only matters as the build host that owns `/boot` and GRUB, but a GRUB
+package update there is still the one way to break booting. Kernels are
+ours and never come from a package. How the machine was set up:
+[install.md](install.md).
+
+## Arch (daily)
+
+The tested path, about weekly:
+
+1. Charger connected.
+2. `bash tools/backup/snapshot-arch.sh pre-update`: a read-only btrfs
+   snapshot of the `arch` subvolume (includes `/home`); the rollback is in the
+   script's header.
+3. `sudo pacman -Syu`, then `yay -Sua`, then `mise up`. (`omarchy update`
+   should do the same, see [arch.md](arch.md) "Updating"; not yet run here.)
+4. Reboot only if something low-level changed (systemd, Mesa, firmware).
+   `omarchy-update-restart` always offers a kernel reboot (our kernel is not
+   a package): answer no.
+
+**Held packages** (`IgnorePkg` in `/etc/pacman.conf`, set by
+`install/arch/stage3-yay.sh`): `omarchy`, `omarchy-settings`,
+`omarchy-keyring`, `mise-bin`, `google-chrome` (installed by hand: no
+configured repository has them, so `yay` would try to replace them) and
+`mkinitcpio` (held since 13 October; our kernel has no package or preset,
+so its hooks never run anyway). They are updated by hand: Omarchy with a
+newer pin in `stage3-omarchy-build.sh` after reviewing its migrations and the
+`NoExtract` list ([arch.md](arch.md)); the others with `pacman -U` from
+Omarchy's aarch64 repository.
+
+**Never** unmask `linux-modules-cleanup.service` (it deletes the module trees
+of every kernel but the running one; [kernel.md](kernel.md), 19 October), never
+run `omarchy-reinstall-configs`, and never let Omarchy's
+`install/post-install/pacman.sh` run (it writes x86 mirrors).
+
+## Kernels
+
+Two kernels, both ours: `7.2.7-book4` (EL1, Fedora's default, the build base)
+and `7.2.7-book4s`, the sleep kernel booted at EL2 every day. A kernel update
+is a rebuild, done on Arch through Fedora's container:
+
+- The sleep kernel: boot the normal EL1 entry (the build script refuses to
+  replace the running kernel), `bash tools/kernel/build-sleep-kernel.sh`,
+  then `bash install/el2/sleep-setup.sh` (re-creates the EL2 entry from the
+  new DTB and keeps the defaults).
+- Only its out-of-tree modules: `bash tools/kernel/build-sleep-modules.sh`.
+- The base kernel: [kernel.md](kernel.md), then
+  `bash install/arch/sync-kernel.sh` for Arch.
+- Moving to 7.3: planned once Anatase has a 7.3 tree; most of
+  `tools/kernel/sleep-backport/` is already in 7.3.
+
+**DSP firmware:** qebspil loads its own copy from the ESP
+(`\firmware\qcom\x1e80100\SAMSUNG\galaxy-book4-edge\`). After changing the
+firmware in `/usr/lib/firmware/updates/`, run `bash install/el2/esp-install.sh`
+again (EL1) so the two stay the same.
+
+## Fedora (`dnf update`)
 
 Checked on 1 October 2026 against 963 pending Fedora 45 updates.
 
@@ -20,7 +78,7 @@ Excluding the Fedora kernel costs little while the Anatase kernel is the
 default: it is only the fallback. To keep it excluded permanently, add
 `excludepkgs=kernel*` to `[main]` in `/etc/dnf/dnf.conf`.
 
-## The one real danger: GRUB updates
+### The one real danger: GRUB updates
 
 `/boot/efi/EFI/fedora/grub.cfg` is our static configuration (`cutmem`,
 `devicetree`, explicit kernel paths). The `grub2-efi-aa64` package marks it as a
@@ -47,7 +105,7 @@ If it is 0: `sudo /etc/kernel/install.d/99-book4-devicetree.install add $(uname 
 default boot file). No shim update was pending when this was written; check
 before updating (`dnf check-update shim-aa64`).
 
-## Safe by design
+### Safe by design
 
 - **Kernel updates.** The boot hook adds the new kernel as a "(other)" entry and
   keeps the pinned kernel (`/etc/book4/default-kernel`) as the default. DKMS
@@ -64,7 +122,7 @@ before updating (`dnf check-update shim-aa64`).
   snippets.** All are files no package owns, or live in `updates/` directories
   that take precedence.
 
-## Procedure
+### Procedure
 
 1. Charger connected.
 2. `bash install/guard-grub.sh` once (installs the guard and tests it on a

@@ -1,10 +1,15 @@
 # Linux at EL2 (no Qualcomm hypervisor)
 
-**Status (15 October 2026): works, experimental.** Arch boots at EL2 with
-KVM, from a USB stick that loads [slbounce](https://github.com/TravMurav/slbounce)
-before the normal GRUB. No internal audio (the DSPs cannot start; Bluetooth
-audio works), no RTC and no UEFI variables. Nothing on the internal disk's ESP or in the firmware's
-boot entries changes; without the stick the machine boots as before.
+**Status (20 October 2026): the daily boot.** The firmware entry "Book4 EL2
+(slbounce)" starts a UEFI Shell from the internal ESP, which loads qebspil
+(starts the ADSP and CDSP) and slbounce, then GRUB boots the sleep kernel
+`7.2.7-book4s` at EL2 (entry "el2-sleep"): KVM, audio, battery, USB-C, and
+full s2idle deep sleep ([power.md](power.md)). Missing at EL2: EFI variables
+(qseecom fails), so no RTC offset (the clock comes from NTP) and no
+hibernation. Set up by `install/el2/build-efi.sh`, `install/el2/esp-install.sh`
+and `install/el2/sleep-setup.sh` ([install.md](install.md) step 12 on). The
+sections below are the history, oldest first: the USB stick (15 October),
+then the internal ESP with the DSPs (19 October).
 
 ## Why
 

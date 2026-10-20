@@ -1432,7 +1432,7 @@ shut down.
 
 ### 0004 on Fedora (4 October): event quiescing only, driver bound
 
-[patches-experimental/0004](../drivers/anatase/patches-experimental/0004-samsung-emuec-quiesce-events-across-sleep.patch)
+[patches-experimental/0004](../drivers/anatase/patches/0002-samsung-emuec-quiesce-events-across-sleep.patch)
 (PM notifier: interrupt masked and sync/HPD work stopped from
 `PM_SUSPEND_PREPARE` to `PM_POST_SUSPEND`, no detach, one resync after),
 Fedora `7.2.7-book4`, original `samsung-galaxybook-ec`, charging port

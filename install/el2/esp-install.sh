@@ -19,12 +19,16 @@
 #        (the GRUB half of "EL2 by default" is install/el2/sleep-setup.sh)
 #
 # Inputs (built or staged on this machine, see docs/el2.md):
-#   ~/src/el2-usb/stage/EFI/BOOT/BOOTAA64.EFI  UEFI Shell (pbatard UEFI-Shell 26H1)
+#   UEFI Shell (pbatard UEFI-Shell 26H1, pinned like make-usb.sh): downloaded
+#     to ~/src/ext/uefi-shell/shellaa64.efi and hash-checked if not there
+#     (older setups: ~/src/el2-usb/stage/EFI/BOOT/BOOTAA64.EFI)
 #   ~/src/ext/qebspil/out/qebspilaa64.efi        qebspil + the AOSS load_state patch
 #   ~/src/ext/slbounce/out/slbounce.efi          slbounce (+ \EFI\book4-el2\ tcblaunch fallback)
 #     both built by install/el2/build-efi.sh (older setups: ~/src/slbounce);
 #     QEBSPIL=/path/qebspilaa64.efi SLBOUNCE=/path/slbounce.efi override them
-#   ~/src/el2-usb/stage/tcb9616.exe              Windows' tcblaunch.exe 10.0.26100.9616 (never commit)
+#   tcblaunch.exe: TCBLAUNCH=/path, else ~/src/el2-usb/stage/tcb9616.exe, else
+#     Windows' own (install/arch/mount-ro.sh first); Microsoft's, never commit.
+#     10.0.26100.9616 and .4351 both reach EL2 here.
 #   /usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge/
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
@@ -33,10 +37,22 @@ DIR=EFI/book4-el2
 FWDIR=firmware/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
 LABEL="Book4 EL2 (slbounce)"
 shell=$HOME/src/el2-usb/stage/EFI/BOOT/BOOTAA64.EFI
+shell_url=https://github.com/pbatard/UEFI-Shell/releases/download/26H1/shellaa64.efi
+shell_sha=1569b6db4e391c3c59194aa3319a3945efb800fb25349eb9d36ff3d258517ea6
+if [ ! -s "$shell" ]; then
+    shell=$HOME/src/ext/uefi-shell/shellaa64.efi
+    if [ ! -s "$shell" ]; then
+        mkdir -p "$(dirname "$shell")"
+        curl -sSfL -o "$shell.part" "$shell_url"
+        echo "$shell_sha  $shell.part" | sha256sum -c --quiet || { rm -f "$shell.part"; echo "error: UEFI Shell hash mismatch" >&2; exit 1; }
+        mv "$shell.part" "$shell"
+    fi
+fi
 qeb=${QEBSPIL:-$HOME/src/ext/qebspil/out/qebspilaa64.efi}
 slb=${SLBOUNCE:-$HOME/src/ext/slbounce/out/slbounce.efi}
 [ -n "${SLBOUNCE:-}" ] || [ -s "$slb" ] || slb=$HOME/src/slbounce/out/slbounce.efi
-tcb=$HOME/src/el2-usb/stage/tcb9616.exe
+tcb=${TCBLAUNCH:-$HOME/src/el2-usb/stage/tcb9616.exe}
+[ -n "${TCBLAUNCH:-}" ] || [ -s "$tcb" ] || tcb=/mnt/windows/Windows/System32/tcblaunch.exe
 fw=/usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
 
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
