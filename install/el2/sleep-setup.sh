@@ -2,8 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Daily EL2 deep sleep (docs/power.md, docs/el2.md): what ~/el2-drain-test.sh
 # used to set up by hand, done at every EL2 boot of the sleep kernel by a
-# systemd service, plus GRUB's default.
+# systemd service, plus the boot entry and the defaults. Needs the sleep
+# kernel (tools/kernel/build-sleep-kernel.sh) and the ESP pieces
+# (install/el2/esp-install.sh) first.
 #
+#   0. GRUB entry "el2-sleep" (install/el2/el2-dtb.sh): the sleep kernel's DTB
+#      /dtb-test/book4-sleep.dtb with the EL2 overlay (qcom,broken-reset on
+#      the DSPs, so qebspil starts them), without clk/pd_ignore_unused.
+#      Re-created every run, so a rebuilt kernel or overlay is picked up.
 #   1. book4-el2-sleep.service (only on kernel command lines with
 #      id_aa64mmfr0.ecv=1, i.e. the EL2 entries, and only for a kernel that
 #      has el1tmr): loads el1tmr (next timer deadline into CNTP_CVAL_EL02 for
@@ -33,6 +39,7 @@ blk=/etc/modprobe.d/book4-no-pwrlmts.conf
 entry=el2-sleep
 
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
+if findmnt -rn -S /dev/sda4 >/dev/null; then echo "error: /dev/sda4 (/boot) is mounted; unmount it first" >&2; exit 1; fi
 sudo -v
 
 el2=; journalctl -k -b -o cat | grep -c 'All CPU(s) started at EL2' >/dev/null && el2=1
@@ -47,6 +54,16 @@ if [ "${1:-}" = undo ]; then
     echo "Removed the service and the GRUB default ($blk kept: the module crashes the ADSP)."
     exit 0
 fi
+
+echo "== 0. GRUB entry '$entry'"
+bash "$repo/install/arch/test-entry.sh" remove "$entry" >/dev/null 2>&1 || true
+# our own generated file (el2-dtb.sh will not overwrite a different one)
+b=$(mktemp -d); sudo mount /dev/sda4 "$b"; sudo rm -f "$b/dtb-test/book4-sleep-el2.dtb"
+[ -e "$b/vmlinuz-7.2.7-book4s" ] && [ -e "$b/dtb-test/book4-sleep.dtb" ] ||
+    { sudo umount "$b"; rmdir "$b"; echo "error: no sleep kernel on /boot; run tools/kernel/build-sleep-kernel.sh" >&2; exit 1; }
+sync; sudo umount "$b"; rmdir "$b"
+bash "$here/el2-dtb.sh" /dtb-test/book4-sleep.dtb "$entry" -clk_ignore_unused -pd_ignore_unused \
+    kernel=/vmlinuz-7.2.7-book4s initrd=/initramfs-7.2.7-book4s-arch.img
 
 echo "== 1. $unit"
 sudo mkdir -p "$(dirname "$helper")"

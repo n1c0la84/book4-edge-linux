@@ -17,6 +17,12 @@ copyright and licence headers are kept intact in every copied file.
 | Wi-Fi firmware c5-00302 | not shipped; documented in `docs/firmware.md` | Debian `firmware-atheros` 20251111-1 | Qualcomm | linux-firmware terms | no |
 | Wi-Fi `board.bin` | not shipped; documented | upstream `board-2.bin`, entry for subsystem 1107 / board-id 82 | Qualcomm | linux-firmware terms | extracted only |
 | DSP / GPU firmware | not shipped; documented | Samsung/Qualcomm Windows drivers | Samsung / Qualcomm | proprietary | n/a |
+| Sleep kernel patches 0001-0009, 0011-0014, 0019-0025 | `tools/kernel/sleep-backport/` | upstream Linux 7.3 / linux-next and jglathe's 7.2 tree (each patch keeps its `From:` and upstream commit) | Maulik Shah, Mukesh Ojha, Thomas Gleixner, Ajay Kumar Nandam, Praveen Talari (Qualcomm/Linux); Stephan Gerhold (remoteproc attach) | GPL-2.0-only | backported to 7.2.7; 0010 and 0015-0018 are ours |
+| `el1tmr.c`, `aoss_cxsd_only.c` | `tools/power/sleep-modules/` | [justririll/x1e-sleep](https://github.com/justririll/x1e-sleep) commit 4e84b60 | justririll | GPL-2.0 / GPL-2.0-only (file headers) | no |
+| `qcom_adsp_pwr_lmts.c`, `book4_dsp_sleepstate.c` | `tools/power/sleep-modules/` | based on x1e-sleep's `adsp-pwr-lmts` and `adsp-sleepstate` | justririll; changes ours | GPL-2.0 / GPL-2.0-only | yes (PM notifier timing; both DSPs; neither is used: see `docs/power.md`) |
+| `qebspil-aoss-load-state.patch` | `install/el2/` | x1e-sleep commit 4e84b60, `qebspil/0001-pil-send-AOSS-load_state-off-on-before-starting-ADSP.patch`, for [stephan-gh/qebspil](https://github.com/stephan-gh/qebspil) 8e4d9e6 | justririll | GPL-2.0-only (as qebspil) | no |
+| qebspil, slbounce | not shipped; built from pinned commits by `install/el2/build-efi.sh` | [stephan-gh/qebspil](https://github.com/stephan-gh/qebspil), [TravMurav/slbounce](https://github.com/TravMurav/slbounce) | Stephan Gerhold; Nikita Travkin | GPL-2.0-only / BSD-3-Clause (see each) | our slbounce change is `install/el2/slbounce-tcblaunch-fallback.patch` |
+| EL2 device tree overlay | `dts/src/x1-el2-book4.dtso` | upstream `arch/arm64/boot/dts/qcom/x1-el2.dtso` | Qualcomm/Linaro DTS authors | as the Linux DTS sources | yes (no ADSP/CDSP iommus; DSPs `qcom,broken-reset`, sleepstate entries) |
 
 ## Ideas and findings from others we relied on
 
@@ -30,6 +36,15 @@ copyright and licence headers are kept intact in every copied file.
   this hardware.
 - The Debian firmware packagers, whose `firmware-atheros` archive preserved the
   working ath12k firmware.
+- **justririll/x1e-sleep** (ASUS Vivobook S15): the first full DRIPS on X1E,
+  and the recipe our EL2 deep sleep is ported from (`el1tmr`, the LPASS and
+  geni fixes, the panel supplies, qebspil's AOSS message).
+- **Stephan Gerhold** (qebspil, remoteproc attach) and **Nikita Travkin**
+  (slbounce): the EL2 boot chain with the DSPs running.
+- **Qualcomm's upstream work** (Maulik Shah's PDC series, Ajay Kumar
+  Nandam's LPASS macro runtime PM): most of the sleep kernel's patches.
+- The **linux_ms_dev_kit #94** thread (jglathe, Stewings, aruhier, Val Packett
+  on linux-arm-msm) for comparisons across X1E/X1P machines.
 
 ## Our own work
 

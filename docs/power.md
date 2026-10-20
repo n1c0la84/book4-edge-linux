@@ -168,7 +168,7 @@ and hope the OS will drop the vote later"; the protocol is gone once the DSP
 starts at ExitBootServices), and Linux only attaches ("Handover signaled,
 but it already happened"), so the proxy vote may stay in force. Test:
 qebspil built with `QEBSPIL_NO_PROXY_VOTE=1`
-(`install/el2/qebspil-no-proxy-vote.patch`, which also carries the AOSS
+(`tools/experiments/qebspil-no-proxy-vote.patch`, which also carries the AOSS
 `load_state` hunks of `pil.c`), swapped in with `tools/experiments/qebspil-swap.sh noproxy`.
 **Result (19 October, 21:57): without the proxy vote the ADSP does not
 boot** (`qcom_q6v5_pas: reset broken and remoteproc not running during

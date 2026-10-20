@@ -21,7 +21,9 @@
 # Inputs (built or staged on this machine, see docs/el2.md):
 #   ~/src/el2-usb/stage/EFI/BOOT/BOOTAA64.EFI  UEFI Shell (pbatard UEFI-Shell 26H1)
 #   ~/src/ext/qebspil/out/qebspilaa64.efi        qebspil + the AOSS load_state patch
-#   ~/src/slbounce/out/slbounce.efi              slbounce (+ \EFI\book4-el2\ tcblaunch fallback)
+#   ~/src/ext/slbounce/out/slbounce.efi          slbounce (+ \EFI\book4-el2\ tcblaunch fallback)
+#     both built by install/el2/build-efi.sh (older setups: ~/src/slbounce);
+#     QEBSPIL=/path/qebspilaa64.efi SLBOUNCE=/path/slbounce.efi override them
 #   ~/src/el2-usb/stage/tcb9616.exe              Windows' tcblaunch.exe 10.0.26100.9616 (never commit)
 #   /usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge/
 set -euo pipefail
@@ -31,8 +33,9 @@ DIR=EFI/book4-el2
 FWDIR=firmware/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
 LABEL="Book4 EL2 (slbounce)"
 shell=$HOME/src/el2-usb/stage/EFI/BOOT/BOOTAA64.EFI
-qeb=$HOME/src/ext/qebspil/out/qebspilaa64.efi
-slb=$HOME/src/slbounce/out/slbounce.efi
+qeb=${QEBSPIL:-$HOME/src/ext/qebspil/out/qebspilaa64.efi}
+slb=${SLBOUNCE:-$HOME/src/ext/slbounce/out/slbounce.efi}
+[ -n "${SLBOUNCE:-}" ] || [ -s "$slb" ] || slb=$HOME/src/slbounce/out/slbounce.efi
 tcb=$HOME/src/el2-usb/stage/tcb9616.exe
 fw=/usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
 
