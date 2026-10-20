@@ -33,8 +33,13 @@ systemctl suspend              # returns before the suspend starts: wait for the
 while [ "$(cat /sys/power/suspend_stats/success)" = "$ok0" ] && [ "$(cat /sys/power/suspend_stats/fail)" = "$fail0" ]; do sleep 1; done
 [ "$(cat /sys/power/suspend_stats/fail)" = "$fail0" ] || echo "warning: the suspend FAILED (see dmesg)"
 sleep 3                        # let resume finish
-echo "resumed; waiting 30 s for the EC's battery reading to catch up ..."
-sleep 30
+# The EC refreshes charge_now late after resume (over a minute on 20 October,
+# then a jump of 70 mAh) and in steps of about 1 % (35 mAh): wait for the
+# value to change (at most 3 min), and count on long sleeps for precision.
+echo "resumed; waiting for the EC's battery reading to change (up to 3 min) ..."
+i=0
+while [ "$(cat $bat/charge_now)" = "$c0" ] && [ $i -lt 180 ]; do sleep 5; i=$((i + 5)); done
+[ "$(cat $bat/charge_now)" != "$c0" ] || echo "warning: charge_now never changed: the figure below is not a measurement"
 sudo -v
 c1=$(cat $bat/charge_now); t1=$(date +%s); s1=$(counters)
 v=$(cat $bat/voltage_now)

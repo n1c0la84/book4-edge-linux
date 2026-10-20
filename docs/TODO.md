@@ -14,10 +14,10 @@ within each section. What is already done is listed at the end.
       Dybcio, QCS6490 thread, January 2026). The next sleep kernel build sets
       `CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE` (falls back to generic if TZ says
       no); test: `qcom_qseecom` probes and `/sys/firmware/efi/efivars` fills.
-- [ ] **A long drain with the DSPs running** (over an hour on battery,
-      `tools/power/el2-drain-test.sh`): the wattage in CXSD-only sleep, and
-      that it survives the hour. The hourly AOSD reset **does** happen here
-      (19-20 October night); `aoss_cxsd_only` is now loaded at every EL2 boot.
+- [x] **An hour with the DSPs running, AOSD off** (20 October): 99.9 %
+      `cxsd`/`ddr` over 66 min, no reset across the hour after boot.
+- [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
+      in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset
       at N hours + ~1 min after boot. Not ours to solve alone; follow
       x1e-sleep and #94.

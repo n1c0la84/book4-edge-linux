@@ -22,6 +22,16 @@ shut; the RTC came back at 2024-05-29 until NTP. Workaround, as x1e-sleep's
 default: `aoss_cxsd_only` (AOSS told not to enter AOSD; CX collapse and DDR
 self-refresh stay allowed; x1e-sleep: ~0.17 W over a 16.9 h night), now
 loaded by `book4-el2-sleep.service` (`install/el2/sleep-setup.sh`).
+**Daily setup, 66 min on battery (20 October, 09:29-10:35, boot at 08:47):**
+both DSPs attached, LPASS votes 0, AOSD off: `cxsd`/`ddr` **99.9 %**
+(3943.9 of ~3946 s), `aosd` 0 by design, no ADSP crash, and **no reset**
+across the boot's one-hour mark (09:48). Wattage: the EC kept the old
+`charge_now` for over a minute after resume (the test read 0 mAh), then
+dropped 3045 -> 2975 mAh (87 -> 85 %): about 63 mAh asleep, **roughly 1 W**,
+but the EC moves `charge_now` in steps of about 1 % (35 mAh), so 0.5-1.5 W.
+The 1.55 W of 19 October (70 mAh in 41 min) has the same uncertainty.
+`tools/power/sleep-drain.sh` now waits for `charge_now` to change; precise
+figures need long sleeps (overnight: ~4 %).
 
 **Others have reached full DRIPS on X1E (found 19 October, late).**
 github.com/justririll/x1e-sleep (ASUS Vivobook S15, X1E80100, jglathe 7.2 at
