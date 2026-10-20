@@ -32,6 +32,16 @@ but the EC moves `charge_now` in steps of about 1 % (35 mAh), so 0.5-1.5 W.
 The 1.55 W of 19 October (70 mAh in 41 min) has the same uncertainty.
 `tools/power/sleep-drain.sh` now waits for `charge_now` to change; precise
 figures need long sleeps (overnight: ~4 %).
+**Speakers lost after that sleep (20 October):** one WSA8845 amp
+(`sdw:4:0:0217:0202:00:1`) `UNATTACHED` after resume, SoundWire parity errors
+from the amps at suspend/resume, the speaker pipeline stuck in `[init]`;
+sound back only after a reboot. The known race (x1e-sleep): SoundWire gates
+its clock while the interrupt thread still touches the controller, and the
+next clock-stop exit clashes. Probably more frequent now that the VA/WSA
+macros runtime-suspend after 100 ms (0024/0025), which means many more
+clock-stop cycles (a guess). Fix: patch 0026, Oleg Keri's
+`synchronize_irq()` before gating the clock (posted 7 October, not merged;
+x1e-sleep carries it); in the next sleep kernel build.
 
 **Others have reached full DRIPS on X1E (found 19 October, late).**
 github.com/justririll/x1e-sleep (ASUS Vivobook S15, X1E80100, jglathe 7.2 at

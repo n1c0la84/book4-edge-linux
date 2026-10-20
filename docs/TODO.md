@@ -16,6 +16,10 @@ within each section. What is already done is listed at the end.
       no); test: `qcom_qseecom` probes and `/sys/firmware/efi/efivars` fills.
 - [x] **An hour with the DSPs running, AOSD off** (20 October): 99.9 %
       `cxsd`/`ddr` over 66 min, no reset across the hour after boot.
+- [ ] **Rebuild the sleep kernel** (EL1 boot, `tools/kernel/build-sleep-kernel.sh`,
+      then `install/el2/sleep-setup.sh`): brings 0024-0026 into the kernel
+      proper (speakers lost after sleep without 0026, 20 October) and the
+      SHM-bridge test for EFI variables; then retire `~/va-macro-prep.sh`.
 - [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
       in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset

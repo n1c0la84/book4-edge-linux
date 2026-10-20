@@ -1,0 +1,39 @@
+From 196043f4b7474c8dd4927be675cb8ce1fa6f5663 Mon Sep 17 00:00:00 2001
+From: Oleg Keri <okerixx@gmail.com>
+Date: Wed, 7 Oct 2026 21:33:32 +0200
+Subject: [PATCH] soundwire: qcom: wait for the interrupt thread before gating
+ the clock
+
+A broadcast write returns as soon as the interrupt thread signals
+SPECIAL_CMD_ID_FINISHED, while the thread still has to clear and re-read
+the interrupt status. swrm_runtime_suspend() gates hclk right after the
+ClockStopNow broadcast, so those accesses race against the clock being
+removed; on x1e80100 and glymur hclk is the SoundWire clock itself. The
+next clock-stop exit then fails at random: bus clash, parity errors
+reported by the peripherals or AUTO_ENUM_FAILED, each leaving one side of
+the speakers detached until reboot.
+
+Wait for the interrupt thread to finish before gating the clock.
+
+Fixes: 74e79da9fd46 ("soundwire: qcom: add runtime pm support")
+Signed-off-by: Oleg Keri <okerixx@gmail.com>
+Link: https://lore.kernel.org/all/20261007193332.5270-1-okerixx@gmail.com/
+---
+ drivers/soundwire/qcom.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/soundwire/qcom.c b/drivers/soundwire/qcom.c
+index b288218f6..db1cb6f9b 100644
+--- a/drivers/soundwire/qcom.c
++++ b/drivers/soundwire/qcom.c
+@@ -1795,6 +1795,7 @@ static int __maybe_unused swrm_runtime_suspend(struct device *dev)
+ 		}
+ 	}
+ 
++	synchronize_irq(ctrl->irq);
+ 	clk_disable_unprepare(ctrl->hclk);
+ 
+ 	usleep_range(300, 305);
+-- 
+2.56.0
+

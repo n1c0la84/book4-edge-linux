@@ -16,7 +16,7 @@ power notes, what works and what does not) lives in
 | branch | base | content |
 |---|---|---|
 | `book4/7.2` (default) | Anatase `anatase-7.2`, `2ad788424` | 7.2.7 + the patches below: the everyday kernel (`7.2.7-book4`) |
-| `book4/7.2-sleep` | `book4/7.2` | + 25 patches for deep sleep: the 7.3 PDC series and DRIPS idle state, the 7.3 LPASS macro runtime-PM and geni fixes, Stephan Gerhold's remoteproc attach (DSPs started by qebspil at EL2), panel supplies not always-on. The daily kernel `7.2.7-book4s`, booted at EL2 |
+| `book4/7.2-sleep` | `book4/7.2` | + 26 patches for deep sleep: the 7.3 PDC series and DRIPS idle state, the 7.3 LPASS macro runtime-PM and geni fixes, Stephan Gerhold's remoteproc attach (DSPs started by qebspil at EL2), panel supplies not always-on, a SoundWire clock-stop race fix (posted, not merged). The daily kernel `7.2.7-book4s`, booted at EL2 |
 | `book4/7.2-pdc` | `book4/7.2` | the PDC backport alone, a test (superseded by `book4/7.2-sleep`) |
 | `book4/7.2-sleep-own-macros` | `book4/7.2-sleep` | a record: our first VA/WSA macro fixes, replaced by upstream's commits |
 
