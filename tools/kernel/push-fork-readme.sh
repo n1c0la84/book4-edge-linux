@@ -17,6 +17,9 @@ git remote get-url book4 >/dev/null || { echo "No remote 'book4' (run install/ke
 start=$(git branch --show-current)
 trap 'git switch -q "$start"' EXIT
 git switch -q "$BRANCH"
+# The README may have been committed on GitHub's side meanwhile (20 October,
+# from another clone): catch up first, fast-forward only.
+git -c credential.helper= -c credential.helper="!gh auth git-credential" pull -q --ff-only book4 "$BRANCH"
 mkdir -p .github
 cp "$REPO/tools/kernel/fork-README.md" .github/README.md
 git add -f .github/README.md
