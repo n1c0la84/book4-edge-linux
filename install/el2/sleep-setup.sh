@@ -19,8 +19,9 @@
 #      allowed, x1e-sleep measured ~0.17 W over 16.9 h that way; to allow
 #      AOSD, Environment=BOOK4_AOSD=1 in a drop-in for the service), holds
 #      the UFS interconnect paths with icc_hold (UFS fails to resume once the
-#      boot floors drop otherwise), waits for the sound card, then forces sync_state on every provider (videocc/QCE have
-#      no driver here, so it never runs by itself and the boot votes stay).
+#      boot floors drop otherwise), waits for the sound card, then forces
+#      sync_state on every provider (videocc/QCE have no driver here, so it
+#      never runs by itself and the boot votes stay).
 #   2. qcom_adsp_pwr_lmts blacklisted: its Modern Standby message crashes the
 #      Book4's ADSP (Samsung's INF disables it on Windows too).
 #   3. EL2 as the default boot, both halves together, because the GRUB
@@ -76,8 +77,6 @@ sudo tee "$helper" >/dev/null <<'EOF'
 # Book4 (install/el2/sleep-setup.sh): prepare s2idle deep sleep at EL2.
 set -eu
 modprobe el1tmr
-# No AOSD: the SoC hard-resets in it about hourly (sleep-setup.sh header).
-[ "${BOOK4_AOSD:-0}" = 1 ] || modprobe aoss_cxsd_only
 modprobe icc_hold nodes=/soc@0/ufshc@1d84000 tag=3
 # Without a verified hold, releasing the boot votes breaks UFS on resume.
 dmesg | grep -q 'icc_hold: holding [1-9][0-9]* paths (tag 3)' ||
@@ -86,6 +85,14 @@ dmesg | grep -q 'icc_hold: holding [1-9][0-9]* paths (tag 3)' ||
 i=0
 while [ $i -lt 90 ] && [ ! -e /proc/asound/card0 ]; do sleep 1; i=$((i + 1)); done
 [ -e /proc/asound/card0 ] || echo "no sound card after 90 s; releasing the boot votes anyway" >&2
+# No AOSD: the SoC hard-resets in it about hourly (sleep-setup.sh header).
+# It needs the AOSS QMP driver, which can still be probing (-EPROBE_DEFER,
+# 20 Oct): retry, and never let it stop the rest.
+if [ "${BOOK4_AOSD:-0}" != 1 ]; then
+    i=0
+    until modprobe aoss_cxsd_only 2>/dev/null || [ $i -ge 30 ]; do sleep 1; i=$((i + 1)); done
+    [ -d /sys/module/aoss_cxsd_only ] || echo "aoss_cxsd_only did not load: AOSD stays allowed (hourly resets)" >&2
+fi
 n=0
 for p in $(find /sys/devices -name state_synced); do
     [ "$(cat "$p")" = 1 ] || { printf 1 > "$p"; n=$((n + 1)); }
