@@ -26,6 +26,114 @@ within each section. What is already done is listed at the end.
 - [ ] The rest of the board's ~1.5 W in deep sleep (always-on 3.3 V rails,
       Wi-Fi): [power.md](power.md).
 
+## Test of 10 October (DT 0005/0006, emuec orientation 0005)
+
+- [x] DT 0005/0006 (Fedora, "alt DT woofer-names.dtb"): new DT running,
+      repeater 0x43 gone, speakers from the right sides, fingerprint `1c7a`
+      present. Made the default (`book4-default-1010.dtb`, previous default
+      as the alt entry); UCM woofer order flipped; on the kernel branch
+      `book4/7.2` (f53908232). (The test's step 1 printed no names: it asked
+      `amixer -c0`, where UCM's remap hides them; `-D hw:0` shows them.)
+- [x] emuec orientation: now `drivers/anatase/patches/0004` (rebased onto the
+      tree's driver; on `book4/7.2` as 6221fc739). Retest after installing it:
+      charger `reverse` / rotated `normal`, hub `normal` / rotated `reverse`;
+      the SBU mux select (GPIO 167) follows, enable (168, active low) on.
+- [ ] External monitor through the USB-C hub: still no picture **in both
+      orientations**, so orientation was not the blocker. DP alt mode is
+      entered and configured (pin D, all VDMs ACKed), HPD reaches msm_dp
+      (`bridge_hpd status=1`), then every DPCD read times out
+      (`dpu_dp_aux: 0x00102 AUX -> (ret=-110)`). Suspects: which DP
+      controller / AUX the port is really wired to, the SBU mux polarity, the
+      PHY. Captures: `~/usbc-dp-20261010-1822*.log`, `...-1823*.log`.
+
+To test (should work, never verified)
+
+- [x] **CPU frequency scaling on Fedora** (5 Oct): `scmi-cpufreq` via
+      `/etc/modules-load.d/book4-cpufreq.conf`, 710-3417 MHz, sha256 x2.9
+      ([power.md](power.md)).
+- [x] **Power profiles do nothing**: `power-profiles-daemon` has only its
+      placeholder backend. The Samsung EC profiles were measured by hand
+      (5 Oct, [power.md](power.md)): no difference in a 60 s all-core load.
+      Left as is.
+- [ ] **Headset microphone** on the jack. Headphone playback works with
+      automatic switching (5 Oct, Arch), as do digital USB-C earphones and
+      Bluetooth earbuds (A2DP AAC); see [audio.md](audio.md).
+- [ ] **External monitor**: USB-C DisplayPort (DP alt-mode via `samsung-emuec`)
+      and HDMI (`rtd2171` bridge, `simple_bridge`). **HDMI port works**
+      (8 Oct, Arch): AOC 27" at 2560x1440 @ 60 Hz, hot-plug detected, picture
+      fine (Hyprland gave it scale 2: set a per-monitor scale). Across
+      suspend/resume not yet checked. Also the last open check
+      for the sleep fix (`patches/0002`): a display still works after resume.
+      **6 Oct, Arch: USB-C to HDMI hub (VIA VL817, Billboard) does not work.**
+      `samsung-emuec 1-0033: DisplayPort Alt Mode configured with pin D`, the
+      USB controller restarted and the hub's USB side (card reader) came up,
+      but no HPD, no link training, not one `msm_dp` message; DP-1/DP-2 stayed
+      disconnected and the hub then exposed its Billboard device. The break is
+      between Alt Mode entry and the display driver: DP Status/Attention ->
+      HPD in `samsung-emuec`, the DRM bridge, or the hub. Next: retest with
+      `samsung_emuec` dynamic debug and `drm.debug=0x106`, monitor on and
+      connected to the hub before plugging it in; also the other port and a
+      direct USB-C-to-DP/HDMI cable. Same driver on Fedora.
+      **8 Oct, Arch, traced (`tools/display/usbc-dp-capture.sh`):** the
+      whole Alt Mode sequence is ACKed (SVID, modes, enter, status,
+      configure, attention), HPD = 1 reaches `msm_dp` (DP-1, 2 s after
+      plug-in), then **every AUX read times out (-110)** and after ~8 s
+      `msm_dp` gives up ("failed to read caps"); the hub then shows its
+      Billboard. Orientation was "reverse". AUX runs over SBU through the
+      FSUSB42 mux (`usb-1-ss0-sbu-mux`, enable TLMM 168, select 167): next,
+      flip the plug (orientation polarity) and read the mux GPIOs.
+      Flip test (8 Oct, 11:16 and 11:17, plug rotated in between): sysfs
+      orientation reads **"reverse" both ways** (4 of 4 plug-ins), AUX
+      fails both ways. So samsung-emuec's orientation decoding (CC_STATUS
+      0x11 bits 7:4) is wrong or that field is not orientation; the SBU mux
+      then always selects the same way (ss0: enable 168 low, select 167
+      high). AUX failing in *both* orientations suggests a second fault
+      too. Next (parked, HDMI port covers external displays): raw bytes
+      for both orientations with `sudo python3 tools/display/pdic-cc.py 1
+      watch`, fix the decoding, retest.
+      **Cause found (9 Oct):** CC_STATUS (0x11) bits 7:4 are the attach
+      type / power direction, not the orientation: the charger (laptop
+      sink) reads 1 ("normal") with the plug either way round, the hub
+      (laptop source) 2 ("reverse") either way. So with a hub or monitor
+      the SBU mux and combo PHY are always set for "reverse". Next: find
+      the real orientation bits (`pdic-cc.py 1 watch`, charger flipped),
+      then fix `samsung-emuec` (and report to Anatase). AUX also failed
+      in the matching orientation, so a second fault remains.
+      **8 Oct, Windows: the same hub works on the same port** (picture,
+      card reader). The hub's Billboard reports DP alt mode (SVID 0xFF01)
+      entered with configuration status 0x3 ("configured successfully"), so
+      the hub is fine and the fault is on the Linux side; compare with
+      `lsusb -v` of the Billboard on Linux (`bmConfigured`). The firmware's
+      ACPI logs only role reads (`GDRO`/`GPRO`) during it. Also logged:
+      `SMC arrived with function code 4200010a` with parameters `2 1 2a`,
+      `2 1 9`, `2 2 9`, 3.2 s after plug-in and again 2.4 s after unplug,
+      i.e. at display bring-up and teardown. Reading 0x4200010a as Qualcomm
+      SiP service 1 (boot), command 0x0a, that would be
+      `QCOM_SCM_BOOT_SET_REMOTE_STATE` (2 arguments: state 1/2, id 0x2a and
+      9). Unverified, but worth checking whether Linux's DP path makes (or
+      needs) such a call. Raw captures: `C:\scdt\hub1.etl`,
+      `dbgview-hub1.log` (Samsung driver WPP events there are undecoded).
+- [ ] **The sleep fix in long-term use** (installed 4 Oct, Fedora and Arch):
+      repeated cycles, plug-in and unplug during sleep, over days.
+- [ ] **Fedora kernel update** (7.2.8 and later): only affects the fallback
+      "(other)" entry, kernel packages are held back. When taken: DKMS modules
+      built, display/battery/Wi-Fi/audio fine on that entry. See
+      [updates.md](updates.md).
+- [ ] **GRUB guard on a future GRUB update**, including the `chain.mod` copy
+      for the Windows entry (the guard was tested before that entry existed).
+- [ ] **Wi-Fi after a firmware update** (`linux-firmware`/`atheros-firmware`):
+      a new `board-2.bin` could change which board data ath12k uses.
+- [ ] **`install/install-fedora.sh` end to end** on a fresh install (each step
+      was tested on its own, the script as a whole never).
+- [ ] **Touchscreen** on GNOME and on the Fedora kernel (works under KDE and
+      Hyprland on the Anatase kernel). The two "UNKNOWN" HID interfaces are
+      **Goodix vendor channels, not pen or gestures** (Windows, 8 Oct): the
+      Goodix `27c6:0123` has three collections, COL01 touch screen (0x0D/0x04:
+      tip, contact ID, X 0-28800, Y 0-18000, contact count, max 10 contacts,
+      a 256-byte certification blob), COL02 vendor page 0xFFF0 and COL03
+      0xFFF1 (64-byte in/out reports, firmware/debug). No pen collection.
+      Windows binds only the generic `input.inf` to COL02/03. Nothing to do.
+
 ## Open problems
 
 - [ ] **CPU boost** (`/sys/devices/system/cpu/cpufreq/boost` = 0): try 4 GHz

@@ -30,7 +30,11 @@ All of them run as your user and call `sudo` themselves.
    [firmware.md](firmware.md).
 3. The base layer and the fallback kernel's drivers:
    `bash install/install-fedora.sh [BLUETOOTH_ADDRESS]` (boot hook, keyboard,
-   audio profile, Bluetooth address, Anatase's drivers through DKMS).
+   audio profile, Bluetooth address, Anatase's drivers through DKMS). With
+   the stock Fedora kernel that is already a working laptop (battery, USB-C,
+   charging, audio), minus the keyboard backlight, EFI variables and the
+   clock. `install/update-boot-hook.sh` and `install/update-audio.sh`
+   reinstall those pieces from the repo later.
 4. The GRUB guard before any `dnf update`: `bash install/guard-grub.sh`
    ([updates.md](updates.md)).
 
