@@ -80,6 +80,16 @@ else
 fi
 [ \"\$(make -s LOCALVERSION=$lv kernelrelease)\" = $rel ]
 grep -q '^CONFIG_PM_CLK=y' .config || { echo 'error: CONFIG_PM_CLK is off: the LPASS macros would not build' >&2; exit 1; }
+# TrustZone buffers through SHM bridges (20 October): at EL2 there is no
+# Gunyah to share memory with TrustZone, and qseecom's first call (the
+# uefisecapp lookup) is refused with -22, hence no EFI variables. The
+# allocator falls back to the generic mode if TrustZone has no SHM bridge.
+if ! grep -q '^CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE=y' .config; then
+    ./scripts/config --disable QCOM_TZMEM_MODE_GENERIC --enable QCOM_TZMEM_MODE_SHMBRIDGE
+    make -s LOCALVERSION=$lv olddefconfig
+    echo '   config: QCOM_TZMEM_MODE_SHMBRIDGE' >&2
+fi
+grep -q '^CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE=y' .config || { echo 'error: could not set CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE' >&2; exit 1; }
 make -s -j\$(nproc) LOCALVERSION=$lv Image modules qcom/$dtbname >&2
 out=~/src/sleep-out; rm -rf \$out; mkdir -p \$out
 make -s LOCALVERSION=$lv INSTALL_MOD_PATH=\$out INSTALL_MOD_STRIP=1 DEPMOD=true modules_install >&2
