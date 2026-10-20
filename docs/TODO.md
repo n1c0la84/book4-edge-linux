@@ -19,7 +19,8 @@ within each section. What is already done is listed at the end.
 - [ ] **Rebuild the sleep kernel** (EL1 boot, `tools/kernel/build-sleep-kernel.sh`,
       then `install/el2/sleep-setup.sh`): brings 0024-0026 into the kernel
       proper (speakers lost after sleep without 0026, 20 October) and the
-      SHM-bridge test for EFI variables; then retire `~/va-macro-prep.sh`.
+      SHM-bridge test for EFI variables; then delete `~/audio-modules-prep.sh`
+      (the module-only stopgap for 0024-0026).
 - [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
       in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset
