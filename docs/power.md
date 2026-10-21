@@ -11,8 +11,8 @@ CX) powered through every suspend. Upstream fixed it in 7.3 (`cd054a6e272c`
 wsa, `eb667d0fbdd3` va, "Switch to PM clock framework for runtime PM"; we had
 backported only the rx/tx half of that series); patches 0024/0025 are now
 those two commits (details at the end of the ADSP section).
-Open: a long drain on battery for the wattage, EFI variables at EL2, EL2 as
-the default boot.
+Open: a long drain on battery for the wattage. (EL2 is the default boot since
+20 October; EFI variables and the RTC work at EL2 since 21 October.)
 **The hourly AOSD reset is here too (night of 19-20 October):** the EL2 boot
 of 22:35:41 suspended at 23:21 (lid) and hard-reset in its sleep at about
 23:36, an hour and a minute after boot, exactly x1e-sleep's open issue

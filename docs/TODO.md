@@ -7,21 +7,17 @@ within each section. What is already done is listed at the end.
 
 **Now (20 October):**
 
-- [ ] **EFI variables at EL2** (qseecom fails with -22): the RTC offset and
-      hibernation depend on them. The one real gap of the daily setup.
-      SHM-bridge mode alone (21 October build) did not help: the bridges were
-      created, TrustZone still refused the `uefisecapp` lookup. The Surface
-      Pro 11 at EL2 has the same symptom, fixed by SHM bridges that Linux
-      owns itself (`qcom,shm-bridge-vmid` = self owner;
-      dwhinham/archiso-aarch64-sp11#38): sleep-backport 0027/0028 and the
-      property in our EL2 overlay. Test after the next sleep kernel build
-      (incremental now): `qcom_qseecom` probes, `/sys/firmware/efi/efivars`
-      fills, `rtc0` appears.
-- [ ] **Rebuild the sleep kernel** (EL1 boot, `tools/kernel/build-sleep-kernel.sh`,
-      then `install/el2/sleep-setup.sh`): brings 0024-0026 into the kernel
-      proper (speakers lost after sleep without 0026, 20 October) and the
-      SHM-bridge test for EFI variables; then delete `~/audio-modules-prep.sh`
-      (the module-only stopgap for 0024-0026).
+- [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
+      EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
+      mode alone did not help; SHM bridges owned by Linux itself did (as on the
+      Surface Pro 11, dwhinham/archiso-aarch64-sp11#38): sleep-backport
+      0027/0028 and `qcom,shm-bridge-vmid` in the EL2 overlay. 199 variables,
+      `rtc0` sets the clock at boot.
+- [x] **Rebuild the sleep kernel** (21 October): 0024-0028 are in the kernel
+      proper (Qualcomm's VA/WSA macro commits, the SoundWire IRQ fix, the SHM
+      bridge self-owner); `~/audio-modules-prep.sh` (the module-only stopgap)
+      is obsolete. `build-sleep-kernel.sh` now builds incrementally when
+      patches are added at the end.
 - [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
       in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset
@@ -220,9 +216,9 @@ To test (should work, never verified)
       stable backport request (email to stable@vger.kernel.org) or ask the
       Anatase kernel to cherry-pick it. Our kernel carries our own patch
       meanwhile ([power.md](power.md)).
-- [ ] **Hibernation** (EL1 only: at EL2 there are no EFI variables, so no
-      `HibernateLocation`; with deep sleep at EL2 it is no longer needed for
-      nights on battery). Swap and
+- [ ] **Hibernation** (possible at EL2 too since EFI variables work there,
+      21 October; with deep sleep at EL2 it is no longer needed for nights on
+      battery, and its resume still resets the machine). Swap and
       `HibernateLocation` are set up. The first attempt hung while stopping
       the DSPs after the user session froze; moving that stop before the
       freeze resolved the hang. The second attempt reached hibernation entry

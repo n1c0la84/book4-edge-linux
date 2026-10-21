@@ -96,10 +96,10 @@ On Arch, booted normally (EL1, kernel `7.2.7-book4`):
 16. Reboot. Check with `bash tools/power/el2-drain-test.sh` on battery:
     `aosd`/`cxsd`/`ddr` should be near 99 % ([power.md](power.md)).
 
-**At EL2 you lose:** EFI variables (qseecom fails), and with them the RTC
-offset (the clock comes from NTP after boot) and hibernation. The normal
-entries stay in the GRUB menu, and F10 at power-on still picks the firmware's
-other entries.
+**At EL2** EFI variables, the RTC and `efibootmgr` work since 21 October
+(sleep-backport 0027/0028 and the `qcom,shm-bridge-vmid` property in the EL2
+overlay). The normal entries stay in the GRUB menu, and F10 at power-on
+still picks the firmware's other entries.
 
 ## Undo and recovery
 

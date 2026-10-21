@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Low battery: a last warning at 5 % and a clean power-off at 3 %.
 # Omarchy's shell warns once at 10 %; UPower's critical action was "Auto",
-# which picks hybrid sleep/hibernation because the swap file exists, and that
-# cannot work at EL2 (no EFI variables, no HibernateLocation): on 20 October
-# the machine tried to sleep at the last percent and died.
+# which picks hybrid sleep/hibernation because the swap file exists; that
+# resume resets this machine, and on 20 October (EL2, before EFI variables
+# worked there) the machine tried to sleep at the last percent and died.
 #   /etc/UPower/UPower.conf.d/70-book4.conf   PowerOff at 3 %
 #   ~/.local/bin/book4-battery-warn + user timer book4-battery-warn.timer
 #        (every minute; one critical notification per discharge at <= 5 %)

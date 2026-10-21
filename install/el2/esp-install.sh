@@ -56,8 +56,9 @@ tcb=${TCBLAUNCH:-$HOME/src/el2-usb/stage/tcb9616.exe}
 fw=/usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
 
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
-journalctl -k -b -o cat | grep -c 'All CPU(s) started at EL2' >/dev/null &&
-    { echo "error: this is an EL2 boot (no EFI variables); run it on the normal boot" >&2; exit 1; }
+# EFI variables: at EL1 always; at EL2 since sleep-backport 0027/0028 (21 Oct).
+[ -n "$(ls /sys/firmware/efi/efivars 2>/dev/null | head -1)" ] ||
+    { echo "error: no EFI variables on this boot (efibootmgr needs them)" >&2; exit 1; }
 command -v efibootmgr >/dev/null || { echo "error: efibootmgr missing (pacman -S efibootmgr)" >&2; exit 1; }
 sudo -v
 # "Boot0003* Book4 EL2 (slbounce)" possibly followed by a tab and the device path

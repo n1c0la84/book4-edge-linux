@@ -4,9 +4,10 @@
 (slbounce)" starts a UEFI Shell from the internal ESP, which loads qebspil
 (starts the ADSP and CDSP) and slbounce, then GRUB boots the sleep kernel
 `7.2.7-book4s` at EL2 (entry "el2-sleep"): KVM, audio, battery, USB-C, and
-full s2idle deep sleep ([power.md](power.md)). Missing at EL2: EFI variables
-(qseecom fails), so no RTC offset (the clock comes from NTP) and no
-hibernation. Set up by `install/el2/build-efi.sh`, `install/el2/esp-install.sh`
+full s2idle deep sleep ([power.md](power.md)), and since 21 October EFI
+variables and the RTC (SHM bridges owned by Linux itself: sleep-backport
+0027/0028 from jglathe's tree, `qcom,shm-bridge-vmid` in the overlay; as on
+the Surface Pro 11, dwhinham/archiso-aarch64-sp11#38). Set up by `install/el2/build-efi.sh`, `install/el2/esp-install.sh`
 and `install/el2/sleep-setup.sh` ([install.md](install.md) step 12 on). The
 sections below are the history, oldest first: the USB stick (15 October),
 then the internal ESP with the DSPs (19 October).

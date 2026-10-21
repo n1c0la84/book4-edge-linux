@@ -29,8 +29,8 @@
 #      the firmware entry "Book4 EL2 (slbounce)" first in the boot order
 #      (install/el2/esp-install.sh default) and GRUB's default the test entry
 #      "el2-sleep" (install/arch/test-entry.sh default). The boot order needs
-#      EFI variables, which EL2 does not have: step 3 runs only on an EL1
-#      boot; at EL2 the script stops after step 2 and says so.
+#      EFI variables: at EL1 always, at EL2 with sleep-backport 0027/0028
+#      (21 October); without them the script stops after step 2 and says so.
 #
 # Run on Arch as your user:  bash install/el2/sleep-setup.sh [undo]
 #   undo: removes the service, GRUB's default and (at EL1) the boot order
@@ -47,15 +47,15 @@ entry=el2-sleep
 if findmnt -rn -S /dev/sda4 >/dev/null; then echo "error: /dev/sda4 (/boot) is mounted; unmount it first" >&2; exit 1; fi
 sudo -v
 
-el2=; journalctl -k -b -o cat | grep -c 'All CPU(s) started at EL2' >/dev/null && el2=1
+efivars=; [ -n "$(ls /sys/firmware/efi/efivars 2>/dev/null | head -1)" ] && efivars=1
 
 if [ "${1:-}" = undo ]; then
     sudo systemctl disable book4-el2-sleep.service 2>/dev/null || true
     sudo rm -f "$helper" "$unit"
     sudo systemctl daemon-reload
     bash "$repo/install/arch/test-entry.sh" default none
-    if [ -z "$el2" ]; then bash "$here/esp-install.sh" default-off
-    else echo "EL2 boot: the firmware boot order is unchanged; on EL1 run: bash install/el2/esp-install.sh default-off"; fi
+    if [ -n "$efivars" ]; then bash "$here/esp-install.sh" default-off
+    else echo "No EFI variables on this boot: the firmware boot order is unchanged; run: bash install/el2/esp-install.sh default-off"; fi
     echo "Removed the service and the GRUB default ($blk kept: the module crashes the ADSP)."
     exit 0
 fi
@@ -125,10 +125,10 @@ printf '%s\n' "# book4-edge-linux: its Modern Standby message crashes the ADSP (
 cat "$blk"
 
 echo "== 3. EL2 as the default boot"
-if [ -n "$el2" ]; then
-    echo "   EL2 boot: no EFI variables, so the boot order cannot be changed here."
+if [ -z "$efivars" ]; then
+    echo "   No EFI variables on this boot, so the boot order cannot be changed here."
     echo "   The service is active from the next EL2 boot. For the default, run this"
-    echo "   script again on an EL1 boot."
+    echo "   script again on a boot with EFI variables (EL1, or EL2 with 0027/0028)."
     exit 0
 fi
 entries=$(bash "$repo/install/arch/test-entry.sh" list)   # captured: grep -q in a pipe trips pipefail
