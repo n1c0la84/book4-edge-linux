@@ -6,7 +6,8 @@
 #   post:  time and counters; a transient timer runs "report" 60 s later,
 #          when the EC's battery reading has caught up with the wake-up
 #   report: one journal line (journalctl -t book4-sleep) and a CSV row in
-#          /var/log/book4-sleep.csv: minutes asleep, mAh, W, residency
+#          /var/log/book4-sleep.csv: minutes asleep, mAh, W, residency, and
+#          the boot (el1, el2-sleep, or el2-mods: GPIO 44 freed in the DT)
 # Sleeps with the charger plugged in at either end are logged without a
 # wattage. The minute awake before the reading adds ~0.1 Wh: noise on a
 # night, not on a 10-minute nap.
@@ -23,6 +24,12 @@ acc() {   # accumulated 19.2 MHz ticks in aosd cxsd ddr (0 if unreadable)
         v=$(awk -F: '/Accumulated Duration/{gsub(/ /,"",$2); print $2}' "$st/$s" 2>/dev/null)
         printf '%s ' "${v:-0}"
     done
+}
+boot() {  # which entry: EL1, the daily EL2 entry, or el2-mods (GPIO 44 freed)
+    local r
+    grep -q 'id_aa64mmfr0.ecv=1' /proc/cmdline || { echo el1; return; }
+    r=$(od -A n -t u4 --endian=big /sys/firmware/devicetree/base/soc@0/pinctrl@f100000/gpio-reserved-ranges 2>/dev/null | tr -s ' ')
+    case "$r" in *" 44 4"*) echo el2-sleep ;; *" 45 3"*) echo el2-mods ;; *) echo el2 ;; esac
 }
 batt() { echo "$(cat "$bat/charge_now" 2>/dev/null || echo 0) $(cat "$bat/voltage_now" 2>/dev/null || echo 0) $(cat "$bat/status" 2>/dev/null || echo Unknown)"; }
 
@@ -47,16 +54,16 @@ report/*)
     res=$(awk -v s=$secs -v a=$((a1 - a0)) -v x=$((x1 - x0)) -v d=$((d1 - d0)) \
         'BEGIN { t = s * 19200000; printf "aosd %.1f%% cxsd %.1f%% ddr %.1f%%", 100*a/t, 100*x/t, 100*d/t }')
     if [ "$s0" = Discharging ] && [ "$s1" = Discharging ] && [ "$s2" = Discharging ]; then
-        line=$(awk -v s=$secs -v c=$((c0 - c1)) -v v="$v0" -v r="$res" \
-            'BEGIN { wh = c / 1e6 * v / 1e6; printf "slept %.0f min on battery: %.0f mAh = %.2f Wh = %.2f W; %s", s/60, c/1000, wh, wh / (s/3600), r }')
+        line=$(awk -v s=$secs -v c=$((c0 - c1)) -v v="$v0" -v r="$res" -v b="$(boot)" \
+            'BEGIN { wh = c / 1e6 * v / 1e6; printf "[%s] slept %.0f min on battery: %.0f mAh = %.2f Wh = %.2f W; %s", b, s/60, c/1000, wh, wh / (s/3600), r }')
         w=$(awk -v s=$secs -v c=$((c0 - c1)) -v v="$v0" 'BEGIN { printf "%.3f", c / 1e6 * v / 1e6 / (s/3600) }')
     else
-        line="slept $((secs / 60)) min, charger involved ($s0 -> $s1 -> $s2): no wattage; $res"
+        line="[$(boot)] slept $((secs / 60)) min, charger involved ($s0 -> $s1 -> $s2): no wattage; $res"
         w=
     fi
     logger -t book4-sleep "$line"
-    [ -e "$csv" ] || echo "start,minutes,mah,watts,status,aosd_ticks,cxsd_ticks,ddr_ticks,kernel" > "$csv"
-    echo "$(date -d @"$t0" +%FT%T),$((secs / 60)),$(((c0 - c1) / 1000)),$w,$s0/$s1/$s2,$((a1 - a0)),$((x1 - x0)),$((d1 - d0)),$(uname -r)" >> "$csv"
+    [ -e "$csv" ] || echo "start,minutes,mah,watts,status,aosd_ticks,cxsd_ticks,ddr_ticks,kernel,boot" > "$csv"
+    echo "$(date -d @"$t0" +%FT%T),$((secs / 60)),$(((c0 - c1) / 1000)),$w,$s0/$s1/$s2,$((a1 - a0)),$((x1 - x0)),$((d1 - d0)),$(uname -r),$(boot)" >> "$csv"
     ;;
 esac
 exit 0
