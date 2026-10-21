@@ -16,12 +16,13 @@
 #      the 14" DTB with LOCALVERSION=s, modules_install into ~/src/sleep-out.
 #   2. Arch: copy the modules to /usr/lib/modules/7.2.7-book4s, depmod,
 #      mkinitcpio; install /vmlinuz-7.2.7-book4s,
-#      /initramfs-7.2.7-book4s-arch.img and /dtb-test/book4-sleep.dtb on /boot;
-#      GRUB test entry "sleep" (EL1, without clk/pd_ignore_unused).
+#      /initramfs-7.2.7-book4s-arch.img and /dtb-test/book4-sleep.dtb on /boot.
+#   3. install/el2/sleep-setup.sh then makes the EL2 entry from that DTB
+#      (no EL1 entry for this kernel any more: it is the EL2 kernel).
 #
 #   bash tools/kernel/build-sleep-kernel.sh
 #
-# Undo: bash install/arch/test-entry.sh remove sleep; then, if you like,
+# Undo: install/el2/sleep-setup.sh undo; then, if you like,
 # sudo rm -r /usr/lib/modules/7.2.7-book4s and the three files on /boot.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
@@ -132,9 +133,6 @@ sudo mkdir -p "$b/dtb-test"; sudo install -m 644 "$work/book4-sleep.dtb" "$b/dtb
 sync; ls -l "$b/vmlinuz-$rel" "$b/initramfs-$rel-arch.img" "$b/dtb-test/book4-sleep.dtb"
 sudo umount "$b"; rmdir "$b"
 
-echo "== 3. GRUB test entry 'sleep'"
-bash "$repo/install/arch/test-entry.sh" remove sleep >/dev/null 2>&1 || true
-bash "$repo/install/arch/test-entry.sh" add sleep -clk_ignore_unused -pd_ignore_unused \
-    kernel=/vmlinuz-$rel initrd=/initramfs-$rel-arch.img dtb=/dtb-test/book4-sleep.dtb
 echo
-echo "Reboot (no slbounce stick), pick 'test: sleep', then: bash tools/experiments/sleep-test.sh (EL1; for EL2 see docs/el2.md)"
+echo "Installed $rel. Refresh the daily EL2 entry from the new DTB:"
+echo "  bash install/el2/sleep-setup.sh"

@@ -69,7 +69,9 @@ Then boot Arch, and on Arch:
     also masks `linux-modules-cleanup.service`, which must stay masked: it
     deletes the module trees of every kernel but the running one.
 11. Arch as GRUB's default, plus the suspend defaults (`pcie_port_pm=force`,
-    no USB wakeup): `bash install/arch/boot-defaults.sh`.
+    no USB wakeup): `bash install/arch/boot-defaults.sh`. Then the low-battery
+    policy (a last warning at 5 %, a clean power-off at 3 %):
+    `bash install/arch/battery-policy.sh`.
 
 From here, Fedora's container is used from Arch for kernel builds
 (`install/arch/fedora-shell.sh`); Fedora itself does not need to be booted.
