@@ -8,14 +8,15 @@ within each section. What is already done is listed at the end.
 **Now (20 October):**
 
 - [ ] **EFI variables at EL2** (qseecom fails with -22): the RTC offset and
-      hibernation depend on them. The one real gap of the daily setup. The
-      first call that passes TrustZone a buffer (the `uefisecapp` lookup) is
-      refused; without Gunyah, TZ memory likely needs SHM bridges (Konrad
-      Dybcio, QCS6490 thread, January 2026). The next sleep kernel build sets
-      `CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE` (falls back to generic if TZ says
-      no); test: `qcom_qseecom` probes and `/sys/firmware/efi/efivars` fills.
-- [x] **An hour with the DSPs running, AOSD off** (20 October): 99.9 %
-      `cxsd`/`ddr` over 66 min, no reset across the hour after boot.
+      hibernation depend on them. The one real gap of the daily setup.
+      SHM-bridge mode alone (21 October build) did not help: the bridges were
+      created, TrustZone still refused the `uefisecapp` lookup. The Surface
+      Pro 11 at EL2 has the same symptom, fixed by SHM bridges that Linux
+      owns itself (`qcom,shm-bridge-vmid` = self owner;
+      dwhinham/archiso-aarch64-sp11#38): sleep-backport 0027/0028 and the
+      property in our EL2 overlay. Test after the next sleep kernel build
+      (incremental now): `qcom_qseecom` probes, `/sys/firmware/efi/efivars`
+      fills, `rtc0` appears.
 - [ ] **Rebuild the sleep kernel** (EL1 boot, `tools/kernel/build-sleep-kernel.sh`,
       then `install/el2/sleep-setup.sh`): brings 0024-0026 into the kernel
       proper (speakers lost after sleep without 0026, 20 October) and the

@@ -21,6 +21,18 @@
 	status = "disabled";
 };
 
+/*
+ * SHM bridges owned by Linux itself: without Gunyah there is no HLOS VM to
+ * own them, and TrustZone refuses qseecom's buffers (-22: no EFI variables,
+ * no RTC). Needs sleep-backport 0027/0028 (qcom_tzmem self-owner, from
+ * jglathe's tree via github.com/justririll/x1e-dsp) and
+ * CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE. 0xffffffff = QCOM_SCM_VMID_SELF_OWNER
+ * (this overlay is built without the preprocessor).
+ */
+&scm {
+	qcom,shm-bridge-vmid = <0xffffffff>;
+};
+
 &iris {
 	/* TODO: Add video-firmware iommus to start IRIS from EL2 */
 	status = "disabled";

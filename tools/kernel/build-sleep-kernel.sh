@@ -54,14 +54,24 @@ patches=$(tar -cz -C "$here/sleep-backport" $(cd "$here/sleep-backport" && ls *.
 mods=$(tar -cz --exclude='*.ko' --exclude='*.o' --exclude='*.mod*' --exclude='.*' \
        -C "$repo/tools/power" sleep-modules icc-hold/icc_hold.c | base64 -w0)
 sum=$(cat "$here"/sleep-backport/*.patch | sha256sum | cut -c1-16)
+# Checksum of every prefix of the set, "N:sum" for the first N patches: a tree
+# built with the first N patches only needs patches N+1.. applied (patches
+# added at the end, 21 October), not a fresh copy and a full rebuild.
+prefixes=$(i=0; for f in "$here"/sleep-backport/*.patch; do i=$((i + 1));
+    printf '%s:%s ' $i "$(ls "$here"/sleep-backport/*.patch | head -$i | xargs cat | sha256sum | cut -c1-16)"; done)
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 
 echo "== 1. build $rel in the Fedora container (~/src/patchwork-sleep)"
 inner="set -euo pipefail
 cd ~/src
-if [ -e patchwork-sleep ] && [ \"\$(cat patchwork-sleep/.book4-patches 2>/dev/null)\" != $sum ]; then
-    echo '   patch set changed: fresh copy of ~/src/patchwork' >&2
-    rm -rf patchwork-sleep
+have=0
+if [ -e patchwork-sleep ]; then
+    rec=\$(cat patchwork-sleep/.book4-patches 2>/dev/null || true)
+    for ps in $prefixes; do [ \"\${ps#*:}\" = \"\$rec\" ] && have=\${ps%%:*}; done
+    if [ \$have = 0 ]; then
+        echo '   patch set changed: fresh copy of ~/src/patchwork' >&2
+        rm -rf patchwork-sleep
+    fi
 fi
 if [ ! -e patchwork-sleep ]; then
     echo '   reflink copy ~/src/patchwork -> ~/src/patchwork-sleep' >&2
@@ -77,7 +87,15 @@ if [ ! -e patchwork-sleep ]; then
     echo $sum > .book4-patches
 else
     cd patchwork-sleep
-    echo '   patches already applied (same set)' >&2
+    p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
+    i=0
+    for f in \$p/*.patch; do
+        i=\$((i + 1)); [ \$i -gt \$have ] || continue
+        patch -p1 --forward -s < \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
+        echo \"   applied (incremental): \$(basename \$f)\" >&2
+    done
+    [ \$i -gt \$have ] || echo '   patches already applied (same set)' >&2
+    echo $sum > .book4-patches
 fi
 [ \"\$(make -s LOCALVERSION=$lv kernelrelease)\" = $rel ]
 grep -q '^CONFIG_PM_CLK=y' .config || { echo 'error: CONFIG_PM_CLK is off: the LPASS macros would not build' >&2; exit 1; }

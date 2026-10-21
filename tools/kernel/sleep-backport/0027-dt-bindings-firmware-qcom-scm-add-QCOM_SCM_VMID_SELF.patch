@@ -1,0 +1,32 @@
+From 7b82821f5afd14d707a2661cc256ad20f7856481 Mon Sep 17 00:00:00 2001
+From: Kirill Mitrofanov <kmitrqq@gmail.com>
+Date: Wed, 21 Oct 2026 09:05:11 +0200
+Subject: [PATCH 27/28] dt-bindings: firmware: qcom,scm: add
+ QCOM_SCM_VMID_SELF_OWNER
+
+A special value for qcom,shm-bridge-vmid: SHM bridges owned by the
+caller itself, for Linux running at EL2 without Gunyah.
+
+[ book4: the header hunk of "arm64: dts: qcom: x1-el2: 40-bit DMA ranges,
+  Iris firmware, SHM bridge self-owner" from github.com/justririll/x1e-dsp
+  (clk-provider/patches/0002), itself from jglathe's tree; the DTS part is
+  in book4-edge-linux's EL2 overlay instead. ]
+---
+ include/dt-bindings/firmware/qcom,scm.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/dt-bindings/firmware/qcom,scm.h b/include/dt-bindings/firmware/qcom,scm.h
+index 0d29d8d48..776d2cad6 100644
+--- a/include/dt-bindings/firmware/qcom,scm.h
++++ b/include/dt-bindings/firmware/qcom,scm.h
+@@ -37,4 +37,7 @@
+ #define QCOM_SCM_VMID_OEMVM		0x31
+ #define QCOM_SCM_VMID_CP_ADSP_SHARED	0x33
+ 
++/* Special value intended for qcom,shm-bridge-vmid */
++#define QCOM_SCM_VMID_SELF_OWNER	0xffffffff
++
+ #endif
+-- 
+2.56.0
+
