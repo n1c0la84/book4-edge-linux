@@ -83,10 +83,14 @@ clear)
   $SUDO rm -f "$file"; sync; echo "removed all test entries"; exit 0 ;;
 default)
   if [ "$1" = none ]; then nodefault | write; echo "GRUB default: the boot hook's again"; exit 0; fi
-  t=$(awk -v n="$1" '$0 == "# test-entry: " n { getline; if (sub(/^menuentry "/, "")) { sub(/" \{$/, ""); print }; exit }' "$file" 2>/dev/null)
-  [ -n "$t" ] || { echo "error: no test entry '$1'" >&2; exit 1; }
-  { nodefault; printf '\nset default="%s"   %s %s\n' "$t" "$DEFMARK" "$1"; } | write
-  echo "GRUB default: \"$t\""; exit 0 ;;
+  # By the entry's --id: GRUB matches ids before titles (a default by
+  # title was not taken on 21 October). Older entries without an id need
+  # re-adding.
+  id=book4-test-$1
+  grep -qF -- "--id $id {" "$file" 2>/dev/null ||
+      { echo "error: no test entry '$1' with --id $id (re-add it with this script)" >&2; exit 1; }
+  { nodefault; printf '\nset default="%s"   %s %s\n' "$id" "$DEFMARK" "$1"; } | write
+  echo "GRUB default: test entry '$1' (--id $id)"; exit 0 ;;
 remove)
   drop "$1" | write; echo "removed test entry '$1'"; exit 0 ;;
 esac
@@ -135,7 +139,7 @@ done
   cat <<EOF
 
 # test-entry: $name
-menuentry "$title - test: $name" {
+menuentry "$title - test: $name" --id book4-test-$name {
     devicetree $dt
     linux  ${words[0]} ${args[*]}
     initrd $initrd
