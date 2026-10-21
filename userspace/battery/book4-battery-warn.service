@@ -1,0 +1,7 @@
+# Book4 (install/arch/battery-policy.sh)
+[Unit]
+Description=Book4: last low-battery warning
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/book4-battery-warn

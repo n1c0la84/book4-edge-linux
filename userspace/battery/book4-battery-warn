@@ -1,0 +1,17 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# Book4 (install/arch/battery-policy.sh): a second, last warning at 5 %.
+# Omarchy's shell warns once at 10 %; UPower powers off at 3 %
+# (/etc/UPower/UPower.conf.d/70-book4.conf). Once per discharge: the flag
+# is cleared when the battery is no longer discharging.
+set -u
+bat=/sys/class/power_supply/samsung-galaxybook-battery
+flag=${XDG_RUNTIME_DIR:-/tmp}/book4-battery-warned
+level=${BOOK4_BATTERY_WARN:-5}
+[ -r "$bat/capacity" ] || exit 0
+cap=$(cat "$bat/capacity"); st=$(cat "$bat/status")
+if [ "$st" != Discharging ]; then rm -f "$flag"; exit 0; fi
+[ "$cap" -le "$level" ] && [ ! -e "$flag" ] || exit 0
+touch "$flag"
+omarchy-notification-send -g 󰂃 -u critical "Battery at ${cap}%" \
+    "Plug in now: the machine powers off at 3%." -i battery-empty -t 0
