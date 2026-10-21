@@ -8,6 +8,8 @@
 #   report: one journal line (journalctl -t book4-sleep) and a CSV row in
 #          /var/log/book4-sleep.csv: minutes asleep, mAh, W, residency, and
 #          the boot (el1, el2-sleep, or el2-mods: GPIO 44 freed in the DT)
+# After sleeps of 30 min or more on battery, also a desktop notification
+# (time asleep, W, days a full battery would last, deep-sleep share).
 # Sleeps with the charger plugged in at either end are logged without a
 # wattage. The minute awake before the reading adds ~0.1 Wh: noise on a
 # night, not on a 10-minute nap.
@@ -32,6 +34,14 @@ boot() {  # which entry: EL1, the daily EL2 entry, or el2-mods (GPIO 44 freed)
     case "$r" in *" 44 4"*) echo el2-sleep ;; *" 45 3"*) echo el2-mods ;; *) echo el2 ;; esac
 }
 batt() { echo "$(cat "$bat/charge_now" 2>/dev/null || echo 0) $(cat "$bat/voltage_now" 2>/dev/null || echo 0) $(cat "$bat/status" 2>/dev/null || echo Unknown)"; }
+
+notify() {  # HEADLINE BODY: an Omarchy notification in every logged-in user's session
+    local u
+    for u in $(loginctl list-users --no-legend 2>/dev/null | awk '$1 >= 1000 {print $2}'); do
+        systemd-run --quiet --user -M "$u@" --collect \
+            /usr/share/omarchy/bin/omarchy-notification-send -g 󰒲 -u low "$1" "$2" -t 15000 >/dev/null 2>&1 || true
+    done
+}
 
 case "${1:-}/${2:-}" in
 pre/*)
@@ -62,6 +72,19 @@ report/*)
         w=
     fi
     logger -t book4-sleep "$line"
+    # A desktop notification when the figure means something: on battery
+    # throughout and at least 30 minutes asleep.
+    if [ -n "$w" ] && [ "$secs" -ge 1800 ]; then
+        full=$(cat "$bat/charge_full" 2>/dev/null || echo 0)
+        msg=$(awk -v s=$secs -v c=$((c0 - c1)) -v v="$v0" -v w="$w" -v f="$full" -v x=$((x1 - x0)) \
+            'BEGIN { h = int(s/3600); m = int((s%3600)/60)
+                     cx = 100 * x / (s * 19200000)
+                     printf "%dh %02dm asleep: %.2f W (%.1f Wh)|", h, m, w, c/1e6*v/1e6
+                     if (w > 0) printf "A full battery would last %.0f days asleep at this rate. ", f/1e6*v/1e6/w/24
+                     if (cx < 90) printf "Deep sleep only %.0f%% of the time (cxsd)!", cx
+                     else printf "Deep sleep %.0f%% of the time.", cx }')
+        notify "${msg%%|*}" "${msg#*|}"
+    fi
     [ -e "$csv" ] || echo "start,minutes,mah,watts,status,aosd_ticks,cxsd_ticks,ddr_ticks,kernel,boot" > "$csv"
     echo "$(date -d @"$t0" +%FT%T),$((secs / 60)),$(((c0 - c1) / 1000)),$w,$s0/$s1/$s2,$((a1 - a0)),$((x1 - x0)),$((d1 - d0)),$(uname -r),$(boot)" >> "$csv"
     ;;
