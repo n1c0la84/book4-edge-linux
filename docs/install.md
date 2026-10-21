@@ -73,6 +73,7 @@ Then boot Arch, and on Arch:
     policy (a last warning at 5 %, a clean power-off at 3 %):
     `bash install/arch/battery-policy.sh`. And a log of every sleep (minutes,
     mAh, watts, deep-sleep residency): `bash install/arch/sleep-log.sh`.
+    Optional: the Copilot key as Super (keyd): `bash install/arch/copilot-key.sh`.
 
 From here, Fedora's container is used from Arch for kernel builds
 (`install/arch/fedora-shell.sh`); Fedora itself does not need to be booted.
