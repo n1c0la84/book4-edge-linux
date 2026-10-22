@@ -141,6 +141,12 @@ To test (should work, never verified)
       `build-sleep-kernel.sh` now applies and checks them. Test at EL2: plug
       in during sleep (wakes, resleeps), unplug during sleep (no reset),
       `pm: quiesced` in the log.
+- [ ] **Battery readings frozen on book4s (22 Oct):** same cause for
+      `drivers/anatase/patches-galaxybook-ec/0001` (refresh on read): at 9 %
+      the battery showed "Charging", 374 mA, unchanged for 16+ minutes.
+      Fix: `tools/kernel/update-sleep-galaxybook-ec.sh`;
+      `build-sleep-kernel.sh` applies and checks it too. Then retest awake
+      charging below 50 % (it was ~5 W).
 - [ ] **Fedora kernel update** (7.2.8 and later): only affects the fallback
       "(other)" entry, kernel packages are held back. When taken: DKMS modules
       built, display/battery/Wi-Fi/audio fine on that entry. See

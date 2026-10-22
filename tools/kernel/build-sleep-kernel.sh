@@ -51,6 +51,7 @@ esac
 
 patches=$(tar -cz -C "$here/sleep-backport" $(cd "$here/sleep-backport" && ls *.patch) | base64 -w0)
 emuec=$(tar -cz -C "$repo/drivers/anatase" --transform 's|^patches|emuec|' patches | base64 -w0)
+gbec=$(tar -cz -C "$repo/drivers/anatase" --transform 's|^patches-galaxybook-ec|gbec|' patches-galaxybook-ec | base64 -w0)
 # the whole sleep-modules folder (every source the Makefile names) + icc_hold
 mods=$(tar -cz --exclude='*.ko' --exclude='*.o' --exclude='*.mod*' --exclude='.*' \
        -C "$repo/tools/power" sleep-modules icc-hold/icc_hold.c | base64 -w0)
@@ -95,6 +96,15 @@ if [ ! -e patchwork-sleep ]; then
         echo \"   applied: \$(basename \$f) (samsung-emuec)\" >&2
     done
     rm -f drivers/usb/typec/samsung-emuec.c.orig
+    # same for samsung-galaxybook-ec (drivers/anatase/patches-galaxybook-ec;
+    # 22 October: battery readings frozen on book4s)
+    echo $gbec | base64 -d | tar -xz -C \$p
+    for f in \$p/gbec/*.patch; do
+        patch -s -p1 -d drivers/platform/arm64 --dry-run -R -f -i \$f >/dev/null 2>&1 && continue
+        patch -s -p1 -d drivers/platform/arm64 -f -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
+        echo \"   applied: \$(basename \$f) (samsung-galaxybook-ec)\" >&2
+    done
+    rm -f drivers/platform/arm64/samsung-galaxybook-ec.c.orig
     echo $sum > .book4-patches
 else
     cd patchwork-sleep
@@ -110,6 +120,7 @@ else
 fi
 [ \"\$(make -s LOCALVERSION=$lv kernelrelease)\" = $rel ]
 grep -q 'pm: quiesced' drivers/usb/typec/samsung-emuec.c || { echo 'error: samsung-emuec has no sleep quiesce: run tools/kernel/update-sleep-emuec.sh' >&2; exit 1; }
+grep -q 'galaxybook_battery_update' drivers/platform/arm64/samsung-galaxybook-ec.c || { echo 'error: samsung-galaxybook-ec has no battery refresh: run tools/kernel/update-sleep-galaxybook-ec.sh' >&2; exit 1; }
 grep -q '^CONFIG_PM_CLK=y' .config || { echo 'error: CONFIG_PM_CLK is off: the LPASS macros would not build' >&2; exit 1; }
 # TrustZone buffers through SHM bridges (20 October): at EL2 there is no
 # Gunyah to share memory with TrustZone, and qseecom's first call (the
