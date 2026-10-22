@@ -50,6 +50,7 @@ esac
 [ "$(uname -r)" != "$rel" ] || { echo "error: running $rel itself; boot the normal kernel to rebuild it" >&2; exit 1; }
 
 patches=$(tar -cz -C "$here/sleep-backport" $(cd "$here/sleep-backport" && ls *.patch) | base64 -w0)
+emuec=$(tar -cz -C "$repo/drivers/anatase" --transform 's|^patches|emuec|' patches | base64 -w0)
 # the whole sleep-modules folder (every source the Makefile names) + icc_hold
 mods=$(tar -cz --exclude='*.ko' --exclude='*.o' --exclude='*.mod*' --exclude='.*' \
        -C "$repo/tools/power" sleep-modules icc-hold/icc_hold.c | base64 -w0)
@@ -84,6 +85,16 @@ if [ ! -e patchwork-sleep ]; then
         patch -p1 --forward -s < \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
         echo \"   applied: \$(basename \$f)\" >&2
     done
+    # samsung-emuec patches (drivers/anatase/patches): ~/src/patchwork got
+    # them only as a module build, never in its source, so a copy lacks them
+    # (22 October: unplug-during-sleep reset back at EL2)
+    echo $emuec | base64 -d | tar -xz -C \$p
+    for f in \$p/emuec/*.patch; do
+        patch -s -p1 -d drivers/usb/typec --dry-run -R -f -i \$f >/dev/null 2>&1 && continue
+        patch -s -p1 -d drivers/usb/typec -f -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
+        echo \"   applied: \$(basename \$f) (samsung-emuec)\" >&2
+    done
+    rm -f drivers/usb/typec/samsung-emuec.c.orig
     echo $sum > .book4-patches
 else
     cd patchwork-sleep
@@ -98,6 +109,7 @@ else
     echo $sum > .book4-patches
 fi
 [ \"\$(make -s LOCALVERSION=$lv kernelrelease)\" = $rel ]
+grep -q 'pm: quiesced' drivers/usb/typec/samsung-emuec.c || { echo 'error: samsung-emuec has no sleep quiesce: run tools/kernel/update-sleep-emuec.sh' >&2; exit 1; }
 grep -q '^CONFIG_PM_CLK=y' .config || { echo 'error: CONFIG_PM_CLK is off: the LPASS macros would not build' >&2; exit 1; }
 # TrustZone buffers through SHM bridges (20 October): at EL2 there is no
 # Gunyah to share memory with TrustZone, and qseecom's first call (the

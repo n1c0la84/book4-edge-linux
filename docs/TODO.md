@@ -133,6 +133,14 @@ To test (should work, never verified)
       `dbgview-hub1.log` (Samsung driver WPP events there are undecoded).
 - [ ] **The sleep fix in long-term use** (installed 4 Oct, Fedora and Arch):
       repeated cycles, plug-in and unplug during sleep, over days.
+- [ ] **Unplug reset back at EL2 (22 Oct):** the daily kernel 7.2.7-book4s
+      had none of `drivers/anatase/patches/0001-0003` (they reached
+      7.2.7-book4 only as a module build, never `~/src/patchwork`'s source),
+      so a charger unplugged in sleep hard-reset the machine (RTC back at
+      2024-05-29). Fix: `tools/kernel/update-sleep-emuec.sh`;
+      `build-sleep-kernel.sh` now applies and checks them. Test at EL2: plug
+      in during sleep (wakes, resleeps), unplug during sleep (no reset),
+      `pm: quiesced` in the log.
 - [ ] **Fedora kernel update** (7.2.8 and later): only affects the fallback
       "(other)" entry, kernel packages are held back. When taken: DKMS modules
       built, display/battery/Wi-Fi/audio fine on that entry. See
