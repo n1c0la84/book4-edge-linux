@@ -64,10 +64,10 @@ sudo -v
 sudo cp -p "$ko" "$ko.prev"
 sudo install -m 644 "$new" "$ko"
 sudo depmod $rel
-echo "   $ko: $(modinfo -F srcversion "$ko")"
+echo "   $ko: $(modinfo -F vermagic "$ko" | cut -d' ' -f1), quiesce code present"
 # Not in the initramfs today (typec is in no mkinitcpio hook); say so if
 # that ever changes instead of rebuilding /boot from here.
-img=$(mktemp); trap 'rm -rf "$work" "$img"' EXIT
+img=$work/initramfs.img   # root-owned, but in our own directory: removable
 sudo mkinitcpio -k $rel -g "$img" >/dev/null 2>&1
 if sudo lsinitcpio "$img" | grep -q samsung-emuec; then
     echo "   NOTE: samsung-emuec is in the initramfs: rerun tools/kernel/build-sleep-kernel.sh to refresh /boot" >&2
