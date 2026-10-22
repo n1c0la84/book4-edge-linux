@@ -40,8 +40,10 @@ within each section. What is already done is listed at the end.
       driving it visibly changed the EC in sleep. Test without a rebuild:
       `tools/power/el2-mods-test.sh` (entry "el2-mods"), drain vs the daily
       entry. Next candidates: `VREG_MISC_3P3` (touchscreen) and `VREG_WCN_3P3`
-      (Wi-Fi/BT chip) are always-on; three PMIC LDOs (l7b, l10b, l12b) too,
-      with no consumer in the DT. A Windows battery-standby figure (one hour
+      (Wi-Fi/BT chip, held only by always-on on the 14") are always-on; so
+      are l7b/l10b (front camera supplies; the driver could switch them) and
+      l12b (1.2 V, no consumer on the 14"; speaker-amp vdd-io on the 15", so
+      test it last). A Windows battery-standby figure (one hour
       lid closed, `powercfg /sleepstudy`) would give the target.
 
 ## Test of 10 October (DT 0005/0006, emuec orientation 0005)
