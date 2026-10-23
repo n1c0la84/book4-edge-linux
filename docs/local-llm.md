@@ -95,7 +95,7 @@ rate clusters 1 and 2 above cluster 0 (capacity from the boost frequency:
 A user service runs the server on demand (`~/.config/systemd/user/llama-server.service`):
 
     llama-server -m ~/models/Qwen3-8B-Q4_K_M.gguf -a qwen3-8b --host 127.0.0.1 --port 8080 \
-        -t 8 -tb 12 -c 32768 -fa on -ctk q8_0 -ctv q8_0 --jinja --cache-reuse 256
+        -t 8 -tb 12 -c 32768 -fa on -ctk q8_0 -ctv q8_0 -np 1 -cram 2048 --jinja --cache-reuse 256
 
 32k context because opencode's system prompt and tool list alone are ~10k
 tokens; the q8_0 KV cache keeps the whole server at ~7 GB. The same port
@@ -122,3 +122,11 @@ tools, among them `skill` (which lists every skill under `~/.claude/skills`),
 Qwen3's recommended temperature 0.6 / top_p 0.95. Tab switches to it in
 opencode, or `opencode --agent lean`. `opencode debug agent lean` shows
 what it resolves to.
+
+`-np 1` (one request at a time): with the default slots, opencode's
+session-title request ran beside the first real one, and both crawled
+(lean agent, 23 October: 3,457-token prompt at 19 t/s, output at 3 t/s,
+the title at 0.6 t/s; 3 min 34 s to the first reply). Queued, the
+title takes seconds and the prompt ~45 s. `-cram 2048` caps the RAM prompt
+cache that keeps the main prompt while the title request has the slot
+(default 8 GB).
