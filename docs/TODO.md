@@ -452,4 +452,8 @@ Not yet reported:
   1024, so single-threaded work also lands on cluster 0 (3.42 GHz) instead of
   the 4.0 GHz clusters. Geekbench single-core 2200 unpinned, 2482 pinned to
   CPUs 4-11. Cause: no `capacity-dmips-mhz` in hamoa.dtsi, so no capacities
-  at all. sleep-backport 0038 adds it (cluster 0 ~872, 1-2 1024); to verify.
+  at all. sleep-backport 0038 adds it: verified 23 October, capacities
+  872/1024/1024, 10 of 10 unpinned busy loops on CPUs 4-11, a busy task
+  released from CPU 1 moves there within 1 s (misfit migration). The three
+  clusters have identical energy models, so EAS has nothing to choose by.
+  Open: an unpinned Geekbench single-core run (expect ~2480).
