@@ -34,9 +34,12 @@
 };
 
 /*
- * The boot framebuffer as UEFI leaves it (DisplaySplashBufferInfo and
- * UEFIDisplayInfo: 0xe4800000, 0x21c0000 bytes, 2880x1800, 32 bpp, stride
- * 11520), with the GCC display clocks it needs: this EL2 entry boots without
+ * The boot framebuffer as the EL2 path leaves it: UEFI's buffer
+ * (DisplaySplashBufferInfo / UEFIDisplayInfo: 0xe4800000, 0x21c0000 bytes,
+ * natively 2880x1800), but the UEFI Shell that starts this path switches the
+ * GOP to 1024x768 (kernel console 128x48 on every EL2 boot; with 2880x1800
+ * here the boot text came out as stripes, 23 October). So 1024x768, stride
+ * 4096. With the GCC display clocks it needs: this EL2 entry boots without
  * clk_ignore_unused, and the kernel's "Disabling unused clocks" at ~3 s
  * switched them off, so the screen was black until msm took over (~17 s).
  * simpledrm keeps listed clocks on and releases them when msm replaces it;
@@ -53,9 +56,9 @@
 	framebuffer@e4800000 {
 		compatible = "simple-framebuffer";
 		reg = <0x0 0xe4800000 0x0 0x021c0000>;
-		width = <2880>;
-		height = <1800>;
-		stride = <11520>;
+		width = <1024>;
+		height = <768>;
+		stride = <4096>;
 		format = "a8r8g8b8";
 		clocks = <&gcc 38>, <&gcc 37>, <&gcc 39>;
 	};
