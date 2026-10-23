@@ -257,20 +257,23 @@ To test (should work, never verified)
       averaged (29.0 GB/s for 60 s unthrottled on 5 October). The
       ACPI tables (Windows) also limit on board thermistors behind the PMIC
       ADC (TZ31/TZ32, passive 59/63 C), which Linux does not describe.
-- [ ] **UFS speed** (24 October, `fio`, 4 GB NOCOW file on btrfs, on the
+- [x] **UFS speed** (24 October, `fio`, 4 GB NOCOW file on btrfs, on the
       charger): KIOXIA THGJFJT2T85BAT0A, UFS 4.0 (spec 0x0400), 2 lanes.
-      Sequential 1 MB QD32: read 1,050 MB/s, write 1,588; random 4K: 8,445 /
-      3,307 IOPS at QD1 (90 / 84 us), 91,220 / 48,048 at QD32. The raw disk
-      reads at 1,752 MB/s, the file at ~910 with O_DIRECT and 949 buffered
-      (2 extents, not fragmentation): btrfs's read path costs about half.
-      Clock scaling off changed nothing. The link runs at HS-G4 (rate A),
-      the most X1E allows: its GCC has no 403 MHz UniPro rate, which
-      ufs-qcom needs for G5 (300 MHz = G4; the PHY and the device support
-      G5; SM8650 has the 403 MHz OPP, X1E and SM8550 stop at 300).
-      WriteBooster is off (`wb_on` 0) although the device has a shared WB
-      buffer. Next: why btrfs halves reads (readahead, csum-less NOCOW
-      file still slow), WriteBooster, a Windows CrystalDiskMark run for
-      comparison.
+      Sequential 1 MB QD32: read **1.8 GB/s** (raw disk and file alike;
+      `dd` buffered 1.8 GB/s), write 1.57-1.59 GB/s; random 4K: 8,445 /
+      3,307 IOPS at QD1 (90 / 84 us), 91,220 / 48,048 at QD32. Nothing to fix:
+      - The link runs at HS-G4 (rate A), the most X1E allows: its GCC has
+        no 403 MHz UniPro rate, which ufs-qcom needs for G5 (300 MHz = G4;
+        PHY and device support G5; SM8650 has the 403 MHz OPP, X1E and
+        SM8550 stop at 300). Clock scaling off changed nothing.
+      - WriteBooster works: ufs-qcom sets UFSHCD_CAP_WB_WITH_CLK_SCALING, so
+        it is on while the clock is scaled up (`flags/wb_enable` true during
+        writes) and off at idle; buffer 0x2000 units, 100 % available, wear
+        0-10 %.
+      - A first reading of ~0.9-1.05 GB/s for the file was not btrfs: the
+        random-4K write tests had just scattered it inside the UFS's own
+        flash mapping. Rewritten sequentially it reads at 1.8 GB/s; after
+        20 s of random 4K writes over it, 1.1 GB/s again (reproduced).
 - [ ] **Hibernation** (possible at EL2 too since EFI variables work there,
       21 October; with deep sleep at EL2 it is no longer needed for nights on
       battery, and its resume still resets the machine). Swap and
