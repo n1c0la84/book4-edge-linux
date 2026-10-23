@@ -155,3 +155,19 @@ skills in `~/.pi/agent/skills`. Provider in `~/.pi/agent/models.json`:
 
 Use: `pi --model llama.cpp/qwen3-8b`. One agent at a time: the server queues
 requests (`-np 1`).
+
+## Vulkan on the Adreno X1-85 (23 October): slower, not used
+
+Turnip (Mesa 26.2.4, Vulkan 1.4 conformant) runs llama.cpp's Vulkan backend
+(`build-vk/`, needs `vulkan-headers` and `spirv-headers`). llama.cpp reports
+`int dot: 0` and `matrix cores: none` for it, so it takes the generic shader
+paths. Qwen3-8B Q4_K_M fully offloaded (`-ngl 99`):
+
+| test | Vulkan (GPU) | CPU, 12 threads |
+|---|---|---|
+| prompt, 512 tokens | 34.8 t/s | ~80 t/s |
+| prompt, 2048 tokens | 27.3 (27.4 with flash attention) | 34.3 |
+| generation | 8.6 t/s | 20.9 t/s (8 threads) |
+
+The CPU path stays. Worth retrying when Turnip or llama.cpp gain integer
+dot product or cooperative matrix support for this GPU.
