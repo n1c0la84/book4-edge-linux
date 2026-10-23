@@ -78,3 +78,13 @@ The Surface Pro 11 measured 21.4 t/s with memlat. Prompt processing is
 compute-bound and unchanged (all-core work does not boost). Best now:
 
     ./build/bin/llama-cli -m ~/models/Qwen3-8B-Q4_K_M.gguf -t 8 -tb 12 -cnv
+
+Geekbench 7 on the same kernel, on the charger: **single-core 2200,
+multi-core 16352** (was 2202 / 13226): multi-core +24 % from memlat, now
+above the X1E-80-100 browser average. Single-core did not move although
+clusters 1 and 2 ran at 4.0 GHz for ~450 s of the run: every CPU reports
+`cpu_capacity` 1024, so the scheduler does not prefer the boosting clusters
+and the single-core thread also ran on cluster 0 (3.42 GHz max, no boost
+step). To look at: capacity from the boost frequency (0037 sets
+`capacity_freq_ref`, but the capacities are not rescaled), or a pinned run
+(`taskset -c 4-11`).
