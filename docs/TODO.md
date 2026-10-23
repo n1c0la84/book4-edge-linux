@@ -447,3 +447,8 @@ Not yet reported:
 - Superseded: our own keyboard backlight driver (`0x62`; Anatase's mailbox
   driver does it), the EC event queue (in Anatase's DTS), the experimental
   sleep patches v1/v2 and the EC display-bit test (`patches-experimental/`).
+
+- **CPU capacity with boost** (23 October): all CPUs report `cpu_capacity`
+  1024, so single-threaded work also lands on cluster 0 (3.42 GHz) instead of
+  the 4.0 GHz clusters. Geekbench single-core 2200 unpinned, 2482 pinned to
+  CPUs 4-11. Rescale the capacities from the boost frequency (after 0037).

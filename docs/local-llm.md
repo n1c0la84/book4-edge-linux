@@ -85,6 +85,7 @@ above the X1E-80-100 browser average. Single-core did not move although
 clusters 1 and 2 ran at 4.0 GHz for ~450 s of the run: every CPU reports
 `cpu_capacity` 1024, so the scheduler does not prefer the boosting clusters
 and the single-core thread also ran on cluster 0 (3.42 GHz max, no boost
-step). To look at: capacity from the boost frequency (0037 sets
-`capacity_freq_ref`, but the capacities are not rescaled), or a pinned run
-(`taskset -c 4-11`).
+step). Pinned to the boosting clusters (`taskset -c 4-11`): **single-core
+2482** (+13 %; multi-core 13302 on those 8 cores only). So the kernel should
+rate clusters 1 and 2 above cluster 0 (capacity from the boost frequency:
+0037 sets `capacity_freq_ref`, but the capacities are not rescaled).
