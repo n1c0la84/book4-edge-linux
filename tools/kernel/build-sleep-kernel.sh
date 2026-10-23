@@ -132,6 +132,16 @@ if ! grep -q '^CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE=y' .config; then
     echo '   config: QCOM_TZMEM_MODE_SHMBRIDGE' >&2
 fi
 grep -q '^CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE=y' .config || { echo 'error: could not set CONFIG_QCOM_TZMEM_MODE_SHMBRIDGE' >&2; exit 1; }
+# The TEO idle governor next to menu (23 October): with menu, 83 % of
+# cluster 0's CL5 entries end before CL5's minimum residency. Built in, it
+# can be chosen at runtime (/sys/devices/system/cpu/cpuidle/current_governor);
+# menu stays the default.
+if ! grep -q '^CONFIG_CPU_IDLE_GOV_TEO=y' .config; then
+    ./scripts/config --enable CPU_IDLE_GOV_TEO
+    make -s LOCALVERSION=$lv olddefconfig
+    echo '   config: CPU_IDLE_GOV_TEO' >&2
+fi
+grep -q '^CONFIG_CPU_IDLE_GOV_TEO=y' .config || { echo 'error: could not set CONFIG_CPU_IDLE_GOV_TEO' >&2; exit 1; }
 make -s -j\$(nproc) LOCALVERSION=$lv Image modules qcom/$dtbname >&2
 out=~/src/sleep-out; rm -rf \$out; mkdir -p \$out
 make -s LOCALVERSION=$lv INSTALL_MOD_PATH=\$out INSTALL_MOD_STRIP=1 DEPMOD=true modules_install >&2
