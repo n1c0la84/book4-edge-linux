@@ -55,12 +55,22 @@ esac
 staged=; [ "$(uname -r)" != "$rel" ] || staged=1
 stage=/var/lib/book4/staged
 
-patches=$(tar -cz -C "$here/sleep-backport" $(cd "$here/sleep-backport" && ls *.patch) | base64 -w0)
-emuec=$(tar -cz -C "$repo/drivers/anatase" --transform 's|^patches|emuec|' patches | base64 -w0)
-gbec=$(tar -cz -C "$repo/drivers/anatase" --transform 's|^patches-galaxybook-ec|gbec|' patches-galaxybook-ec | base64 -w0)
+# The patches and module sources go to the container as files in Fedora's
+# ~/src/.book4-build (as base64 in the command they outgrew the 128 KB limit
+# for one argument, 23 October: "Argument list too long").
+pay=$(mktemp -d)
+tar -cz -C "$here/sleep-backport" -f "$pay/patches.tgz" $(cd "$here/sleep-backport" && ls *.patch)
+tar -cz -C "$repo/drivers/anatase" --transform 's|^patches|emuec|' -f "$pay/emuec.tgz" patches
+tar -cz -C "$repo/drivers/anatase" --transform 's|^patches-galaxybook-ec|gbec|' -f "$pay/gbec.tgz" patches-galaxybook-ec
 # the whole sleep-modules folder (every source the Makefile names) + icc_hold
-mods=$(tar -cz --exclude='*.ko' --exclude='*.o' --exclude='*.mod*' --exclude='.*' \
-       -C "$repo/tools/power" sleep-modules icc-hold/icc_hold.c | base64 -w0)
+tar -cz --exclude='*.ko' --exclude='*.o' --exclude='*.mod*' --exclude='.*' \
+    -C "$repo/tools/power" -f "$pay/mods.tgz" sleep-modules icc-hold/icc_hold.c
+sudo -v
+fh=$(mktemp -d); sudo mount -o subvol=home "$DEV_ROOT" "$fh"
+sudo rm -rf "$fh/$USER/src/.book4-build"
+sudo install -d -m 755 "$fh/$USER/src/.book4-build"
+sudo install -m 644 "$pay"/*.tgz "$fh/$USER/src/.book4-build/"
+sync; sudo umount "$fh"; rmdir "$fh"; rm -rf "$pay"
 sum=$(cat "$here"/sleep-backport/*.patch | sha256sum | cut -c1-16)
 # Checksum of every prefix of the set, "N:sum" for the first N patches: a tree
 # built with the first N patches only needs patches N+1.. applied (patches
@@ -87,7 +97,7 @@ if [ ! -e patchwork-sleep ]; then
     cd patchwork-sleep
     r=\$(make -s LOCALVERSION= kernelrelease)
     [ \"\$r\" = $base ] || { echo \"error: tree release is \$r, expected $base\" >&2; exit 1; }
-    p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
+    p=\$(mktemp -d); tar -xzf ~/src/.book4-build/patches.tgz -C \$p
     for f in \$p/*.patch; do
         patch -p1 --forward -s < \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
         echo \"   applied: \$(basename \$f)\" >&2
@@ -95,7 +105,7 @@ if [ ! -e patchwork-sleep ]; then
     # samsung-emuec patches (drivers/anatase/patches): ~/src/patchwork got
     # them only as a module build, never in its source, so a copy lacks them
     # (22 October: unplug-during-sleep reset back at EL2)
-    echo $emuec | base64 -d | tar -xz -C \$p
+    tar -xzf ~/src/.book4-build/emuec.tgz -C \$p
     for f in \$p/emuec/*.patch; do
         patch -s -p1 -d drivers/usb/typec --dry-run -R -f -i \$f >/dev/null 2>&1 && continue
         patch -s -p1 -d drivers/usb/typec -f -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
@@ -104,7 +114,7 @@ if [ ! -e patchwork-sleep ]; then
     rm -f drivers/usb/typec/samsung-emuec.c.orig
     # same for samsung-galaxybook-ec (drivers/anatase/patches-galaxybook-ec;
     # 22 October: battery readings frozen on book4s)
-    echo $gbec | base64 -d | tar -xz -C \$p
+    tar -xzf ~/src/.book4-build/gbec.tgz -C \$p
     for f in \$p/gbec/*.patch; do
         patch -s -p1 -d drivers/platform/arm64 --dry-run -R -f -i \$f >/dev/null 2>&1 && continue
         patch -s -p1 -d drivers/platform/arm64 -f -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
@@ -114,7 +124,7 @@ if [ ! -e patchwork-sleep ]; then
     echo $sum > .book4-patches
 else
     cd patchwork-sleep
-    p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
+    p=\$(mktemp -d); tar -xzf ~/src/.book4-build/patches.tgz -C \$p
     i=0
     for f in \$p/*.patch; do
         i=\$((i + 1)); [ \$i -gt \$have ] || continue
@@ -162,7 +172,7 @@ done
 make -s -j\$(nproc) LOCALVERSION=$lv Image modules qcom/$dtbname >&2
 out=~/src/sleep-out; rm -rf \$out; mkdir -p \$out
 make -s LOCALVERSION=$lv INSTALL_MOD_PATH=\$out INSTALL_MOD_STRIP=1 DEPMOD=true modules_install >&2
-m=\$(mktemp -d); echo $mods | base64 -d | tar -xz -C \$m
+m=\$(mktemp -d); tar -xzf ~/src/.book4-build/mods.tgz -C \$m
 cp \$m/icc-hold/icc_hold.c \$m/sleep-modules/; echo 'obj-m += icc_hold.o' >> \$m/sleep-modules/Makefile
 make -s LOCALVERSION=$lv M=\$m/sleep-modules modules >&2
 install -D -m 644 -t \$out/lib/modules/$rel/extra \$m/sleep-modules/*.ko
