@@ -11,8 +11,8 @@
 # After sleeps of 30 min or more on battery, also a desktop notification
 # (time asleep, W, days a full battery would last, deep-sleep share).
 # Sleeps with the charger plugged in at either end are logged without a
-# wattage. The minute awake before the reading adds ~0.1 Wh: noise on a
-# night, not on a 10-minute nap.
+# wattage. The minute awake before the reading is taken off with the
+# battery's current at that moment (since 23 October).
 set -u
 bat=/sys/class/power_supply/samsung-galaxybook-battery
 st=/sys/kernel/debug/qcom_stats
@@ -61,6 +61,12 @@ report/*)
     read -r c1 v1 s2 <<<"$(batt)"
     rm -f "$run/pre" "$run/post"
     secs=$((t1 - t0)); [ "$secs" -gt 0 ] || exit 0
+    # The charge is read ~60 s after the wake: take off what that awake
+    # minute used (the battery's own current now, times the time awake), in
+    # mAh, so short sleeps are comparable with long ones.
+    awake=$(( $(date +%s) - t1 ))
+    i_now=$(cat "$bat/current_now" 2>/dev/null || echo 0); i_now=${i_now#-}
+    c1=$(( c1 + i_now * awake / 3600 ))
     res=$(awk -v s=$secs -v a=$((a1 - a0)) -v x=$((x1 - x0)) -v d=$((d1 - d0)) \
         'BEGIN { t = s * 19200000; printf "aosd %.1f%% cxsd %.1f%% ddr %.1f%%", 100*a/t, 100*x/t, 100*d/t }')
     if [ "$s0" = Discharging ] && [ "$s1" = Discharging ] && [ "$s2" = Discharging ]; then
