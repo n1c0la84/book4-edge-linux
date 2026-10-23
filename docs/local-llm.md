@@ -112,3 +112,13 @@ Use: `systemctl --user start llama-server`, then `opencode -m llama.cpp/qwen3-8b
 `systemctl --user stop llama-server` frees the RAM. The first request reads
 opencode's whole prompt at ~80 t/s (two minutes or so); llama-server keeps it
 cached, so later turns only pay for what is new.
+
+A lean agent for it (`agent.lean` in `opencode.json`, prompt in
+`~/.config/opencode/prompts/lean.md`, ten lines): the default "build" agent
+sends ~11.4k tokens (three minutes at ~65 t/s) because it describes twelve
+tools, among them `skill` (which lists every skill under `~/.claude/skills`),
+`task` and `webfetch`. "lean" keeps read, grep, glob, edit, write and bash
+(the rest set to "deny" under `permission`), runs on `llama.cpp/qwen3-8b` at
+Qwen3's recommended temperature 0.6 / top_p 0.95. Tab switches to it in
+opencode, or `opencode --agent lean`. `opencode debug agent lean` shows
+what it resolves to.
