@@ -41,10 +41,13 @@ Two kernels, both ours: `7.2.7-book4` (EL1, Fedora's default, the build base)
 and `7.2.7-book4s`, the sleep kernel booted at EL2 every day. A kernel update
 is a rebuild, done on Arch through Fedora's container:
 
-- The sleep kernel: boot the normal EL1 entry (the build script refuses to
-  replace the running kernel), `bash tools/kernel/build-sleep-kernel.sh`,
+- The sleep kernel, from any boot: `bash tools/kernel/build-sleep-kernel.sh`,
   then `bash install/el2/sleep-setup.sh` (re-creates the EL2 entry from the
-  new DTB and keeps the defaults).
+  new DTB and keeps the defaults). When the sleep kernel itself is running,
+  its new modules are staged in `/var/lib/book4/staged` and swapped in at
+  the next boot (`book4-modules-swap.service`, before anything loads modules
+  from disk; the previous set stays as `<release>.old`), so reboot when it
+  suits you. Patches added at the end of the set build incrementally.
 - Only its out-of-tree modules: `bash tools/kernel/build-sleep-modules.sh`.
 - The base kernel: [kernel.md](kernel.md), then
   `bash install/arch/sync-kernel.sh` for Arch.

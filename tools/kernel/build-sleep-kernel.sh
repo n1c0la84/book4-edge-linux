@@ -15,7 +15,10 @@
 #      (a new patch set makes a fresh copy), patch, build Image, modules and
 #      the 14" DTB with LOCALVERSION=s, modules_install into ~/src/sleep-out.
 #   2. Arch: copy the modules to /usr/lib/modules/7.2.7-book4s, depmod,
-#      mkinitcpio; install /vmlinuz-7.2.7-book4s,
+#      mkinitcpio (when 7.2.7-book4s itself is running: staged in
+#      /var/lib/book4/staged and swapped in at the next boot by
+#      book4-modules-swap.service, so the running kernel's modules are never
+#      replaced under it); install /vmlinuz-7.2.7-book4s,
 #      /initramfs-7.2.7-book4s-arch.img and /dtb-test/book4-sleep.dtb on /boot.
 #   3. install/el2/sleep-setup.sh then makes the EL2 entry from that DTB
 #      (no EL1 entry for this kernel any more: it is the EL2 kernel).
@@ -47,7 +50,10 @@ case "$(systemctl is-enabled linux-modules-cleanup.service 2>/dev/null || true)"
     masked|not-found|"") ;;
     *) echo "error: linux-modules-cleanup.service is active and would delete this kernel's modules at the next boot of another kernel; run: sudo systemctl mask linux-modules-cleanup.service" >&2; exit 1 ;;
 esac
-[ "$(uname -r)" != "$rel" ] || { echo "error: running $rel itself; boot the normal kernel to rebuild it" >&2; exit 1; }
+# Running this kernel: its modules are staged and swapped in at the next boot
+# (userspace/boot/book4-modules-swap), never replaced under the running kernel.
+staged=; [ "$(uname -r)" != "$rel" ] || staged=1
+stage=/var/lib/book4/staged
 
 patches=$(tar -cz -C "$here/sleep-backport" $(cd "$here/sleep-backport" && ls *.patch) | base64 -w0)
 emuec=$(tar -cz -C "$repo/drivers/anatase" --transform 's|^patches|emuec|' patches | base64 -w0)
@@ -172,15 +178,29 @@ sudo -v
 h=$(mktemp -d); sudo mount -o ro,subvol=home "$DEV_ROOT" "$h"
 src=$h/$USER/src/sleep-out
 [ -d "$src/lib/modules/$rel/kernel" ] && [ -s "$src/Image" ] || { sudo umount "$h"; echo "error: no build output in $src" >&2; exit 1; }
-sudo rm -rf /usr/lib/modules/$rel.new
-sudo cp -a "$src/lib/modules/$rel" /usr/lib/modules/$rel.new
-cp "$src/Image" "$src/$dtbname" "$work/"
-sudo umount "$h"; rmdir "$h"
-sudo rm -rf /usr/lib/modules/$rel
-sudo mv /usr/lib/modules/$rel.new /usr/lib/modules/$rel
-sudo depmod $rel
-echo "   /usr/lib/modules/$rel: $(find /usr/lib/modules/$rel -name '*.ko*' | wc -l) modules"
-sudo mkinitcpio -k $rel -g "$work/initramfs.img" >/dev/null
+if [ -n "$staged" ]; then
+    # Running $rel: stage the modules, build the initramfs from them.
+    sudo rm -rf "$stage"; sudo mkdir -p "$stage/lib/modules"
+    sudo cp -a "$src/lib/modules/$rel" "$stage/lib/modules/$rel"
+    cp "$src/Image" "$src/$dtbname" "$work/"
+    sudo umount "$h"; rmdir "$h"
+    sudo depmod -b "$stage" $rel
+    echo "   staged $stage/lib/modules/$rel: $(find "$stage/lib/modules/$rel" -name '*.ko*' | wc -l) modules (swapped in at the next boot)"
+    sudo install -D -m 755 "$repo/userspace/boot/book4-modules-swap" /usr/local/lib/book4/modules-swap
+    sudo install -m 644 "$repo/userspace/boot/book4-modules-swap.service" /etc/systemd/system/
+    sudo systemctl daemon-reload; sudo systemctl enable -q book4-modules-swap.service
+    sudo mkinitcpio -k $rel -r "$stage" -g "$work/initramfs.img" >/dev/null
+else
+    sudo rm -rf /usr/lib/modules/$rel.new
+    sudo cp -a "$src/lib/modules/$rel" /usr/lib/modules/$rel.new
+    cp "$src/Image" "$src/$dtbname" "$work/"
+    sudo umount "$h"; rmdir "$h"
+    sudo rm -rf /usr/lib/modules/$rel
+    sudo mv /usr/lib/modules/$rel.new /usr/lib/modules/$rel
+    sudo depmod $rel
+    echo "   /usr/lib/modules/$rel: $(find /usr/lib/modules/$rel -name '*.ko*' | wc -l) modules"
+    sudo mkinitcpio -k $rel -g "$work/initramfs.img" >/dev/null
+fi
 LIST=$(sudo lsinitcpio "$work/initramfs.img")   # captured: grep -q in a pipe trips pipefail
 grep -qE '/ufs-qcom\.ko(\.[gx]z|\.zst)?$' <<<"$LIST" || { echo "error: ufs-qcom.ko missing from the initramfs" >&2; exit 1; }
 dtc -q -I dtb -O dtb -p 8192 -o "$work/book4-sleep.dtb" "$work/$dtbname"   # padded for GRUB
@@ -198,3 +218,4 @@ sudo umount "$b"; rmdir "$b"
 echo
 echo "Installed $rel. Refresh the daily EL2 entry from the new DTB:"
 echo "  bash install/el2/sleep-setup.sh"
+[ -z "$staged" ] || echo "Then reboot whenever it suits you: the new modules are swapped in at boot."

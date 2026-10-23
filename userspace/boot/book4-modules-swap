@@ -1,0 +1,20 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# Book4 (tools/kernel/build-sleep-kernel.sh, staged install): a kernel's
+# modules built while that kernel was running wait in
+# /var/lib/book4/staged/lib/modules/<release>; at the next boot, before
+# udev's coldplug or systemd-modules-load load anything from disk, swap them
+# in. The previous tree stays as <release>.old until the next swap.
+set -eu
+s=/var/lib/book4/staged/lib/modules
+m=/usr/lib/modules
+[ -d "$s" ] || exit 0
+for d in "$s"/*/; do
+    [ -d "$d" ] || continue
+    r=$(basename "$d")
+    rm -rf --one-file-system "$m/$r.old"
+    [ -d "$m/$r" ] && mv "$m/$r" "$m/$r.old"
+    mv "$d" "$m/$r"
+    echo "swapped in the staged modules of $r (previous ones: $m/$r.old)"
+done
+rmdir "$s" 2>/dev/null || true

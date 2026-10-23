@@ -1,0 +1,14 @@
+# Book4 (tools/kernel/build-sleep-kernel.sh): swap in staged kernel modules
+[Unit]
+Description=Book4: swap in kernel modules staged by a build
+DefaultDependencies=no
+ConditionDirectoryNotEmpty=/var/lib/book4/staged/lib/modules
+After=systemd-remount-fs.service
+Before=systemd-modules-load.service systemd-udev-trigger.service sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/book4/modules-swap
+
+[Install]
+WantedBy=sysinit.target
