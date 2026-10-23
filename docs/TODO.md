@@ -242,7 +242,7 @@ To test (should work, never verified)
       stable backport request (email to stable@vger.kernel.org) or ask the
       Anatase kernel to cherry-pick it. Our kernel carries our own patch
       meanwhile ([power.md](power.md)).
-- [ ] **Sustained full load reaches 108-112 C** (23 October, on the charger,
+- [x] **Sustained full load reaches 108-112 C** (23 October, on the charger,
       boost on): llama-server reading opencode's 11.4k-token prompt on all
       12 cores for ~20 min. Prompt reading fell from ~65 to ~9 t/s, the
       hardware throttling the clocks while cpufreq still showed 4012 MHz;
@@ -250,7 +250,11 @@ To test (should work, never verified)
       firmware limits it (1-minute runs on 5 October peaked at 96 C). 81-83 C
       20 s after stopping. sleep-backport 0039: a passive trip at 95 C on
       all 30 CPU/CPUSS zones, bound to each cluster's cpufreq cooling
-      device (as the GPU zones are); to verify under the same load. The
+      device (as the GPU zones are). Verified 24 October, on the charger
+      with boost: 5 min of `openssl speed -multi 12 sha256` held the hottest
+      CPU sensor at 95-97 C (step_wise moving the clusters between ~1-4 GHz,
+      single samples down to 710 MHz), 78 C seconds after; 26.1 GB/s
+      averaged (29.0 GB/s for 60 s unthrottled on 5 October). The
       ACPI tables (Windows) also limit on board thermistors behind the PMIC
       ADC (TZ31/TZ32, passive 59/63 C), which Linux does not describe.
 - [ ] **Hibernation** (possible at EL2 too since EFI variables work there,
