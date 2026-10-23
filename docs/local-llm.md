@@ -35,7 +35,7 @@ seconds, so approximate. Generation is memory-bound: 4 threads already
 reach the limit, more only burn power (and 12 slow it down). Prompt
 processing is compute-bound and uses all 12. So:
 
-    ./build/bin/llama-cli -m ~/models/Qwen3-8B-Q4_K_M.gguf -t 4 -tb 12 -cnv
+    ./build/bin/llama-cli -m ~/models/Qwen3-8B-Q4_K_M.gguf -t 4 -tb 12 -cnv   # before memlat; see below
 
 Qwen3-8B has a thinking and a direct mode in one model; `/no_think` or
 `/think` in a message switches. The generation rate corresponds to about
@@ -55,3 +55,26 @@ preview uploads every result publicly): **single-core 2202, multi-core
 (not checked directly: the browser refuses scripted requests): about -3 %
 single-core and -9 % multi-core here, the multi-core gap plausibly memory
 bandwidth. To repeat after the memlat build.
+
+## With memlat and boost (23 October, evening)
+
+Sleep kernel with sleep-backport 0029-0037 (memlat; schedutil reaching the
+4.0 GHz boost), on the charger. Boost: `tools/power/cpu-clock.py` reads
+4003 MHz on CPU 4, 3996/4000 on CPUs 8/9 (one single 704 MHz reading on CPU
+8 right after CPU 4 had boosted, not reproduced), 3410 on CPU 0 (no boost
+step). memlat: DDR 547 MHz idle, ~2.1 GHz during generation (up to 4224),
+LLCC 300 -> 806-1066 MHz.
+
+Qwen3-8B Q4_K_M:
+
+| threads | generation before | generation now | prompt now |
+|---|---|---|---|
+| 4 | 10.4 t/s | **16.2 t/s** | |
+| 6 | 10.5 | **19.4** | 63.7 t/s |
+| 8 | 10.2 | **20.9** | |
+| 12 | 8.9 | 12.8 | 80.9 t/s |
+
+The Surface Pro 11 measured 21.4 t/s with memlat. Prompt processing is
+compute-bound and unchanged (all-core work does not boost). Best now:
+
+    ./build/bin/llama-cli -m ~/models/Qwen3-8B-Q4_K_M.gguf -t 8 -tb 12 -cnv
