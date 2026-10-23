@@ -169,5 +169,7 @@ paths. Qwen3-8B Q4_K_M fully offloaded (`-ngl 99`):
 | prompt, 2048 tokens | 27.3 (27.4 with flash attention) | 34.3 |
 | generation | 8.6 t/s | 20.9 t/s (8 threads) |
 
-The CPU path stays. Worth retrying when Turnip or llama.cpp gain integer
+The whole desktop froze while it ran (no kernel errors): llama.cpp's
+compute work held the GPU and the compositor could not draw until each
+batch finished. The CPU path stays. Worth retrying when Turnip or llama.cpp gain integer
 dot product or cooperative matrix support for this GPU.
