@@ -33,6 +33,34 @@
 	qcom,shm-bridge-vmid = <0xffffffff>;
 };
 
+/*
+ * The boot framebuffer as UEFI leaves it (DisplaySplashBufferInfo and
+ * UEFIDisplayInfo: 0xe4800000, 0x21c0000 bytes, 2880x1800, 32 bpp, stride
+ * 11520), with the GCC display clocks it needs: this EL2 entry boots without
+ * clk_ignore_unused, and the kernel's "Disabling unused clocks" at ~3 s
+ * switched them off, so the screen was black until msm took over (~17 s).
+ * simpledrm keeps listed clocks on and releases them when msm replaces it;
+ * a DT framebuffer also stops sysfb from registering UEFI's a second time.
+ * Only GCC clocks: gcc is built in, dispcc is a module loaded later (its
+ * clocks are not touched by that cleanup). 38/37/39 = GCC_DISP_HF_AXI_CLK,
+ * GCC_DISP_AHB_CLK, GCC_DISP_XO_CLK (no preprocessor here).
+ */
+&{/chosen} {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	ranges;
+
+	framebuffer@e4800000 {
+		compatible = "simple-framebuffer";
+		reg = <0x0 0xe4800000 0x0 0x021c0000>;
+		width = <2880>;
+		height = <1800>;
+		stride = <11520>;
+		format = "a8r8g8b8";
+		clocks = <&gcc 38>, <&gcc 37>, <&gcc 39>;
+	};
+};
+
 &iris {
 	/* TODO: Add video-firmware iommus to start IRIS from EL2 */
 	status = "disabled";
