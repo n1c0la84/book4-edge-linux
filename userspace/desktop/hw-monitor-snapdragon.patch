@@ -1,0 +1,60 @@
+diff --git i/hw-probe w/hw-probe
+index 0aa5bc5..2f1a6c4 100755
+--- i/hw-probe
++++ w/hw-probe
+@@ -50,6 +50,13 @@ trim() {
+ cpu_model=$(awk -F: '/^model name/ {sub(/^[ \t]+/, "", $2); print $2; exit}' /proc/cpuinfo)
+ # ARM boards have no "model name"; fall back to the SoC hardware line.
+ [[ -z $cpu_model ]] && cpu_model=$(awk -F: '/^Hardware|^Model/ {sub(/^[ \t]+/, "", $2); print $2; exit}' /proc/cpuinfo)
++# Snapdragon X: no model line at all; the SoC compatible names the chip.
++if [[ -z $cpu_model && -r /proc/device-tree/compatible ]]; then
++  case "$(tr '\0' ' ' </proc/device-tree/compatible)" in
++    *qcom,x1e80100* | *qcom,x1e*) cpu_model="Snapdragon X Elite" ;;
++    *qcom,x1p42100* | *qcom,x1p*) cpu_model="Snapdragon X Plus" ;;
++  esac
++fi
+ [[ -z $cpu_model ]] && cpu_model="CPU"
+ # Marketing suffixes eat tooltip width and say nothing.
+ cpu_model=$(trim "${cpu_model//(R)/}")
+@@ -111,6 +118,10 @@ for hwmon in /sys/class/hwmon/hwmon*; do
+       cpu_thermal | soc_thermal | scpi_sensors | cpu-thermal)
+         consider_cpu_temp 70 "$input" "${label:-$name}"
+         ;;
++      # Snapdragon X: 30 tsens zones; a cluster-wide one stands for the
++      # package (cluster 1 runs hottest under load).
++      cpuss1_btm_thermal) consider_cpu_temp 52 "$input" "CPU cluster 1" ;;
++      cpuss[0-9]_*_thermal) consider_cpu_temp 50 "$input" "$name" ;;
+       acpitz)
+         consider_cpu_temp 20 "$input" "${label:-$name}"
+         ;;
+@@ -206,6 +217,30 @@ for card in /sys/class/drm/card[0-9]*; do
+   fi
+ done
+ 
++# Adreno (msm): the DRM card is the display controller and the GPU has no
++# sysfs load file. Load comes from book4-gpu-busy (DRM fdinfo, written to
++# $XDG_RUNTIME_DIR/gpu_busy_percent), the clock from devfreq, the
++# temperature from the gpuss tsens zones.
++for df in /sys/class/devfreq/*.gpu; do
++  [[ -r $df/cur_freq ]] || continue
++  gname="Adreno"
++  [[ $cpu_model == "Snapdragon X Elite" ]] && gname="Adreno X1-85"
++  [[ $cpu_model == "Snapdragon X Plus" ]] && gname="Adreno X1-45"
++  entry="{$(printf '%s: %s, ' "$(json_str kind)" "$(json_str msm)")"
++  entry+="$(printf '%s: %s, ' "$(json_str name)" "$(json_str "$gname")")"
++  if [[ -x $HOME/.local/bin/book4-gpu-busy ]]; then
++    entry+="$(printf '%s: %s, ' "$(json_str busyPath)" "$(json_str "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gpu_busy_percent")")"
++  fi
++  for hwmon in /sys/class/hwmon/hwmon*; do
++    [[ $(read_first "$hwmon/name") == gpuss_0_thermal ]] && entry+="$(field_path tempPath "$hwmon/temp1_input")"
++  done
++  entry+="$(field_path clockPath "$df/cur_freq")"
++  entry=${entry%, }
++  entry+="}"
++  gpu_entries=("$entry" "${gpu_entries[@]+"${gpu_entries[@]}"}")
++  break
++done
++
+ # NVIDIA reports nothing useful through sysfs, so it gets sampled by polling
+ # nvidia-smi instead. Declared last: a sysfs-capable card is always cheaper.
+ if command -v nvidia-smi >/dev/null 2>&1; then

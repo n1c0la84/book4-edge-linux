@@ -1,0 +1,12 @@
+# Book4 (install/arch/gpu-busy.sh): GPU load for desktop widgets
+[Unit]
+Description=Book4: Adreno GPU load to $XDG_RUNTIME_DIR/gpu_busy_percent
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/book4-gpu-busy
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

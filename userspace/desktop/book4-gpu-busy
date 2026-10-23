@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+# GPU load for desktop widgets: the msm (Adreno) driver has no
+# gpu_busy_percent, but every DRM client's fdinfo carries drm-engine-gpu, the
+# nanoseconds the GPU worked for it. Summed over clients (one per
+# drm-client-id) and divided by the wall time that is the GPU's busy share.
+# Written every INTERVAL s to $XDG_RUNTIME_DIR/gpu_busy_percent, an integer
+# like amdgpu's sysfs file. Clients are re-discovered every RESCAN s; only
+# their fdinfo is read in between. Sees the user's own processes only, which
+# are the desktop's GPU clients (compositor, browser, games).
+import os, time
+
+INTERVAL, RESCAN = 2.0, 10.0
+out = os.path.join(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"), "gpu_busy_percent")
+
+def find_clients():
+    found = []
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            for fd in os.listdir(f"/proc/{pid}/fd"):
+                if os.readlink(f"/proc/{pid}/fd/{fd}").startswith("/dev/dri/"):
+                    found.append(f"/proc/{pid}/fdinfo/{fd}")
+        except OSError:
+            continue
+    return found
+
+def busy_ns(paths):
+    per_client = {}
+    for p in paths:
+        try:
+            with open(p) as f:
+                info = dict(l.split(":", 1) for l in f if ":" in l)
+        except OSError:
+            continue
+        if "msm" not in info.get("drm-driver", ""):
+            continue
+        cid = info.get("drm-client-id", "").strip()
+        ns = info.get("drm-engine-gpu", "0").split()[0]
+        per_client[cid] = max(per_client.get(cid, 0), int(ns))
+    return per_client
+
+def write(pct):
+    tmp = out + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(f"{pct}\n")
+    os.replace(tmp, out)
+
+clients, scanned = find_clients(), time.monotonic()
+prev, t_prev = busy_ns(clients), time.monotonic()
+write(0)
+while True:
+    time.sleep(INTERVAL)
+    if time.monotonic() - scanned >= RESCAN:
+        clients, scanned = find_clients(), time.monotonic()
+    cur, t = busy_ns(clients), time.monotonic()
+    # only clients present both times; a counter can't go backwards
+    d = sum(max(0, v - prev[c]) for c, v in cur.items() if c in prev)
+    write(min(100, round(100 * d / ((t - t_prev) * 1e9))))
+    prev, t_prev = cur, t

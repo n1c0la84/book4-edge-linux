@@ -95,7 +95,7 @@ rate clusters 1 and 2 above cluster 0 (capacity from the boost frequency:
 A user service runs the server on demand (`~/.config/systemd/user/llama-server.service`):
 
     llama-server -m ~/models/Qwen3-8B-Q4_K_M.gguf -a qwen3-8b --host 127.0.0.1 --port 8080 \
-        -t 8 -tb 12 -c 32768 -fa on -ctk q8_0 -ctv q8_0 -np 1 -cram 2048 --jinja --cache-reuse 256
+        -t 8 -tb 12 -c 24576 -fa off -np 1 -cram 2048 --jinja --cache-reuse 256
 
 32k context because opencode's system prompt and tool list alone are ~10k
 tokens; the q8_0 KV cache keeps the whole server at ~7 GB. The same port
@@ -130,3 +130,28 @@ the title at 0.6 t/s; 3 min 34 s to the first reply). Queued, the
 title takes seconds and the prompt ~45 s. `-cram 2048` caps the RAM prompt
 cache that keeps the main prompt while the title request has the slot
 (default 8 GB).
+
+Flash attention off (23 October, `llama-bench -p 2048 -t 12`): 34.3 t/s
+without it, 11.1 with it, 19.3 with it and the q8_0 cache it allows (run in
+that order while the CPU warmed from 76 to 97 C, so the later rows started
+hotter, but not by enough to explain the gap). Prompt reading also slows
+with length: ~80 t/s for 512 tokens, ~34 for 2048. With the f16 cache the
+context is 24k (~3.5 GB); `limit.context` in opencode.json and
+`contextWindow` in pi's models.json say the same.
+
+## pi (23 October)
+
+`npm install -g @mariozechner/pi-coding-agent` (0.73.1; npm skipped three
+optional install scripts: koffi, protobufjs, @google/genai). Four tools (read,
+write, edit, bash) and a short prompt: 1,988 tokens with the two Omarchy
+skills in `~/.pi/agent/skills`. Provider in `~/.pi/agent/models.json`:
+
+    { "providers": { "llama.cpp": {
+        "baseUrl": "http://127.0.0.1:8080/v1", "api": "openai-completions", "apiKey": "local",
+        "compat": { "supportsDeveloperRole": false, "supportsReasoningEffort": false },
+        "models": [ { "id": "qwen3-8b", "name": "Qwen3-8B (local)", "reasoning": true,
+                      "input": ["text"], "contextWindow": 24576, "maxTokens": 8192,
+                      "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 } } ] } } }
+
+Use: `pi --model llama.cpp/qwen3-8b`. One agent at a time: the server queues
+requests (`-np 1`).
