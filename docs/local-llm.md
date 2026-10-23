@@ -89,3 +89,26 @@ step). Pinned to the boosting clusters (`taskset -c 4-11`): **single-core
 2482** (+13 %; multi-core 13302 on those 8 cores only). So the kernel should
 rate clusters 1 and 2 above cluster 0 (capacity from the boost frequency:
 0037 sets `capacity_freq_ref`, but the capacities are not rescaled).
+
+## opencode with the local model (23 October)
+
+A user service runs the server on demand (`~/.config/systemd/user/llama-server.service`):
+
+    llama-server -m ~/models/Qwen3-8B-Q4_K_M.gguf -a qwen3-8b --host 127.0.0.1 --port 8080 \
+        -t 8 -tb 12 -c 32768 -fa on -ctk q8_0 -ctv q8_0 --jinja --cache-reuse 256
+
+32k context because opencode's system prompt and tool list alone are ~10k
+tokens; the q8_0 KV cache keeps the whole server at ~7 GB. The same port
+serves the chat page at http://127.0.0.1:8080. opencode (Omarchy's,
+through mise) gets a provider in `~/.config/opencode/opencode.json`:
+
+    "provider": { "llama.cpp": {
+        "npm": "@ai-sdk/openai-compatible", "name": "llama.cpp (local)",
+        "options": { "baseURL": "http://127.0.0.1:8080/v1" },
+        "models": { "qwen3-8b": { "name": "Qwen3-8B (local)", "tool_call": true,
+                                  "limit": { "context": 32768, "output": 8192 } } } } }
+
+Use: `systemctl --user start llama-server`, then `opencode -m llama.cpp/qwen3-8b`;
+`systemctl --user stop llama-server` frees the RAM. The first request reads
+opencode's whole prompt at ~80 t/s (two minutes or so); llama-server keeps it
+cached, so later turns only pay for what is new.
