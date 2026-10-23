@@ -113,7 +113,10 @@ ConditionPathExists=/usr/lib/modules/%v/extra/el1tmr.ko
 After=systemd-modules-load.service
 
 [Service]
-Type=oneshot
+# exec, not oneshot: the helper waits for the sound card and the AOSS driver
+# (up to two minutes), and as a oneshot it held the login screen back by
+# ~6 s (23 October). It only has to be done before the first suspend.
+Type=exec
 RemainAfterExit=yes
 ExecStart=$helper
 
