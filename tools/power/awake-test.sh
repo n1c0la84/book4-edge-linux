@@ -15,6 +15,8 @@
 #   bright-25      brightness 25 %
 #   bright-100     brightness 100 %
 #   all-savings    wifi-ps + aspm + usb-rpm together (brightness 50 %)
+#   screen-off     panel off (hyprctl dispatch dpms off), back on after: the
+#                  screen's share of the total
 # Results: printed, and appended to ~/.local/state/book4-awake-power.csv.
 #
 # Run as yourself:  bash tools/power/awake-test.sh [VARIANT ...]
@@ -42,6 +44,7 @@ wifips() { sudo iw dev wlan0 set power_save "$1" 2>/dev/null || true; }
 setaspm() { echo "$1" | sudo tee "$aspm" >/dev/null 2>&1 || echo "   (ASPM policy not writable)"; }
 usbrpm() { for d in $usbdevs; do echo "$1" | sudo tee "$d/power/control" >/dev/null; done; }
 restore() {
+    hyprctl dispatch dpms on >/dev/null 2>&1 || true
     echo "$bright0" | sudo tee "$bl/brightness" >/dev/null
     wifips "${ps0:-off}"; setaspm "$aspm0" >/dev/null
     for d in $usbdevs; do echo "${usb0[$d]}" | sudo tee "$d/power/control" >/dev/null; done
@@ -73,10 +76,11 @@ apply() {
         bright-25) setb 25 ;;
         bright-100) setb 100 ;;
         all-savings) wifips on; setaspm powersupersave; usbrpm auto ;;
+        screen-off) hyprctl dispatch dpms off >/dev/null ;;
         *) echo "unknown variant $1" >&2; return 1 ;;
     esac
 }
-undo() { wifips "${ps0:-off}"; setaspm "$aspm0" >/dev/null; for d in $usbdevs; do echo "${usb0[$d]}" | sudo tee "$d/power/control" >/dev/null; done; }
+undo() { hyprctl dispatch dpms on >/dev/null 2>&1 || true; wifips "${ps0:-off}"; setaspm "$aspm0" >/dev/null; for d in $usbdevs; do echo "${usb0[$d]}" | sudo tee "$d/power/control" >/dev/null; done; }
 
 mkdir -p "$(dirname "$csv")"
 [ -e "$csv" ] || echo "time,variant,watts,battery_pct,kernel" > "$csv"
