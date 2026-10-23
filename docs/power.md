@@ -1447,6 +1447,21 @@ use (both logged), the EC itself, and a Windows battery-standby figure for
 this board (`powercfg /sleepstudy` after an hour lid closed on battery),
 the only real target.
 
+## Power while awake (23 October)
+
+`tools/power/awake-test.sh` (on battery, hands off, one minute averaged per
+setting after 20 s to settle; the EC refreshes `current_now` every 2-3 s, so
+a single run resolves about ±0.2 W): idle at EL2, dark theme, brightness
+50 %: **5.36 W**. Against that: Wi-Fi power saving +0.06, PCIe ASPM
+`powersupersave` +0.20, USB runtime PM -0.09, brightness 25 % -0.07 and
+100 % +0.13, all three savings together +0.04 W: nothing beyond the noise.
+The OLED panel costs little at any brightness with a dark theme (it only
+spends on lit pixels). CPU idle: per core only WFI and `cpu-sleep-0`
+(retention, `0x00000004`); the cluster states CL4 `0x01000044` and CL5
+`0x01000054` and SS1 `0x02000154` are in the PSCI domains (OSI), their use
+only visible in `/sys/kernel/debug/pm_genpd` (root). Next: `screen-off` (the
+panel's share) and the cluster-state residency.
+
 ## What we know about the sleep state
 
 - **Windows reaches full low power in sleep** (`powercfg /sleepstudy`,
