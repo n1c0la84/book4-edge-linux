@@ -242,6 +242,15 @@ To test (should work, never verified)
       stable backport request (email to stable@vger.kernel.org) or ask the
       Anatase kernel to cherry-pick it. Our kernel carries our own patch
       meanwhile ([power.md](power.md)).
+- [ ] **Sustained full load reaches 108-112 C** (23 October, on the charger,
+      boost on): llama-server reading opencode's 11.4k-token prompt on all
+      12 cores for ~20 min. Prompt reading fell from ~65 to ~9 t/s, the
+      hardware throttling the clocks while cpufreq still showed 4012 MHz;
+      the Linux cpufreq cooling devices stayed at state 0, so only the
+      firmware limits it (1-minute runs on 5 October peaked at 96 C). 81-83 C
+      20 s after stopping. To do: Linux passive trips (~95 C) on the CPU
+      thermal zones bound to the cpufreq cooling devices, or fewer threads
+      for long jobs; check what Windows does under the same load.
 - [ ] **Hibernation** (possible at EL2 too since EFI variables work there,
       21 October; with deep sleep at EL2 it is no longer needed for nights on
       battery, and its resume still resets the machine). Swap and
