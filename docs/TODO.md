@@ -274,7 +274,9 @@ To test (should work, never verified)
         random-4K write tests had just scattered it inside the UFS's own
         flash mapping. Rewritten sequentially it reads at 1.8 GB/s; after
         20 s of random 4K writes over it, 1.1 GB/s again (reproduced).
-- [ ] **Hibernation** (possible at EL2 too since EFI variables work there,
+- [ ] **Hibernation** (setup removed 24 October with `hibernate-setup.sh undo`:
+      swap file, `/swap` subvolume and the DSP service; zram only now. Possible
+      at EL2 too since EFI variables work there,
       21 October; with deep sleep at EL2 it is no longer needed for nights on
       battery, and its resume still resets the machine). Swap and
       `HibernateLocation` are set up. The first attempt hung while stopping
