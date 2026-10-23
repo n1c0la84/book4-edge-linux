@@ -43,3 +43,15 @@ Qwen3-8B has a thinking and a direct mode in one model; `/no_think` or
 measured 7 t/s for the same model without memlat (38 GB/s STREAM) and 21 t/s
 with it; memlat is in the sleep kernel from the next build
 (`tools/kernel/sleep-backport/0029-0036`).
+
+## CPU baseline: Geekbench 7 (23 October)
+
+Geekbench 7.1.0 Linux/AArch64 preview (official, `cdn.geekbench.com`,
+`Geekbench-7.1.0-LinuxARMPreview.tar.gz`; run from its folder, `--cpu`; the
+preview uploads every result publicly): **single-core 2202, multi-core
+13226** at EL2 on 7.2.7-book4s without memlat, on battery, max 3.42 GHz (the
+4.0 GHz boost is never requested on Linux). Geekbench 7 is calibrated to 2500
+= Ryzen 7 7700. The X1E-80-100's browser average was reported as 2261 / 14483
+(not checked directly: the browser refuses scripted requests): about -3 %
+single-core and -9 % multi-core here, the multi-core gap plausibly memory
+bandwidth. To repeat after the memlat build.
