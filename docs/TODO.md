@@ -451,4 +451,5 @@ Not yet reported:
 - **CPU capacity with boost** (23 October): all CPUs report `cpu_capacity`
   1024, so single-threaded work also lands on cluster 0 (3.42 GHz) instead of
   the 4.0 GHz clusters. Geekbench single-core 2200 unpinned, 2482 pinned to
-  CPUs 4-11. Rescale the capacities from the boost frequency (after 0037).
+  CPUs 4-11. Cause: no `capacity-dmips-mhz` in hamoa.dtsi, so no capacities
+  at all. sleep-backport 0038 adds it (cluster 0 ~872, 1-2 1024); to verify.

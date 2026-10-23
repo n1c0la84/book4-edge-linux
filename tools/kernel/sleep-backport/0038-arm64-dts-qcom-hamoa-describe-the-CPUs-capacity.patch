@@ -1,0 +1,126 @@
+From cd68271aaa36275e1abb8e6b4082cb5a90df1980 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Fri, 23 Oct 2026 21:51:34 +0200
+Subject: [PATCH] arm64: dts: qcom: hamoa: describe the CPUs' capacity
+
+Without capacity-dmips-mhz, arch_topology computes no CPU capacities and
+every CPU stays at 1024, although the second and third clusters reach
+4012.8 MHz (boost) and the first only 3417.6 MHz. Single-threaded work then
+lands on the first cluster as often as elsewhere: on the Galaxy Book4 Edge
+Geekbench 7 single-core scored 2200 unpinned and 2482 pinned to CPUs 4-11.
+
+All twelve cores are the same Oryon core, so give them the same
+capacity-dmips-mhz; arch_topology scales it by each policy's maximum
+frequency (cpuinfo.max_freq at policy creation), so the first cluster ends
+up at ~872 and the others at 1024.
+
+Assisted-by: Claude Opus 5.5
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01ALoC6yerK2c2q13o4h7F4t
+---
+ arch/arm64/boot/dts/qcom/hamoa.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/hamoa.dtsi b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+index e01a393dd..432c6b509 100644
+--- a/arch/arm64/boot/dts/qcom/hamoa.dtsi
++++ b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+@@ -73,6 +73,7 @@ cpu0: cpu@0 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x0>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_0>;
+ 			power-domains = <&cpu_pd0>, <&scmi_dvfs 0>;
+ 			power-domain-names = "psci", "perf";
+@@ -90,6 +91,7 @@ cpu1: cpu@100 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x100>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_0>;
+ 			power-domains = <&cpu_pd1>, <&scmi_dvfs 0>;
+ 			power-domain-names = "psci", "perf";
+@@ -101,6 +103,7 @@ cpu2: cpu@200 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x200>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_0>;
+ 			power-domains = <&cpu_pd2>, <&scmi_dvfs 0>;
+ 			power-domain-names = "psci", "perf";
+@@ -112,6 +115,7 @@ cpu3: cpu@300 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x300>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_0>;
+ 			power-domains = <&cpu_pd3>, <&scmi_dvfs 0>;
+ 			power-domain-names = "psci", "perf";
+@@ -123,6 +127,7 @@ cpu4: cpu@10000 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x10000>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_1>;
+ 			power-domains = <&cpu_pd4>, <&scmi_dvfs 1>;
+ 			power-domain-names = "psci", "perf";
+@@ -140,6 +145,7 @@ cpu5: cpu@10100 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x10100>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_1>;
+ 			power-domains = <&cpu_pd5>, <&scmi_dvfs 1>;
+ 			power-domain-names = "psci", "perf";
+@@ -151,6 +157,7 @@ cpu6: cpu@10200 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x10200>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_1>;
+ 			power-domains = <&cpu_pd6>, <&scmi_dvfs 1>;
+ 			power-domain-names = "psci", "perf";
+@@ -162,6 +169,7 @@ cpu7: cpu@10300 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x10300>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_1>;
+ 			power-domains = <&cpu_pd7>, <&scmi_dvfs 1>;
+ 			power-domain-names = "psci", "perf";
+@@ -173,6 +181,7 @@ cpu8: cpu@20000 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x20000>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_2>;
+ 			power-domains = <&cpu_pd8>, <&scmi_dvfs 2>;
+ 			power-domain-names = "psci", "perf";
+@@ -190,6 +199,7 @@ cpu9: cpu@20100 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x20100>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_2>;
+ 			power-domains = <&cpu_pd9>, <&scmi_dvfs 2>;
+ 			power-domain-names = "psci", "perf";
+@@ -201,6 +211,7 @@ cpu10: cpu@20200 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x20200>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_2>;
+ 			power-domains = <&cpu_pd10>, <&scmi_dvfs 2>;
+ 			power-domain-names = "psci", "perf";
+@@ -212,6 +223,7 @@ cpu11: cpu@20300 {
+ 			compatible = "qcom,oryon";
+ 			reg = <0x0 0x20300>;
+ 			enable-method = "psci";
++			capacity-dmips-mhz = <1024>;
+ 			next-level-cache = <&l2_2>;
+ 			power-domains = <&cpu_pd11>, <&scmi_dvfs 2>;
+ 			power-domain-names = "psci", "perf";
+-- 
+2.56.0
+
