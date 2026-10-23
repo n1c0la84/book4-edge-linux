@@ -248,9 +248,11 @@ To test (should work, never verified)
       hardware throttling the clocks while cpufreq still showed 4012 MHz;
       the Linux cpufreq cooling devices stayed at state 0, so only the
       firmware limits it (1-minute runs on 5 October peaked at 96 C). 81-83 C
-      20 s after stopping. To do: Linux passive trips (~95 C) on the CPU
-      thermal zones bound to the cpufreq cooling devices, or fewer threads
-      for long jobs; check what Windows does under the same load.
+      20 s after stopping. sleep-backport 0039: a passive trip at 95 C on
+      all 30 CPU/CPUSS zones, bound to each cluster's cpufreq cooling
+      device (as the GPU zones are); to verify under the same load. The
+      ACPI tables (Windows) also limit on board thermistors behind the PMIC
+      ADC (TZ31/TZ32, passive 59/63 C), which Linux does not describe.
 - [ ] **Hibernation** (possible at EL2 too since EFI variables work there,
       21 October; with deep sleep at EL2 it is no longer needed for nights on
       battery, and its resume still resets the machine). Swap and
