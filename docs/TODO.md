@@ -34,12 +34,15 @@ within each section. What is already done is listed at the end.
       [power.md](power.md); low priority now that s2idle sleeps deeply.
 - [ ] **Fedora's role** (undecided): build host only, or retire it and move
       `/boot`, GRUB and the kernel builds to Arch.
-- [ ] **The rest of the board's ~1.5 W in deep sleep** (the Vivobook S15 is
-      at ~0.17-0.25 W). First lead: Windows pulls GPIO 44 (`MODS`, the EC's
-      standby input) low at Modern Standby; Linux never does, and on 3 October
-      driving it visibly changed the EC in sleep. Test without a rebuild:
-      `tools/power/el2-mods-test.sh` (entry "el2-mods"), drain vs the daily
-      entry. Next candidates: `VREG_MISC_3P3` (touchscreen) and `VREG_WCN_3P3`
+- [ ] **The board's power in deep sleep: ~0.9 W** (sleep log, 21-23 October:
+      0.90 W over 4 h 10 min on el2-sleep, `cxsd` 100 %; nights of 12 h
+      survive; the Vivobook S15 is at ~0.17-0.25 W, the Surface Pro 11 at
+      0.26 W). Every sleep is logged with its entry and radio state
+      (`install/arch/sleep-log.sh`, `journalctl -t book4-sleep`).
+      **GPIO 44 (`MODS`) ruled out:** el2-mods ~0.93 W (1 h 36 min) against
+      ~0.9 W on el2-sleep. Next, each with no rebuild: airplane mode before
+      a sleep (the log records it); `tools/power/el2-dt-test.sh nomisc`
+      (touchscreen rail switched off at suspend). Further candidates: `VREG_MISC_3P3` (touchscreen) and `VREG_WCN_3P3`
       (Wi-Fi/BT chip, held only by always-on on the 14") are always-on; so
       are l7b/l10b (front camera supplies; the driver could switch them) and
       l12b (1.2 V, no consumer on the 14"; speaker-amp vdd-io on the 15", so
