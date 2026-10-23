@@ -14,6 +14,8 @@
 #
 #   bash install/el2/esp-install.sh            install / update
 #   bash install/el2/esp-install.sh entry-off  remove only the boot entry
+#   bash install/el2/esp-install.sh entry-refresh  re-create the entry (same place in
+#        the boot order) with the current shell options, e.g. after 23 Oct
 #   bash install/el2/esp-install.sh default    put the entry first in the boot order
 #   bash install/el2/esp-install.sh default-off  put it back at the end
 #        (the GRUB half of "EL2 by default" is install/el2/sleep-setup.sh)
@@ -36,6 +38,9 @@ ESPDEV=/dev/sda1
 DIR=EFI/book4-el2
 FWDIR=firmware/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
 LABEL="Book4 EL2 (slbounce)"
+# Options for the UEFI Shell: no 5 s "Press ESC ... startup.nsh" countdown.
+# EDK2's Shell skips the first word of its load options as its own name.
+SHELLARGS="Shellaa64.efi -delay 0"
 shell=$HOME/src/el2-usb/stage/EFI/BOOT/BOOTAA64.EFI
 shell_url=https://github.com/pbatard/UEFI-Shell/releases/download/26H1/shellaa64.efi
 shell_sha=1569b6db4e391c3c59194aa3319a3945efb800fb25349eb9d36ff3d258517ea6
@@ -68,6 +73,17 @@ entry() { sudo efibootmgr | awk -v l="$LABEL" '/^Boot[0-9A-F][0-9A-F][0-9A-F][0-
 
 if [ "${1:-}" = entry-off ]; then
     n=$(entry); [ -n "$n" ] && sudo efibootmgr -q -b "$n" -B && echo "removed Boot$n ($LABEL)" || echo "no '$LABEL' entry"
+    exit 0
+fi
+if [ "${1:-}" = entry-refresh ]; then
+    n=$(entry); [ -n "$n" ] || { echo "error: no '$LABEL' entry; run this script without arguments first" >&2; exit 1; }
+    order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
+    sudo efibootmgr -q -b "$n" -B
+    sudo efibootmgr -q --create --disk /dev/sda --part 1 --label "$LABEL" --loader "\\${DIR//\//\\}\\Shellaa64.efi" --unicode "$SHELLARGS"
+    m=$(entry); [ -n "$m" ] || { echo "error: entry not re-created" >&2; exit 1; }
+    sudo efibootmgr -q -o "$(tr ',' '\n' <<<"$order" | sed "s/^$n\$/$m/" | paste -sd, -)"   # same place as before
+    echo "re-created Boot$m ($LABEL) with options '$SHELLARGS'"
+    sudo efibootmgr -v | grep -E "^BootOrder|$LABEL"
     exit 0
 fi
 case "${1:-}" in default|default-off)
@@ -122,7 +138,7 @@ if [ -n "$(entry)" ]; then
     echo "   '$LABEL' already exists (Boot$(entry))"
 else
     order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
-    sudo efibootmgr -q --create --disk /dev/sda --part 1 --label "$LABEL" --loader "\\${DIR//\//\\}\\Shellaa64.efi"
+    sudo efibootmgr -q --create --disk /dev/sda --part 1 --label "$LABEL" --loader "\\${DIR//\//\\}\\Shellaa64.efi" --unicode "$SHELLARGS"
     n=$(entry); [ -n "$n" ] || { echo "error: entry not created" >&2; exit 1; }
     sudo efibootmgr -q -o "$order${order:+,}$n"   # old order first: the default boot is unchanged
     echo "   created Boot$n, appended to the boot order ($order -> $order${order:+,}$n)"
