@@ -1,0 +1,5 @@
+# Book4 (install/arch/battery-policy.sh): the CPU's 4.0 GHz boost (clusters
+# 1-2, single/dual core; sleep-backport 0037 makes schedutil use it) only on
+# the charger, as Windows does; on battery the CPUs stay at up to 3.4 GHz.
+SUBSYSTEM=="power_supply", KERNEL=="samsung-galaxybook-ac", ACTION=="add|change", ATTR{online}=="1", RUN+="/bin/sh -c 'echo 1 > /sys/devices/system/cpu/cpufreq/boost'"
+SUBSYSTEM=="power_supply", KERNEL=="samsung-galaxybook-ac", ACTION=="add|change", ATTR{online}=="0", RUN+="/bin/sh -c 'echo 0 > /sys/devices/system/cpu/cpufreq/boost'"

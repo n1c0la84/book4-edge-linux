@@ -209,6 +209,13 @@ To test (should work, never verified)
       temperature; the boot log's "Failed to add opps_by_lvl at 3417600 for
       NCC1/NCC2" may be related.
 
+      **23 October: fixed in sleep-backport 0037** (scmi-cpufreq creates its
+      policies with boost enabled, so the reference is 4012.8 MHz; the order
+      in cpufreq_policy_online is init -> table validation -> CREATE_POLICY
+      notifier -> boost applied). Boost on the charger only, as Windows:
+      `userspace/battery/91-book4-boost.rules` via `install/arch/battery-policy.sh`.
+      To verify after the next sleep kernel build, on AC:
+      `python3 tools/power/cpu-clock.py 4 8` should read ~4000 MHz.
 - [ ] **Charging stalls after plugging in while awake** (6-7 Oct): first PD
       request times out, 5 V, then 20 V; the battery then gets ~1 W. Plugged
       in during sleep it charges fine. Workaround: plug in with the lid

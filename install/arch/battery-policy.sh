@@ -8,10 +8,13 @@
 #   /etc/UPower/UPower.conf.d/70-book4.conf   PowerOff at 3 %
 #   ~/.local/bin/book4-battery-warn + user timer book4-battery-warn.timer
 #        (every minute; one critical notification per discharge at <= 5 %)
+#   /etc/udev/rules.d/91-book4-boost.rules   the 4.0 GHz CPU boost on the
+#        charger only (needs sleep-backport 0037 for schedutil to use it)
 # Run on Arch as your user:  bash install/arch/battery-policy.sh [undo]
 set -euo pipefail
 src=$(cd "$(dirname "$0")/../../userspace/battery" && pwd)
 conf=/etc/UPower/UPower.conf.d/70-book4.conf
+rule=/etc/udev/rules.d/91-book4-boost.rules
 bin=$HOME/.local/bin/book4-battery-warn
 units=$HOME/.config/systemd/user
 
@@ -22,13 +25,17 @@ if [ "${1:-}" = undo ]; then
     systemctl --user disable --now book4-battery-warn.timer 2>/dev/null || true
     rm -f "$bin" "$units/book4-battery-warn.service" "$units/book4-battery-warn.timer"
     systemctl --user daemon-reload
-    sudo rm -f "$conf"; sudo systemctl restart upower
-    echo "Removed: back to UPower's defaults and Omarchy's single warning."
+    sudo rm -f "$conf" "$rule"; sudo systemctl restart upower; sudo udevadm control --reload
+    echo "Removed: back to UPower's defaults, Omarchy's single warning, boost as the kernel sets it."
     exit 0
 fi
 
 sudo install -D -m 644 "$src/70-book4.conf" "$conf"
 sudo systemctl restart upower
+sudo install -m 644 "$src/91-book4-boost.rules" "$rule"
+sudo udevadm control --reload
+sudo udevadm trigger --action=change /sys/class/power_supply/samsung-galaxybook-ac
+echo "CPU boost: $(cat /sys/devices/system/cpu/cpufreq/boost) (1 on the charger, 0 on battery)"
 install -D -m 755 "$src/book4-battery-warn" "$bin"
 install -D -m 644 -t "$units" "$src/book4-battery-warn.service" "$src/book4-battery-warn.timer"
 systemctl --user daemon-reload

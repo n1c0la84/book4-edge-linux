@@ -1,0 +1,54 @@
+From 22fcf3a84453e4246f743993c516c0717bfcbb0b Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Fri, 23 Oct 2026 19:05:46 +0200
+Subject: [PATCH] cpufreq: scmi: create policies with boost enabled
+
+arch_topology records a policy's capacity reference frequency once, at
+CPUFREQ_CREATE_POLICY, from cpuinfo.max_freq, and schedutil never requests
+more than that reference (its headroom is capped at the CPU's capacity).
+With boost disabled at creation, the reference is the highest non-boost
+frequency, so enabling boost later raises the policy's limit but schedutil
+never uses it.
+
+On the Galaxy Book4 Edge (X1E80100) the second and third clusters offer
+4012.8 MHz as a boost OPP above 3417.6 MHz; it was never requested, while
+forcing it with scaling_min_freq measured 3996 MHz on a single core.
+Enable boost in the driver and for each policy before its table is
+validated, so the reference includes the boost OPP. Disabling boost later
+(e.g. on battery) still lowers the limit as before.
+
+Assisted-by: Claude Opus 5.5
+---
+ drivers/cpufreq/scmi-cpufreq.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/cpufreq/scmi-cpufreq.c b/drivers/cpufreq/scmi-cpufreq.c
+index 4edb4f7a8..392ad3416 100644
+--- a/drivers/cpufreq/scmi-cpufreq.c
++++ b/drivers/cpufreq/scmi-cpufreq.c
+@@ -289,6 +289,14 @@ static int scmi_cpufreq_init(struct cpufreq_policy *policy)
+ 
+ 	policy->driver_data = priv;
+ 	policy->freq_table = freq_table;
++	/*
++	 * Create the policy with its boost frequencies counted, so that
++	 * cpuinfo.max_freq, and with it the capacity reference frequency
++	 * that arch_topology records once at policy creation, include them.
++	 * Otherwise schedutil, which never requests more than that reference,
++	 * cannot reach a boost frequency even after boost is enabled.
++	 */
++	policy->boost_enabled = true;
+ 
+ 	/* SCMI allows DVFS request for any domain from any CPU */
+ 	policy->dvfs_possible_from_any_cpu = true;
+@@ -393,6 +401,7 @@ static struct cpufreq_driver scmi_cpufreq_driver = {
+ 	.exit	= scmi_cpufreq_exit,
+ 	.register_em	= scmi_cpufreq_register_em,
+ 	.set_boost	= cpufreq_boost_set_sw,
++	.boost_enabled	= true,
+ };
+ 
+ static bool scmi_dev_used_by_cpus(struct device *scmi_dev)
+-- 
+2.56.0
+
