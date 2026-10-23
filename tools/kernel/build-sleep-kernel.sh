@@ -142,6 +142,17 @@ if ! grep -q '^CONFIG_CPU_IDLE_GOV_TEO=y' .config; then
     echo '   config: CPU_IDLE_GOV_TEO' >&2
 fi
 grep -q '^CONFIG_CPU_IDLE_GOV_TEO=y' .config || { echo 'error: could not set CONFIG_CPU_IDLE_GOV_TEO' >&2; exit 1; }
+# memlat (23 October, sleep-backport 0029-0036, Qualcomm's RFC v8): the
+# CPUCP raises DDR/LLCC bandwidth when the CPUs wait on memory; without it
+# memory stays at its lowest vote (SP11: 38 -> 67 GB/s). As modules, loaded
+# by book4-el2-sleep.service (the vendor protocol does not autoload).
+for o in QCOM_SCMI_GENERIC_EXT DEVFREQ_GOV_REMOTE SCMI_QCOM_MEMLAT_DEVFREQ; do
+    grep -q \"^CONFIG_\$o=[ym]\" .config && continue
+    ./scripts/config --module \$o
+    make -s LOCALVERSION=$lv olddefconfig
+    grep -q \"^CONFIG_\$o=[ym]\" .config || { echo \"error: could not set CONFIG_\$o\" >&2; exit 1; }
+    echo \"   config: \$o=m\" >&2
+done
 make -s -j\$(nproc) LOCALVERSION=$lv Image modules qcom/$dtbname >&2
 out=~/src/sleep-out; rm -rf \$out; mkdir -p \$out
 make -s LOCALVERSION=$lv INSTALL_MOD_PATH=\$out INSTALL_MOD_STRIP=1 DEPMOD=true modules_install >&2

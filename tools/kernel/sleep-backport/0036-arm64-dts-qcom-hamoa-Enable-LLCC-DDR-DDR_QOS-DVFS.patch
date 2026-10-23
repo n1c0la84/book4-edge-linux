@@ -1,0 +1,36 @@
+From 0f72e70a34a8dd26b9423216718db8b179181844 Mon Sep 17 00:00:00 2001
+From: Sibi Sankar <sibi.sankar@oss.qualcomm.com>
+Date: Fri, 24 Jul 2026 12:48:14 +0530
+Subject: [PATCH 36/36] arm64: dts: qcom: hamoa: Enable LLCC/DDR/DDR_QOS DVFS
+
+On Qualcomm Hamoa SoCs, the memlat governor and the mechanism for
+controlling the LLCC and DDR/DDR_QOS frequencies run on the CPU Control
+Processor (CPUCP) and are exposed via the QCOM SCMI Generic Extension
+protocol. Add the SCMI vendor protocol node required for the QCOM
+SCMI Generic Extension protocol to probe and get functional bus DVFS
+on Hamoa/Purwa SoCs.
+
+Signed-off-by: Sibi Sankar <sibi.sankar@oss.qualcomm.com>
+Signed-off-by: Pragnesh Papaniya <pragnesh.papaniya@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/hamoa.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/hamoa.dtsi b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+index 1ebca3562..e01a393dd 100644
+--- a/arch/arm64/boot/dts/qcom/hamoa.dtsi
++++ b/arch/arm64/boot/dts/qcom/hamoa.dtsi
+@@ -358,6 +358,10 @@ scmi_dvfs: protocol@13 {
+ 				reg = <0x13>;
+ 				#power-domain-cells = <1>;
+ 			};
++
++			scmi_vendor: protocol@80 {
++				reg = <0x80>;
++			};
+ 		};
+ 	};
+ 
+-- 
+2.56.0
+

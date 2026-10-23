@@ -13,7 +13,8 @@
 #   1. book4-el2-sleep.service (only on kernel command lines with
 #      id_aa64mmfr0.ecv=1, i.e. the EL2 entries, and only for a kernel that
 #      has el1tmr): loads el1tmr (next timer deadline into CNTP_CVAL_EL02 for
-#      the firmware) and aoss_cxsd_only (no AOSD, the XO-off level: in it the
+#      the firmware), the memlat modules (DDR/LLCC bandwidth on demand) and
+#      aoss_cxsd_only (no AOSD, the XO-off level: in it the
 #      machine hard-resets about N hours + ~1 min after boot, here 19 Oct
 #      and on x1e-sleep's Vivobook; CX collapse and DDR self-refresh stay
 #      allowed, x1e-sleep measured ~0.17 W over 16.9 h that way; to allow
@@ -77,6 +78,9 @@ sudo tee "$helper" >/dev/null <<'EOF'
 # Book4 (install/el2/sleep-setup.sh): prepare s2idle deep sleep at EL2.
 set -eu
 modprobe el1tmr
+# memlat (sleep-backport 0029-0036): DDR/LLCC follow the CPUs' memory needs.
+# The SCMI vendor protocol does not autoload; optional, never fatal.
+modprobe -q qcom_generic_ext 2>/dev/null && modprobe -q scmi_qcom_memlat_devfreq 2>/dev/null || true
 modprobe icc_hold nodes=/soc@0/ufshc@1d84000 tag=3
 # Without a verified hold, releasing the boot votes breaks UFS on resume.
 dmesg | grep -q 'icc_hold: holding [1-9][0-9]* paths (tag 3)' ||
