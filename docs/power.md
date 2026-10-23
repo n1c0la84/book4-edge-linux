@@ -1420,6 +1420,33 @@ above; no permanent sleep configuration or kernel/module change was made.
   same and also logs the deep-sleep evidence: `qcom_stats` counters and the
   system power domain's s2idle entries.
 
+## Board power in sleep: what Windows' PEP switches (23 October)
+
+Daily EL2 sleep is ~0.9 W (sleep log, `cxsd` ~100 %). Compared with the
+PEP's per-device recipes (`~/src/book4-acpi/pep-summary.txt`,
+`tools/power/pep-dump.py`) for the rails Linux keeps on:
+
+- `LDO10_B` (1.8 V): the SAR sensors (`\_SB.SAR1`/`SAR2`), switched on in D0
+  and never off: Windows keeps it on too.
+- `LDO12_B` (1.2 V): the SD card controller (`\_SB.SDC2`), on in D0, off in
+  D3. Both SD controllers are disabled in our DT (no slot on the 14").
+- `LDO7_B`: only in the PEP's resource inventory (`PPPP`), no device
+  recipe: Windows does not switch it either.
+- `VREG_WCN_3P3` (TLMM GPIO 214) and `VREG_MISC_3P3` (PMIC GPIO 6): no
+  recipe drives either GPIO, so in Modern Standby Windows keeps the Wi-Fi
+  chip and the touchscreen rail powered as well.
+- What Windows does switch off in D3 is what Linux already does in
+  suspend: the Wi-Fi controller's PHY rails and clock buffer (ACPI `PCI4` =
+  our `pci@1c08000`, address window `0x7c300000`; ACPI `PCI3` is a
+  controller this 14" does not use), every USB controller's PHY rails
+  (both bound controllers have `power/wakeup` disabled here), UFS.
+
+So the rail recipes do not explain the gap to the Vivobook S15's ~0.2 W.
+Still open: airplane mode and `el2-nomisc` (touchscreen rail) in normal
+use (both logged), the EC itself, and a Windows battery-standby figure for
+this board (`powercfg /sleepstudy` after an hour lid closed on battery),
+the only real target.
+
 ## What we know about the sleep state
 
 - **Windows reaches full low power in sleep** (`powercfg /sleepstudy`,
