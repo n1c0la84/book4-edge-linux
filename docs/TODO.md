@@ -29,8 +29,9 @@ within each section. What is already done is listed at the end.
       **Works** (`tools/video/iris-test.sh`): `/dev/video0` decoder,
       `/dev/video1` encoder, no reset, no SMMU faults; 1080p60 H.264 and HEVC
       output bit-identical to software (PSNR inf), ~0.3 s CPU per 10 s clip
-      against 2.3 s (H.264) / 3.3 s (HEVC) in software. Still to check: the
-      s2idle collapse with Iris loaded, Moonlight itself.
+      against 2.3 s (H.264) / 3.3 s (HEVC) in software. s2idle with Iris
+      loaded (idle) still collapses: cxsd/ddr 1 entry, 136.5 s of a 139 s
+      suspend (aosd 0 by design, `aoss_cxsd_only`). Still to check: Moonlight.
 - [ ] **NPU (Hexagon CDSP) from Linux**: `/dev/fastrpc-cdsp` is up at EL2;
       armbrusl/x1e-npu runs llama.cpp's Hexagon backend on a Yoga Slim 7x
       (X1E, mainline). Needs the fastrpc userspace and the Hexagon SDK
