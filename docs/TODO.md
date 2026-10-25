@@ -18,6 +18,22 @@ within each section. What is already done is listed at the end.
       bridge self-owner); `~/audio-modules-prep.sh` (the module-only stopgap)
       is obsolete. `build-sleep-kernel.sh` now builds incrementally when
       patches are added at the end.
+- [ ] **Hardware video decoding at EL2** (25 October, untested): Moonlight
+      found no V4L2 decoder because there was none: the video clock
+      controller driver was never built (`CONFIG_SM_VIDEOCC_8550`) and the EL2
+      overlay disabled Iris, since at EL2 nothing authenticates and starts its
+      firmware. Now: sleep-backport 0040 (Stephan Gerhold's non-TZ Iris start,
+      ported from venus; it loads `qcom/vpu/vpu30_p4.mbn` without TrustZone),
+      the firmware stream (SID 0x1942, jglathe via justririll/x1e-dsp) in
+      `dts/src/x1-el2-book4.dtso`, both modules in `build-sleep-kernel.sh`.
+      Test: rebuild, `install/el2/sleep-setup.sh`, `tools/video/iris-test.sh
+      hold`, reboot, `tools/video/iris-test.sh`. Risk: the Zenbook A14 (X1P)
+      hard-resets on the same start (VPU locked by its TME); reported to work
+      on X1E. Then watch the s2idle collapse with Iris loaded.
+- [ ] **NPU (Hexagon CDSP) from Linux**: `/dev/fastrpc-cdsp` is up at EL2;
+      armbrusl/x1e-npu runs llama.cpp's Hexagon backend on a Yoga Slim 7x
+      (X1E, mainline). Needs the fastrpc userspace and the Hexagon SDK
+      libraries; not started.
 - [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
       in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset

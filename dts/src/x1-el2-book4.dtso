@@ -64,9 +64,20 @@
 	};
 };
 
+/*
+ * Iris video codec without TrustZone/PAS (25 October): at EL2 nothing
+ * authenticates the firmware or programs the Iris firmware's SMMU stream,
+ * so qcom-iris loads qcom/vpu/vpu30_p4.mbn itself and maps it through this
+ * stream (sleep-backport 0040, Stephan Gerhold's non-TZ port from venus;
+ * SID 0x1942 from jglathe's x1-el2 via github.com/justririll/x1e-dsp).
+ * Needs CONFIG_SM_VIDEOCC_8550 for the video clock controller.
+ */
 &iris {
-	/* TODO: Add video-firmware iommus to start IRIS from EL2 */
-	status = "disabled";
+	status = "okay";
+
+	video-firmware {
+		iommus = <&apps_smmu 0x1942 0x0>;
+	};
 };
 
 /*
