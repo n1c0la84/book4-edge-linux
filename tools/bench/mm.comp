@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// C = A * B, one output element per invocation, 16x16 tiles in shared
+// memory. n is a multiple of 16 (the harness asks for multiples of 32).
+#version 450
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(std430, binding = 0) readonly buffer BA { float A[]; };
+layout(std430, binding = 1) readonly buffer BB { float B[]; };
+layout(std430, binding = 2) writeonly buffer BC { float C[]; };
+layout(push_constant) uniform P { uint n; };
+
+shared float ta[16][16];
+shared float tb[16][16];
+
+void main()
+{
+	uint r = gl_GlobalInvocationID.y, c = gl_GlobalInvocationID.x;
+	uint lr = gl_LocalInvocationID.y, lc = gl_LocalInvocationID.x;
+	float acc = 0.0;
+
+	for (uint t = 0; t < n; t += 16) {
+		ta[lr][lc] = A[r * n + t + lc];
+		tb[lr][lc] = B[(t + lr) * n + c];
+		barrier();
+		for (uint k = 0; k < 16; k++)
+			acc += ta[lr][k] * tb[k][lc];
+		barrier();
+	}
+	C[r * n + c] = acc;
+}

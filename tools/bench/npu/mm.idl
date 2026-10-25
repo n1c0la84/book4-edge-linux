@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// FastRPC interface of the NPU back end. qaic (Hexagon SDK) turns it into
+// mm.h, mm_stub.c (CPU side, links against libcdsprpc) and mm_skel.c
+// (DSP side, linked into libmm_skel.so with dsp.c).
+#include "AEEStdDef.idl"
+#include "remote.idl"
+
+interface mm : remote_handle64 {
+	// C = A * B, n x n floats, row major, n a multiple of 32
+	long run(in sequence<float> a, in sequence<float> b, rout sequence<float> c, in long n);
+};
