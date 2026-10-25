@@ -1,0 +1,48 @@
+From b46ec7c6bd5ac0f6b11f1ab253053f10983c23f4 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Sun, 25 Oct 2026 16:33:38 +0100
+Subject: [PATCH 1/2] dspqueue: DSPQUEUE_FORCE_V1 to create a version 1 queue
+ (book4 test)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ src/dspqueue/dspqueue_cpu.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/src/dspqueue/dspqueue_cpu.c b/src/dspqueue/dspqueue_cpu.c
+index 66092fa..f249eaf 100644
+--- a/src/dspqueue/dspqueue_cpu.c
++++ b/src/dspqueue/dspqueue_cpu.c
+@@ -602,6 +602,21 @@ AEEResult dspqueue_create(int domain, uint32_t flags, uint32_t req_queue_size,
+     }
+   }
+ 
++  // book4: DSPQUEUE_FORCE_V1=1 creates a version 1 queue (no wait counts,
++  // no driver signaling, a FastRPC signal for every packet), the protocol
++  // that older DSP images (CDSP.HT.2.9.c2-00051) use, to test whether newer
++  // ones (c1-00078) only hang in the v2 + FastRPC signaling combination.
++  if (getenv("DSPQUEUE_FORCE_V1") && !q->have_driver_signaling) {
++    q->header->version = 1;
++    q->header->flags = 0;
++    FARF(ALWAYS, "dspqueue: DSPQUEUE_FORCE_V1, creating a version 1 queue");
++    VERIFY((nErr = dspqueue_rpc_create_queue(dq->dsp_handle, q->id,
++                                             q->user_queue_fd, queue_count,
++                                             &q->dsp_id)) == 0);
++    q->have_wait_counts = 0;
++    goto created;
++  }
++
+   // First attempt to create the queue with an invalid version. If the call
+   // succeeds we know the DSP side is ignoring the version and flags and does
+   // not support wait counts in the header, driver signaling, or any other
+@@ -646,6 +661,7 @@ AEEResult dspqueue_create(int domain, uint32_t flags, uint32_t req_queue_size,
+     q->have_driver_signaling = 0;
+   }
+ 
++created:
+   // Create synchronization resources
+   VERIFY((nErr = pthread_mutex_init(&q->packet_mutex, NULL)) == 0);
+   packetmutex = 1;
+-- 
+2.56.0
+

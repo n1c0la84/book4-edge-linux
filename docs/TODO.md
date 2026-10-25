@@ -66,6 +66,14 @@ within each section. What is already done is listed at the end.
       logged, as the T14s owner warns (late DSP reply on a torn-down
       session). So: no more NPU runs that can hang until dspsignal exists;
       after a hang, reboot at once.
+      **dspsignal port written (25 October, untested):** sleep-backport 0041
+      (Qualcomm dsp-kernel's dspsignal on upstream fastrpc: 8-byte
+      `client_id << 32 | signal` messages both ways, local ioctl 'R' 0x60)
+      and the fastrpc library side (`tools/npu/fastrpc-patches/`, built into
+      `~/npu/rt`; probes the kernel, so it is inert on older kernels). Test:
+      rebuild + `install/el2/sleep-setup.sh`, reboot, then
+      `bash tools/npu/dspsignal-test.sh` (checks both capabilities are 1
+      before it runs llama.cpp).
 - [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
       in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset

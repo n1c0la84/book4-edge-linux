@@ -1,0 +1,121 @@
+From c61a0a67caecbf64709a4b0048edb8112c1b2a06 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Sun, 25 Oct 2026 16:34:00 +0100
+Subject: [PATCH 2/2] dspsignal: implement the ioctls for the book4 kernel's
+ FASTRPC_IOCTL_DSPSIGNAL
+
+ioctl_signal_*() were stubs returning AEE_EUNSUPPORTED. They now use the
+local FASTRPC_IOCTL_DSPSIGNAL ('R' 0x60) of the book4 kernel patch
+"misc: fastrpc: add dspsignal"; DSPSIGNAL_DRIVER_SUPPORT is probed with
+an invalid request (EINVAL = supported, ENOTTY = not).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ inc/fastrpc_ioctl.h | 20 ++++++++++++++++++++
+ src/fastrpc_ioctl.c | 30 +++++++++++++++++++++++++-----
+ 2 files changed, 45 insertions(+), 5 deletions(-)
+
+diff --git a/inc/fastrpc_ioctl.h b/inc/fastrpc_ioctl.h
+index 42b99d2..748ff5b 100644
+--- a/inc/fastrpc_ioctl.h
++++ b/inc/fastrpc_ioctl.h
+@@ -26,6 +26,26 @@
+ #define FASTRPC_IOCTL_MEM_UNMAP			_IOWR('R', 11, struct fastrpc_ioctl_mem_unmap)
+ #define FASTRPC_IOCTL_SET_OPTION		_IOWR('R', 12, struct fastrpc_ioctl_set_option)
+ #define FASTRPC_IOCTL_GET_DSP_INFO		_IOWR('R', 13, struct fastrpc_ioctl_capability)
++/*
++ * dspsignal: matches the book4 kernel patch "misc: fastrpc: add dspsignal"
++ * (a local ABI, not upstream). A kernel without it answers ENOTTY.
++ */
++#define FASTRPC_IOCTL_DSPSIGNAL			_IOWR('R', 0x60, struct fastrpc_ioctl_dspsignal)
++
++enum fastrpc_ioctl_dspsignal_req {
++	FASTRPC_IOCTL_DSPSIGNAL_SIGNAL = 1,
++	FASTRPC_IOCTL_DSPSIGNAL_WAIT = 2,
++	FASTRPC_IOCTL_DSPSIGNAL_CREATE = 3,
++	FASTRPC_IOCTL_DSPSIGNAL_DESTROY = 4,
++	FASTRPC_IOCTL_DSPSIGNAL_CANCEL_WAIT = 5,
++};
++
++struct fastrpc_ioctl_dspsignal {
++	__u32 req;
++	__u32 signal_id;
++	__u32 timeout_usec;	/* WAIT; flags for CREATE */
++	__u32 reserved;
++};
+ 
+ #define ADSPRPC_DEVICE "/dev/fastrpc-adsp"
+ #define SDSPRPC_DEVICE "/dev/fastrpc-sdsp"
+diff --git a/src/fastrpc_ioctl.c b/src/fastrpc_ioctl.c
+index 22d7418..76f7967 100644
+--- a/src/fastrpc_ioctl.c
++++ b/src/fastrpc_ioctl.c
+@@ -8,8 +8,11 @@
+ #include "fastrpc_internal.h"
+ #include "fastrpc_notif.h"
+ #include "remote.h"
++#include <errno.h>
+ #include <sys/ioctl.h>
+ 
++static int ioctl_dspsignal(int dev, uint32_t req, uint32_t signal, uint32_t arg);
++
+ int ioctl_init(int dev, uint32_t flags, int attr, unsigned char *shell, int shelllen,
+                int shellfd, char *mem, int memlen, int memfd, int tessiglen) {
+   int ioErr = 0;
+@@ -141,6 +144,14 @@ int ioctl_getdspinfo(int dev, int domain, uint32_t attr, uint32_t *capability) {
+   int ioErr = AEE_SUCCESS;
+   static struct fastrpc_ioctl_capability cap = {0};
+ 
++  if (attr == DSPSIGNAL_DRIVER_SUPPORT) {
++    /* request 0 is invalid: EINVAL from a kernel with dspsignal, ENOTTY
++     * from one without */
++    errno = 0;
++    *capability = (ioctl_dspsignal(dev, 0, 0, 0) == -1 && errno == EINVAL);
++    errno = 0;
++    return 0;
++  }
+   if (attr >= PERF_V2_DRIVER_SUPPORT && attr < FASTRPC_MAX_ATTRIBUTES) {
+     *capability = 0;
+     return 0;
+@@ -178,24 +189,33 @@ int ioctl_getperf(int dev, int key, void *data, int *datalen) {
+   return AEE_EUNSUPPORTED;
+ }
+ 
++/* dspsignal through FASTRPC_IOCTL_DSPSIGNAL: -1 and errno on failure, as
++ * dspsignal.c expects (ENOTTY = no kernel support, ETIMEDOUT, EINTR) */
++static int ioctl_dspsignal(int dev, uint32_t req, uint32_t signal, uint32_t arg) {
++  struct fastrpc_ioctl_dspsignal sig = {
++      .req = req, .signal_id = signal, .timeout_usec = arg};
++
++  return ioctl(dev, FASTRPC_IOCTL_DSPSIGNAL, &sig);
++}
++
+ int ioctl_signal_create(int dev, uint32_t signal, uint32_t flags) {
+-  return AEE_EUNSUPPORTED;
++  return ioctl_dspsignal(dev, FASTRPC_IOCTL_DSPSIGNAL_CREATE, signal, flags);
+ }
+ 
+ int ioctl_signal_destroy(int dev, uint32_t signal) {
+-  return AEE_EUNSUPPORTED;
++  return ioctl_dspsignal(dev, FASTRPC_IOCTL_DSPSIGNAL_DESTROY, signal, 0);
+ }
+ 
+ int ioctl_signal_signal(int dev, uint32_t signal) {
+-  return AEE_EUNSUPPORTED;
++  return ioctl_dspsignal(dev, FASTRPC_IOCTL_DSPSIGNAL_SIGNAL, signal, 0);
+ }
+ 
+ int ioctl_signal_wait(int dev, uint32_t signal, uint32_t timeout_usec) {
+-  return AEE_EUNSUPPORTED;
++  return ioctl_dspsignal(dev, FASTRPC_IOCTL_DSPSIGNAL_WAIT, signal, timeout_usec);
+ }
+ 
+ int ioctl_signal_cancel_wait(int dev, uint32_t signal) {
+-  return AEE_EUNSUPPORTED;
++  return ioctl_dspsignal(dev, FASTRPC_IOCTL_DSPSIGNAL_CANCEL_WAIT, signal, 0);
+ }
+ 
+ int ioctl_sharedbuf(int dev,
+-- 
+2.56.0
+
