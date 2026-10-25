@@ -18,18 +18,19 @@ within each section. What is already done is listed at the end.
       bridge self-owner); `~/audio-modules-prep.sh` (the module-only stopgap)
       is obsolete. `build-sleep-kernel.sh` now builds incrementally when
       patches are added at the end.
-- [ ] **Hardware video decoding at EL2** (25 October, untested): Moonlight
-      found no V4L2 decoder because there was none: the video clock
-      controller driver was never built (`CONFIG_SM_VIDEOCC_8550`) and the EL2
-      overlay disabled Iris, since at EL2 nothing authenticates and starts its
-      firmware. Now: sleep-backport 0040 (Stephan Gerhold's non-TZ Iris start,
-      ported from venus; it loads `qcom/vpu/vpu30_p4.mbn` without TrustZone),
-      the firmware stream (SID 0x1942, jglathe via justririll/x1e-dsp) in
+- [x] **Hardware video decoding at EL2** (25 October): Moonlight found no
+      V4L2 decoder because there was none: the video clock controller driver
+      was never built (`CONFIG_SM_VIDEOCC_8550`) and the EL2 overlay disabled
+      Iris, since at EL2 nothing authenticates and starts its firmware. Fix:
+      sleep-backport 0040 (Stephan Gerhold's non-TZ Iris start, ported from
+      venus; loads `qcom/vpu/vpu30_p4.mbn` without TrustZone), the firmware
+      stream (SID 0x1942, jglathe via justririll/x1e-dsp) in
       `dts/src/x1-el2-book4.dtso`, both modules in `build-sleep-kernel.sh`.
-      Test: rebuild, `install/el2/sleep-setup.sh`, `tools/video/iris-test.sh
-      hold`, reboot, `tools/video/iris-test.sh`. Risk: the Zenbook A14 (X1P)
-      hard-resets on the same start (VPU locked by its TME); reported to work
-      on X1E. Then watch the s2idle collapse with Iris loaded.
+      **Works** (`tools/video/iris-test.sh`): `/dev/video0` decoder,
+      `/dev/video1` encoder, no reset, no SMMU faults; 1080p60 H.264 and HEVC
+      output bit-identical to software (PSNR inf), ~0.3 s CPU per 10 s clip
+      against 2.3 s (H.264) / 3.3 s (HEVC) in software. Still to check: the
+      s2idle collapse with Iris loaded, Moonlight itself.
 - [ ] **NPU (Hexagon CDSP) from Linux**: `/dev/fastrpc-cdsp` is up at EL2;
       armbrusl/x1e-npu runs llama.cpp's Hexagon backend on a Yoga Slim 7x
       (X1E, mainline). Needs the fastrpc userspace and the Hexagon SDK

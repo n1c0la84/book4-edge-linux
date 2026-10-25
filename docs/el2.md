@@ -88,6 +88,7 @@ handlers registered).
 | USB, fingerprint reader, camera nodes | present |
 | APSS watchdog | `qcom_wdt`, Linux's own, inactive unless opened |
 | **Internal audio, compute DSP** | **no**: `error -22 initializing firmware` (TrustZone refuses PAS without the hypervisor); speakers, microphones and headset jack sit behind the ADSP |
+| Hardware video decode/encode (Iris) | works since 25 October: sleep-backport 0040 + `&iris` in the EL2 overlay, `/dev/video0` (decoder), `/dev/video1` (encoder); `tools/video/iris-test.sh` |
 | Bluetooth audio | works (AirPods): encoded on the CPU, sent through the WCN7850, no DSP |
 | **UEFI variables** | **none** (`qcom_qseecom` probe `-22`): `/sys/firmware/efi/efivars` is empty, `efibootmgr` cannot work |
 | **RTC** | **none** (`RTC time: n/a`): `rtc-pm8xxx` needs the `RTCInfo` variable; the clock is right only once NTP syncs |
