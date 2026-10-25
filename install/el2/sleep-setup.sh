@@ -97,6 +97,13 @@ if [ "${BOOK4_AOSD:-0}" != 1 ]; then
     until modprobe aoss_cxsd_only 2>/dev/null || [ $i -ge 30 ]; do sleep 1; i=$((i + 1)); done
     [ -d /sys/module/aoss_cxsd_only ] || echo "aoss_cxsd_only did not load: AOSD stays allowed (hourly resets)" >&2
 fi
+# No remoteproc recovery: qebspil started the DSPs and Linux only attaches
+# (qcom,broken-reset), so after a DSP crash recovery calls a start op that
+# does not exist and oopses in rproc_start (pc 0x0; 25 October, CDSP crash
+# after a hung NPU session). A crashed DSP then stays offline until reboot.
+for r in /sys/class/remoteproc/remoteproc*; do
+    printf disabled > "$r/recovery" 2>/dev/null || true
+done
 n=0
 for p in $(find /sys/devices -name state_synced); do
     [ "$(cat "$p")" = 1 ] || { printf 1 > "$p"; n=$((n + 1)); }

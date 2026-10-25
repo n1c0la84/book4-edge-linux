@@ -32,10 +32,23 @@ within each section. What is already done is listed at the end.
       against 2.3 s (H.264) / 3.3 s (HEVC) in software. s2idle with Iris
       loaded (idle) still collapses: cxsd/ddr 1 entry, 136.5 s of a 139 s
       suspend (aosd 0 by design, `aoss_cxsd_only`). Still to check: Moonlight.
-- [ ] **NPU (Hexagon CDSP) from Linux**: `/dev/fastrpc-cdsp` is up at EL2;
-      armbrusl/x1e-npu runs llama.cpp's Hexagon backend on a Yoga Slim 7x
-      (X1E, mainline). Needs the fastrpc userspace and the Hexagon SDK
-      libraries; not started.
+- [ ] **NPU (Hexagon CDSP) from Linux** (25 October, half way): FastRPC
+      works at EL2. Recipe from armbrusl/x1e-npu: Samsung's shells from the
+      Windows CDSP package `qcnspmcdm_ext_cdsp8380` (build
+      `CDSP.HT.2.9.c1-00078-HAMOA-1`, byte-identical firmware to what qebspil
+      boots), fastrpc host library built into `~/npu/rt`, llama.cpp's
+      prebuilt `linux-arm64-snapdragon` package (b11874, has
+      `libggml-htp-v73.so`; no x86 cross-build needed), group `fastrpc` +
+      udev rule (`~/npu-setup.sh`). The unsigned PD starts and loads the HTP
+      library, then llama.cpp's first `dspqueue` round trip never returns:
+      qualcomm/fastrpc#377, same hang on a T14s with the same c1-00078
+      firmware; the working Yoga ran a c2 build. Killing the hung run and
+      starting another crashed the CDSP (`fatal error ... sleep_statsi.c:537`)
+      and remoteproc recovery oopsed (attach-only DSP, no start op): recovery
+      is now disabled at EL2 by `install/el2/sleep-setup.sh`. After any hung
+      NPU run: reboot before the next. Ways on: a newer (c2) Samsung CDSP
+      driver from Windows Update, or Qualcomm's QNN/Genie runtime (works on
+      the T14s with c1-00078).
 - [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
       in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset
