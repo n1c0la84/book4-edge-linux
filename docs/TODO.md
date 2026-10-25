@@ -46,9 +46,21 @@ within each section. What is already done is listed at the end.
       starting another crashed the CDSP (`fatal error ... sleep_statsi.c:537`)
       and remoteproc recovery oopsed (attach-only DSP, no start op): recovery
       is now disabled at EL2 by `install/el2/sleep-setup.sh`. After any hung
-      NPU run: reboot before the next. Ways on: a newer (c2) Samsung CDSP
-      driver from Windows Update, or Qualcomm's QNN/Genie runtime (works on
-      the T14s with c1-00078).
+      NPU run: reboot before the next. No newer Samsung driver on Windows
+      Update (NPU driver 30.0.219.1000, 9 Nov 2025 = c1-00078).
+      **Root cause of the hang (25 October):** this firmware's DSP-side
+      dspqueue has a "Queue Monitor" (DSP log: `dspqueue_import: Queue
+      Monitor supported. Importing Queue ... requires packet_callback`) and
+      supports kernel "dspsignal" doorbells (capability 130 = 1); mainline's
+      fastrpc driver has no dspsignal (259 = 0; the fastrpc userspace stubs
+      the ioctls out as unsupported), so the CPU falls back to one FastRPC
+      call per packet, which the monitor never acts on. Forcing a version 1
+      queue (fastrpc branch `book4-dspqueue-v1` in `~/npu/fastrpc`,
+      `DSPQUEUE_FORCE_V1=1`) hangs the same way. The Yoga that works runs
+      the older `c2-00051` (no Queue Monitor). DSP logs: put `0x1f` into
+      `<dsp dir>/<program>.farf`. Fix = dspsignal in the kernel driver and
+      the userspace ioctls (Qualcomm's downstream adsprpc has it), or a
+      DSP-side workaround in libggml-htp.
 - [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
       in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset
