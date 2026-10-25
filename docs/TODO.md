@@ -60,7 +60,12 @@ within each section. What is already done is listed at the end.
       the older `c2-00051` (no Queue Monitor). DSP logs: put `0x1f` into
       `<dsp dir>/<program>.farf`. Fix = dspsignal in the kernel driver and
       the userspace ioctls (Qualcomm's downstream adsprpc has it), or a
-      DSP-side workaround in libggml-htp.
+      DSP-side workaround in libggml-htp. A hung NPU run is not harmless:
+      the forced-v1 run (stopped by SIGINT at 16:21:28, then `No context ID
+      matches response`) was followed by a hard reset at 16:24 with nothing
+      logged, as the T14s owner warns (late DSP reply on a torn-down
+      session). So: no more NPU runs that can hang until dspsignal exists;
+      after a hang, reboot at once.
 - [ ] **An overnight drain** for a real wattage: the EC's `charge_now` moves
       in ~35 mAh steps, so an hour gives only "roughly 1 W" (0.5-1.5 W).
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset
