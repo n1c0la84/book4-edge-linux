@@ -1,0 +1,86 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
+/*
+ * Galaxy Book4 Edge 14" (NP940XMA): four speakers on the sleep kernel's DTB.
+ *
+ * The sleep kernel (tools/kernel/build-sleep-kernel.sh) builds the 14" DTB
+ * from the Anatase base, which has neither the camera nor dts/patches
+ * 0003-0006; those patches sit on top of the camera ones and do not apply
+ * there. This overlay is 0003 (tweeters), 0005 (woofers named by side) and
+ * 0006 (no 0x43 repeater) on their own, without the camera (never tested at
+ * EL2). Built without the preprocessor: GPIO_ACTIVE_LOW = 1.
+ */
+
+/dts-v1/;
+/plugin/;
+
+&{/sound} {
+	audio-routing = "SpkrRight IN", "WSA WSA_SPK1 OUT",
+			"TweeterRight IN", "WSA WSA_SPK2 OUT",
+			"SpkrLeft IN", "WSA2 WSA_SPK1 OUT",
+			"TweeterLeft IN", "WSA2 WSA_SPK2 OUT",
+			"IN1_HPHL", "HPHL_OUT",
+			"IN2_HPHR", "HPHR_OUT",
+			"AMIC2", "MIC BIAS2",
+			"VA DMIC0", "MIC BIAS3",
+			"VA DMIC1", "MIC BIAS3",
+			"VA DMIC2", "MIC BIAS1",
+			"VA DMIC3", "MIC BIAS1",
+			"TX SWR_INPUT1", "ADC2_OUTPUT";
+};
+
+&{/sound/wsa-dai-link/codec} {
+	sound-dai = <&left_spkr>, <&right_tweeter>, <&swr0 0>, <&lpass_wsamacro 0>,
+		    <&right_spkr>, <&left_tweeter>, <&swr3 0>, <&lpass_wsa2macro 0>;
+};
+
+&swr0 {
+	#address-cells = <2>;
+	#size-cells = <0>;
+
+	/* WSA8835 tweeter, right side; macro output SPK2 (RX1) */
+	right_tweeter: speaker@0,1 {
+		compatible = "sdw10217020200";
+		reg = <0 1>;
+		reset-gpios = <&lpass_tlmm 12 1>;
+		#sound-dai-cells = <0>;
+		#thermal-sensor-cells = <0>;
+		sound-name-prefix = "TweeterRight";
+		vdd-supply = <&vreg_l15b_1p8>;
+		qcom,port-mapping = <4 5 6 7>;
+	};
+};
+
+&swr3 {
+	#address-cells = <2>;
+	#size-cells = <0>;
+
+	/* WSA8835 tweeter, left side; macro output SPK2 (RX1) */
+	left_tweeter: speaker@0,1 {
+		compatible = "sdw10217020200";
+		reg = <0 1>;
+		reset-gpios = <&lpass_tlmm 13 1>;
+		#sound-dai-cells = <0>;
+		#thermal-sensor-cells = <0>;
+		sound-name-prefix = "TweeterLeft";
+		vdd-supply = <&vreg_l15b_1p8>;
+		qcom,port-mapping = <4 5 6 7>;
+	};
+};
+
+/*
+ * The woofer names in the shared dtsi are swapped on this model: SoundWire 0
+ * (WSA macro) drives the right woofer, SoundWire 3 (WSA2) the left one.
+ */
+&left_spkr {
+	sound-name-prefix = "SpkrRight";
+};
+
+&right_spkr {
+	sound-name-prefix = "SpkrLeft";
+};
+
+/* Only the eUSB2 repeater at 0x4f (usb_2, the fingerprint reader) exists. */
+&eusb5_repeater {
+	status = "disabled";
+};

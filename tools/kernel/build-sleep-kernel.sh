@@ -20,6 +20,9 @@
 #      book4-modules-swap.service, so the running kernel's modules are never
 #      replaced under it); install /vmlinuz-7.2.7-book4s,
 #      /initramfs-7.2.7-book4s-arch.img and /dtb-test/book4-sleep.dtb on /boot.
+#      The DTB gets dts/src/x1e80100-book4-edge-14-speakers.dtso first: the
+#      tree is the Anatase base without dts/patches, so its DTB drove only
+#      the woofers, swapped (28 October: "audio is very low").
 #   3. install/el2/sleep-setup.sh then makes the EL2 entry from that DTB
 #      (no EL1 entry for this kernel any more: it is the EL2 kernel).
 #
@@ -43,7 +46,7 @@ fi
 if findmnt -rn -S /dev/sda4 >/dev/null; then
     echo "error: /dev/sda4 (/boot) is mounted; unmount it first" >&2; exit 1
 fi
-for t in dtc mkinitcpio lsinitcpio; do command -v $t >/dev/null || { echo "error: $t missing" >&2; exit 1; }; done
+for t in dtc fdtoverlay fdtget mkinitcpio lsinitcpio; do command -v $t >/dev/null || { echo "error: $t missing" >&2; exit 1; }; done
 # kernel-modules-hook's boot-time cleanup deletes module trees pacman doesn't
 # own unless they belong to the running kernel (stage3-omarchy-install.sh).
 case "$(systemctl is-enabled linux-modules-cleanup.service 2>/dev/null || true)" in
@@ -216,7 +219,12 @@ else
 fi
 LIST=$(sudo lsinitcpio "$work/initramfs.img")   # captured: grep -q in a pipe trips pipefail
 grep -qE '/ufs-qcom\.ko(\.[gx]z|\.zst)?$' <<<"$LIST" || { echo "error: ufs-qcom.ko missing from the initramfs" >&2; exit 1; }
-dtc -q -I dtb -O dtb -p 8192 -o "$work/book4-sleep.dtb" "$work/$dtbname"   # padded for GRUB
+# four speakers: tweeters, woofers named by side, no 0x43 repeater
+dtc -q -@ -I dts -O dtb -o "$work/speakers.dtbo" "$repo/dts/src/x1e80100-book4-edge-14-speakers.dtso"
+fdtoverlay -i "$work/$dtbname" -o "$work/speakers.dtb" "$work/speakers.dtbo"
+dtc -q -I dtb -O dtb -p 8192 -o "$work/book4-sleep.dtb" "$work/speakers.dtb"   # padded for GRUB
+[ "$(fdtget -ts "$work/book4-sleep.dtb" /soc@0/soundwire@6b10000/speaker@0,1 sound-name-prefix)" = TweeterLeft ] ||
+    { echo "error: DTB has no tweeters" >&2; exit 1; }
 DTS=$(dtc -q -I dtb -O dts "$work/book4-sleep.dtb")
 grep -c 'system-sleep-only' <<<"$DTS" >/dev/null || { echo "error: DTB has no system-sleep-only DRIPS" >&2; exit 1; }
 grep -c 'arm,psci-suspend-param = <0x2000154>' <<<"$DTS" >/dev/null || { echo "error: DTB has no SS1" >&2; exit 1; }

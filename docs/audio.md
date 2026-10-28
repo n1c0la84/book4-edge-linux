@@ -67,6 +67,18 @@ in its list; the earlier `SpkrLeft2`/`SpkrRight2` were capped only because
 `snd_soc_limit_volume()` writes `platform_max` into the WSA883x driver's
 static control template, shared by every instance.
 
+**EL2 / sleep kernel** (28 October). The sleep kernel's DTB
+(`/dtb-test/book4-sleep.dtb`, the daily EL2 boot) is built from the Anatase
+base without `dts/patches`, so at EL2 only the two woofers played, with
+swapped names, and the crossover sent the highs to channels with no
+amplifier: quiet and muffled. 0003/0005/0006 sit on the camera patches and do
+not apply there, so they are also an overlay without the camera,
+[`dts/src/x1e80100-book4-edge-14-speakers.dtso`](../dts/src/x1e80100-book4-edge-14-speakers.dtso)
+(checked node by node against the fork's 14" DTS).
+`tools/kernel/build-sleep-kernel.sh` applies it; for an installed sleep
+kernel, `install/el2/sleep-speakers-dtb.sh` patches the DTB on /boot and
+refreshes the EL2 entry.
+
 Software: the UCM profile switches the tweeters with the woofers when their
 controls exist (same profile for both DTBs), sets their PA like the woofers',
 and puts the macros' digital gain at the kernel's cap (81 = -3 dB; test
