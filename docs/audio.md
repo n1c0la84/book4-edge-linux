@@ -80,8 +80,8 @@ property by property against the fork's 14" DTS.
 `tools/kernel/apply-sleep-overlays.sh` applies them; `build-sleep-kernel.sh`
 uses it, and for an installed sleep kernel `install/el2/sleep-dtb.sh
 [nocamera|restore]` redoes the DTB on /boot from the copy as built
-(`book4-sleep.dtb.pre-overlays`) and refreshes the EL2 entry. The camera had
-never run at EL2 before this.
+(`book4-sleep.dtb.pre-overlays`) and refreshes the EL2 entry. Verified at EL2 the same
+day: tweeters attached, fingerprint and camera work, deep sleep unchanged.
 
 Software: the UCM profile switches the tweeters with the woofers when their
 controls exist (same profile for both DTBs), sets their PA like the woofers',

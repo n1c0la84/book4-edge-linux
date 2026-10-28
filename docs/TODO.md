@@ -18,6 +18,18 @@ within each section. What is already done is listed at the end.
       bridge self-owner); `~/audio-modules-prep.sh` (the module-only stopgap)
       is obsolete. `build-sleep-kernel.sh` now builds incrementally when
       patches are added at the end.
+- [x] **Speakers, fingerprint and camera at EL2** (28 October): the sleep
+      kernel's DTB is the Anatase base without `dts/patches`, so at EL2 only
+      the woofers played (swapped, highs sent to absent tweeters: "audio is
+      very low"), and the fingerprint reader and camera were missing. Now
+      overlays (`dts/src/x1e80100-book4-edge-14-{speakers,fingerprint,camera}.dtso`)
+      applied by `build-sleep-kernel.sh`, or `install/el2/sleep-dtb.sh
+      [nocamera|restore]` for an installed kernel ([audio.md](audio.md)).
+      **Works:** four amps attached, fingerprint `1c7a:05a1` enumerates, camera
+      streams (`cam`, ~40 fps, no SMMU faults; first time at EL2), and deep
+      sleep holds (141 s suspend: `cxsd`/`ddr` 98 %). Speaker limiter +6 ->
+      +9 dB. Seen twice on 28 Oct: `SWR bus clsh detected` on 6b10000 when
+      playback starts; recovers by itself.
 - [x] **Hardware video decoding at EL2** (25 October): Moonlight found no
       V4L2 decoder because there was none: the video clock controller driver
       was never built (`CONFIG_SM_VIDEOCC_8550`) and the EL2 overlay disabled

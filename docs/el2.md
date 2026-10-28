@@ -85,7 +85,7 @@ handlers registered).
 | Wi-Fi (PCIe 4, now behind Linux's PCIe SMMU) | works; one SMMU translation fault from `0004:01:00.0` at boot |
 | Keyboard, touchpad, touchscreen, lid, power key | work |
 | Battery, charger, USB-C ports (EC over I2C) | work |
-| USB, fingerprint reader, camera nodes | present |
+| USB, fingerprint reader, camera nodes | present (on the 15 Oct DTB; the sleep kernel's DTB needs `install/el2/sleep-dtb.sh` since 28 Oct) |
 | APSS watchdog | `qcom_wdt`, Linux's own, inactive unless opened |
 | **Internal audio, compute DSP** | **no**: `error -22 initializing firmware` (TrustZone refuses PAS without the hypervisor); speakers, microphones and headset jack sit behind the ADSP |
 | Hardware video decode/encode (Iris) | works since 25 October: sleep-backport 0040 + `&iris` in the EL2 overlay, `/dev/video0` (decoder), `/dev/video1` (encoder); `tools/video/iris-test.sh` |
