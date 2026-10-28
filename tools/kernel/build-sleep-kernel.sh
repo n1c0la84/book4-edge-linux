@@ -223,7 +223,7 @@ grep -qE '/ufs-qcom\.ko(\.[gx]z|\.zst)?$' <<<"$LIST" || { echo "error: ufs-qcom.
 dtc -q -@ -I dts -O dtb -o "$work/speakers.dtbo" "$repo/dts/src/x1e80100-book4-edge-14-speakers.dtso"
 fdtoverlay -i "$work/$dtbname" -o "$work/speakers.dtb" "$work/speakers.dtbo"
 dtc -q -I dtb -O dtb -p 8192 -o "$work/book4-sleep.dtb" "$work/speakers.dtb"   # padded for GRUB
-[ "$(fdtget -ts "$work/book4-sleep.dtb" /soc@0/soundwire@6b10000/speaker@0,1 sound-name-prefix)" = TweeterLeft ] ||
+[ "$(fdtget -ts "$work/book4-sleep.dtb" "$(fdtget -ts "$work/book4-sleep.dtb" /__symbols__ left_tweeter 2>/dev/null)" sound-name-prefix 2>/dev/null)" = TweeterLeft ] ||
     { echo "error: DTB has no tweeters" >&2; exit 1; }
 DTS=$(dtc -q -I dtb -O dts "$work/book4-sleep.dtb")
 grep -c 'system-sleep-only' <<<"$DTS" >/dev/null || { echo "error: DTB has no system-sleep-only DRIPS" >&2; exit 1; }

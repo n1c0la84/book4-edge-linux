@@ -24,14 +24,14 @@ b=$(mktemp -d); sudo mount -o ro /dev/sda4 "$b"
 [ -e "$b/$dtb" ] || { sudo umount "$b"; rmdir "$b"; echo "error: no /$dtb; run tools/kernel/build-sleep-kernel.sh" >&2; exit 1; }
 cp "$b/$dtb" "$work/base.dtb"; sudo umount "$b"; rmdir "$b"
 
-if [ "$(fdtget -ts "$work/base.dtb" /soc@0/soundwire@6b10000/speaker@0,1 sound-name-prefix 2>/dev/null)" = TweeterLeft ]; then
+if [ "$(fdtget -ts "$work/base.dtb" "$(fdtget -ts "$work/base.dtb" /__symbols__ left_tweeter 2>/dev/null)" sound-name-prefix 2>/dev/null)" = TweeterLeft ]; then
     echo "/$dtb already has the tweeters"
 else
     fdtget -l "$work/base.dtb" / | grep -qx __symbols__ || { echo "error: /$dtb has no __symbols__" >&2; exit 1; }
     dtc -q -@ -I dts -O dtb -o "$work/speakers.dtbo" "$repo/dts/src/x1e80100-book4-edge-14-speakers.dtso"
     fdtoverlay -i "$work/base.dtb" -o "$work/merged.dtb" "$work/speakers.dtbo"
     dtc -q -I dtb -O dtb -p 8192 -o "$work/new.dtb" "$work/merged.dtb"   # padded for GRUB
-    [ "$(fdtget -ts "$work/new.dtb" /soc@0/soundwire@6b10000/speaker@0,1 sound-name-prefix)" = TweeterLeft ] ||
+    [ "$(fdtget -ts "$work/new.dtb" "$(fdtget -ts "$work/new.dtb" /__symbols__ left_tweeter 2>/dev/null)" sound-name-prefix 2>/dev/null)" = TweeterLeft ] ||
         { echo "error: overlay did not add the tweeters" >&2; exit 1; }
     b=$(mktemp -d); sudo mount /dev/sda4 "$b"
     [ -e "$b/$dtb.pre-speakers" ] || sudo cp -p "$b/$dtb" "$b/$dtb.pre-speakers"
