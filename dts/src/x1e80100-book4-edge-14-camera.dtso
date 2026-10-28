@@ -1,0 +1,317 @@
+// Generated from x1e80100-book4-edge-14-camera.dtso.in by tools/kernel/gen-dt-overlays.sh; edit that file instead.
+/dts-v1/;
+/plugin/;
+&{/} {
+ camera-leds {
+  compatible = "gpio-leds";
+  pinctrl-0 = <&cam_indicator_en>;
+  pinctrl-names = "default";
+  cam_privacy_led: led-camera-indicator {
+   label = "white:camera-indicator";
+   function = "indicator";
+   color = <0>;
+   gpios = <&tlmm 110 0>;
+   default-state = "off";
+  };
+ };
+};
+&{/soc@0} {
+ cci0: cci@ac15000 {
+  compatible = "qcom,x1e80100-cci", "qcom,msm8996-cci";
+  reg = <0 0x0ac15000 0 0x1000>;
+  interrupts = <0 460 1>;
+  clocks = <&camcc 5>,
+    <&camcc 14>,
+    <&camcc 9>;
+  clock-names = "camnoc_axi",
+         "cpas_ahb",
+         "cci";
+  power-domains = <&camcc 5>;
+  pinctrl-0 = <&cci0_default>;
+  pinctrl-1 = <&cci0_sleep>;
+  pinctrl-names = "default", "sleep";
+  #address-cells = <1>;
+  #size-cells = <0>;
+  status = "okay";
+  cci0_i2c0: i2c-bus@0 {
+   reg = <0>;
+   clock-frequency = <100000>;
+   #address-cells = <1>;
+   #size-cells = <0>;
+   camera@36 {
+    compatible = "ovti,ov02c10";
+    reg = <0x36>;
+    reset-gpios = <&tlmm 109 1>;
+    pinctrl-0 = <&cam_rgb_default>;
+    pinctrl-names = "default";
+    clocks = <&camcc 79>;
+    assigned-clocks = <&camcc 79>;
+    assigned-clock-rates = <19200000>;
+    avdd-supply = <&vreg_l7b_2p8>;
+    dvdd-supply = <&vreg_l7b_2p8>;
+    dovdd-supply = <&vreg_l10b_1p8>;
+    leds = <&cam_privacy_led>;
+    led-names = "privacy";
+    orientation = <0>;
+    rotation = <180>;
+    port {
+     ov02c10_ep: endpoint {
+      data-lanes = <1 2>;
+      link-frequencies = /bits/ 64 <400000000>;
+      remote-endpoint = <&csiphy0_ep>;
+     };
+    };
+   };
+  };
+  cci0_i2c1: i2c-bus@1 {
+   reg = <1>;
+   clock-frequency = <1000000>;
+   #address-cells = <1>;
+   #size-cells = <0>;
+  };
+ };
+ camss: isp@acb7000 {
+  compatible = "qcom,x1e80100-camss";
+  reg = <0 0x0acb7000 0 0x2000>,
+        <0 0x0acb9000 0 0x2000>,
+        <0 0x0acbb000 0 0x2000>,
+        <0 0x0acc6000 0 0x1000>,
+        <0 0x0acca000 0 0x1000>,
+        <0 0x0acb6000 0 0x1000>,
+        <0 0x0ace4000 0 0x2000>,
+        <0 0x0ace6000 0 0x2000>,
+        <0 0x0ace8000 0 0x2000>,
+        <0 0x0acec000 0 0x2000>,
+        <0 0x0acf6000 0 0x1000>,
+        <0 0x0acf7000 0 0x1000>,
+        <0 0x0acf8000 0 0x1000>,
+        <0 0x0ac62000 0 0x4000>,
+        <0 0x0ac71000 0 0x4000>,
+        <0 0x0acc7000 0 0x2000>,
+        <0 0x0accb000 0 0x2000>;
+  reg-names = "csid0",
+       "csid1",
+       "csid2",
+       "csid_lite0",
+       "csid_lite1",
+       "csid_wrapper",
+       "csiphy0",
+       "csiphy1",
+       "csiphy2",
+       "csiphy4",
+       "csitpg0",
+       "csitpg1",
+       "csitpg2",
+       "vfe0",
+       "vfe1",
+       "vfe_lite0",
+       "vfe_lite1";
+  clocks = <&camcc 4>,
+    <&camcc 5>,
+    <&camcc 13>,
+    <&camcc 14>,
+    <&camcc 16>,
+    <&camcc 17>,
+    <&camcc 18>,
+    <&camcc 19>,
+    <&camcc 22>,
+    <&camcc 35>,
+    <&camcc 37>,
+    <&camcc 38>,
+    <&camcc 23>,
+    <&camcc 39>,
+    <&camcc 25>,
+    <&camcc 40>,
+    <&camcc 27>,
+    <&camcc 42>,
+    <&camcc 31>,
+    <&gcc 17>,
+    <&gcc 18>,
+    <&camcc 49>,
+    <&camcc 52>,
+    <&camcc 53>,
+    <&camcc 56>,
+    <&camcc 58>,
+    <&camcc 57>,
+    <&camcc 60>,
+    <&camcc 61>;
+  clock-names = "camnoc_nrt_axi",
+         "camnoc_rt_axi",
+         "core_ahb",
+         "cpas_ahb",
+         "cpas_fast_ahb",
+         "cpas_vfe0",
+         "cpas_vfe1",
+         "cpas_vfe_lite",
+         "cphy_rx_clk_src",
+         "csid",
+         "csid_csiphy_rx",
+         "csiphy0",
+         "csiphy0_timer",
+         "csiphy1",
+         "csiphy1_timer",
+         "csiphy2",
+         "csiphy2_timer",
+         "csiphy4",
+         "csiphy4_timer",
+         "gcc_axi_hf",
+         "gcc_axi_sf",
+         "vfe0",
+         "vfe0_fast_ahb",
+         "vfe1",
+         "vfe1_fast_ahb",
+         "vfe_lite",
+         "vfe_lite_ahb",
+         "vfe_lite_cphy_rx",
+         "vfe_lite_csid";
+  interrupts = <0 464 1>,
+        <0 466 1>,
+        <0 431 1>,
+        <0 468 1>,
+        <0 359 1>,
+        <0 477 1>,
+        <0 478 1>,
+        <0 479 1>,
+        <0 122 1>,
+        <0 465 1>,
+        <0 467 1>,
+        <0 469 1>,
+        <0 360 1>;
+  interrupt-names = "csid0",
+      "csid1",
+      "csid2",
+      "csid_lite0",
+      "csid_lite1",
+      "csiphy0",
+      "csiphy1",
+      "csiphy2",
+      "csiphy4",
+      "vfe0",
+      "vfe1",
+      "vfe_lite0",
+      "vfe_lite1";
+  interconnects = <&gem_noc 3 ((1 << 0) | (1 << 1))
+    &config_noc 5 ((1 << 0) | (1 << 1))>,
+    <&mmss_noc 1 ((1 << 0) | (1 << 1) | (1 << 2))
+    &mc_virt 1 ((1 << 0) | (1 << 1) | (1 << 2))>,
+    <&mmss_noc 3 ((1 << 0) | (1 << 1) | (1 << 2))
+    &mc_virt 1 ((1 << 0) | (1 << 1) | (1 << 2))>,
+    <&mmss_noc 2 ((1 << 0) | (1 << 1) | (1 << 2))
+    &mc_virt 1 ((1 << 0) | (1 << 1) | (1 << 2))>;
+  interconnect-names = "ahb",
+         "hf_mnoc",
+         "sf_mnoc",
+         "sf_icp_mnoc";
+  iommus = <&apps_smmu 0x800 0x60>,
+    <&apps_smmu 0x860 0x60>,
+    <&apps_smmu 0x1800 0x60>,
+    <&apps_smmu 0x1860 0x60>,
+    <&apps_smmu 0x18e0 0x00>,
+    <&apps_smmu 0x1980 0x20>,
+    <&apps_smmu 0x1900 0x00>,
+    <&apps_smmu 0x19a0 0x20>;
+  power-domains = <&camcc 1>,
+    <&camcc 2>,
+    <&camcc 5>;
+  power-domain-names = "ife0",
+         "ife1",
+         "top";
+  vdd-csiphy-0p8-supply = <&vreg_l2c_0p8>;
+  vdd-csiphy-1p2-supply = <&vreg_l1c_1p2>;
+  status = "okay";
+  ports {
+   #address-cells = <1>;
+   #size-cells = <0>;
+   port@0 {
+    reg = <0>;
+    csiphy0_ep: endpoint {
+     data-lanes = <0 1>;
+     remote-endpoint = <&ov02c10_ep>;
+    };
+   };
+   port@1 {
+    reg = <1>;
+   };
+   port@2 {
+    reg = <2>;
+   };
+   port@3 {
+    reg = <3>;
+   };
+  };
+ };
+};
+&tlmm {
+ cci0_default: cci0-default-state {
+  cci0_i2c0_default: cci0-i2c0-default-pins {
+   pins = "gpio101", "gpio102";
+   function = "cci_i2c";
+   drive-strength = <2>;
+   bias-pull-up;
+  };
+  cci0_i2c1_default: cci0-i2c1-default-pins {
+   pins = "gpio103", "gpio104";
+   function = "cci_i2c";
+   drive-strength = <2>;
+   bias-pull-up;
+  };
+ };
+ cci0_sleep: cci0-sleep-state {
+  cci0_i2c0_sleep: cci0-i2c0-sleep-pins {
+   pins = "gpio101", "gpio102";
+   function = "cci_i2c";
+   drive-strength = <2>;
+   bias-pull-down;
+  };
+  cci0_i2c1_sleep: cci0-i2c1-sleep-pins {
+   pins = "gpio103", "gpio104";
+   function = "cci_i2c";
+   drive-strength = <2>;
+   bias-pull-down;
+  };
+ };
+ cam-vdd-en-96-hog {
+  gpio-hog;
+  gpios = <96 0>;
+  output-high;
+  line-name = "cam-vdd-en-96";
+ };
+ cam-vdd-en-99-hog {
+  gpio-hog;
+  gpios = <99 0>;
+  output-high;
+  line-name = "cam-vdd-en-99";
+ };
+ cam-shutter-hog {
+  gpio-hog;
+  gpios = <221 0>;
+  output-high;
+  line-name = "cam-shutter-enable";
+ };
+ cam-enable-hog {
+  gpio-hog;
+  gpios = <225 0>;
+  output-high;
+  line-name = "cam-enable";
+ };
+ cam_indicator_en: cam-indicator-en-state {
+  pins = "gpio110";
+  function = "gpio";
+  drive-strength = <2>;
+  bias-disable;
+ };
+ cam_rgb_default: cam-rgb-default-state {
+  mclk-pins {
+   pins = "gpio100";
+   function = "cam_aon";
+   drive-strength = <16>;
+   bias-disable;
+  };
+  reset-n-pins {
+   pins = "gpio109";
+   function = "gpio";
+   drive-strength = <2>;
+   bias-disable;
+  };
+ };
+};

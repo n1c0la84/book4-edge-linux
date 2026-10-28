@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
+/*
+ * Galaxy Book4 Edge 14" (NP940XMA): fingerprint reader on the sleep kernel's
+ * DTB. dts/patches/0004 as an overlay (the sleep DTB is the Anatase base
+ * without dts/patches, see x1e80100-book4-edge-14-speakers.dtso).
+ */
+
+/dts-v1/;
+/plugin/;
+
+/* Fingerprint reader (EgisTec 1c7a:05a1) on usb_2. */
+&usb_2 {
+	dr_mode = "host";
+
+	status = "okay";
+};
+
+&usb_2_hsphy {
+	vdd-supply = <&vreg_l2e_0p8>;
+	vdda12-supply = <&vreg_l3e_1p2>;
+
+	phys = <&eusb6_repeater>;
+
+	status = "okay";
+};

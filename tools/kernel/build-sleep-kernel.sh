@@ -20,9 +20,10 @@
 #      book4-modules-swap.service, so the running kernel's modules are never
 #      replaced under it); install /vmlinuz-7.2.7-book4s,
 #      /initramfs-7.2.7-book4s-arch.img and /dtb-test/book4-sleep.dtb on /boot.
-#      The DTB gets dts/src/x1e80100-book4-edge-14-speakers.dtso first: the
-#      tree is the Anatase base without dts/patches, so its DTB drove only
-#      the woofers, swapped (28 October: "audio is very low").
+#      The DTB gets tools/kernel/apply-sleep-overlays.sh first (speakers,
+#      fingerprint, camera): the tree is the Anatase base without
+#      dts/patches, so its DTB drove only the woofers, swapped (28 October:
+#      "audio is very low"), and had no fingerprint reader or camera.
 #   3. install/el2/sleep-setup.sh then makes the EL2 entry from that DTB
 #      (no EL1 entry for this kernel any more: it is the EL2 kernel).
 #
@@ -219,12 +220,10 @@ else
 fi
 LIST=$(sudo lsinitcpio "$work/initramfs.img")   # captured: grep -q in a pipe trips pipefail
 grep -qE '/ufs-qcom\.ko(\.[gx]z|\.zst)?$' <<<"$LIST" || { echo "error: ufs-qcom.ko missing from the initramfs" >&2; exit 1; }
-# four speakers: tweeters, woofers named by side, no 0x43 repeater
-dtc -q -@ -I dts -O dtb -o "$work/speakers.dtbo" "$repo/dts/src/x1e80100-book4-edge-14-speakers.dtso"
-fdtoverlay -i "$work/$dtbname" -o "$work/speakers.dtb" "$work/speakers.dtbo"
-dtc -q -I dtb -O dtb -p 8192 -o "$work/book4-sleep.dtb" "$work/speakers.dtb"   # padded for GRUB
-[ "$(fdtget -ts "$work/book4-sleep.dtb" "$(fdtget -ts "$work/book4-sleep.dtb" /__symbols__ left_tweeter 2>/dev/null)" sound-name-prefix 2>/dev/null)" = TweeterLeft ] ||
-    { echo "error: DTB has no tweeters" >&2; exit 1; }
+# the DTB as built, kept for install/el2/sleep-dtb.sh; then speakers,
+# fingerprint and camera (tools/kernel/apply-sleep-overlays.sh)
+dtc -q -I dtb -O dtb -p 8192 -o "$work/book4-sleep.dtb.pre-overlays" "$work/$dtbname"
+bash "$repo/tools/kernel/apply-sleep-overlays.sh" "$work/$dtbname" "$work/book4-sleep.dtb"
 DTS=$(dtc -q -I dtb -O dts "$work/book4-sleep.dtb")
 grep -c 'system-sleep-only' <<<"$DTS" >/dev/null || { echo "error: DTB has no system-sleep-only DRIPS" >&2; exit 1; }
 grep -c 'arm,psci-suspend-param = <0x2000154>' <<<"$DTS" >/dev/null || { echo "error: DTB has no SS1" >&2; exit 1; }
@@ -233,6 +232,7 @@ b=$(mktemp -d); sudo mount /dev/sda4 "$b"
 sudo install -m 644 "$work/Image" "$b/vmlinuz-$rel"
 sudo install -m 644 "$work/initramfs.img" "$b/initramfs-$rel-arch.img"
 sudo mkdir -p "$b/dtb-test"; sudo install -m 644 "$work/book4-sleep.dtb" "$b/dtb-test/book4-sleep.dtb"
+sudo install -m 644 "$work/book4-sleep.dtb.pre-overlays" "$b/dtb-test/book4-sleep.dtb.pre-overlays"
 sync; ls -l "$b/vmlinuz-$rel" "$b/initramfs-$rel-arch.img" "$b/dtb-test/book4-sleep.dtb"
 sudo umount "$b"; rmdir "$b"
 

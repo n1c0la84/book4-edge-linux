@@ -71,13 +71,17 @@ static control template, shared by every instance.
 (`/dtb-test/book4-sleep.dtb`, the daily EL2 boot) is built from the Anatase
 base without `dts/patches`, so at EL2 only the two woofers played, with
 swapped names, and the crossover sent the highs to channels with no
-amplifier: quiet and muffled. 0003/0005/0006 sit on the camera patches and do
-not apply there, so they are also an overlay without the camera,
-[`dts/src/x1e80100-book4-edge-14-speakers.dtso`](../dts/src/x1e80100-book4-edge-14-speakers.dtso)
-(checked node by node against the fork's 14" DTS).
-`tools/kernel/build-sleep-kernel.sh` applies it; for an installed sleep
-kernel, `install/el2/sleep-speakers-dtb.sh` patches the DTB on /boot and
-refreshes the EL2 entry.
+amplifier: quiet and muffled. The fingerprint reader (0004) and the camera
+(0001/0002) were missing too. Those patches build on each other and do not
+apply to that base, so they are also overlays in `dts/src/`:
+`x1e80100-book4-edge-14-{speakers,fingerprint,camera}.dtso` (the camera one
+generated from its `.dtso.in` by `tools/kernel/gen-dt-overlays.sh`), checked
+property by property against the fork's 14" DTS.
+`tools/kernel/apply-sleep-overlays.sh` applies them; `build-sleep-kernel.sh`
+uses it, and for an installed sleep kernel `install/el2/sleep-dtb.sh
+[nocamera|restore]` redoes the DTB on /boot from the copy as built
+(`book4-sleep.dtb.pre-overlays`) and refreshes the EL2 entry. The camera had
+never run at EL2 before this.
 
 Software: the UCM profile switches the tweeters with the woofers when their
 controls exist (same profile for both DTBs), sets their PA like the woofers',
@@ -87,7 +91,7 @@ The kernel also caps PA Volume at 6, a flat -3 dB in the driver's TLV, so
 loudness is limited on purpose until Linux has speaker protection; Windows
 is louder (smart-amp protection and Dolby processing). To make up some of it, the
 speaker filter starts with a look-ahead limiter (`ladspa-swh-plugins`,
-+6 dB, peaks held at -1 dBFS): louder on average, same peaks. A PipeWire filter-chain,
++9 dB since 28 October, +6 before; peaks held at -1 dBFS): louder on average, same peaks. A PipeWire filter-chain,
 [`pipewire/book4-speakers.conf`](../userspace/audio/pipewire/book4-speakers.conf),
 is a WirePlumber *smart filter* on the Speaker sink: woofers get full-range
 stereo, tweeters a 2 kHz 4th-order Linkwitz-Riley high-pass. A WirePlumber
