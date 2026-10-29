@@ -14,6 +14,7 @@ Protocol reverse-engineered from Windows EC2.sys (see NOTES.md):
   sudo python3 ectool.py read OFF [N] # EC-space bytes OFF.. (read only)
   sudo python3 ectool.py write OFF VAL   # one EC-space byte; only 0x91/0x92 without --force
   sudo python3 ectool.py btp-plugin   # Windows' _BTP at a plug-in: trip point 0, then remaining mAh
+  sudo python3 ectool.py inputcur MA [W MV]  # charger input limit, as EmuEC.sys sends it after a contract
 """
 import ctypes, fcntl, glob, os, sys, time
 
@@ -103,6 +104,16 @@ def ec_write(off, val):
     wait_idle()          # Windows does not wait here; waiting is harmless
     clear_slot(s)
 
+def ex_cmd(cmd, params):
+    """SecEne9058KbcSendExCmdFull: params to F480.., then the command to FF10."""
+    wait_idle()
+    s = get_slot()
+    for i, b in enumerate(params):
+        xwrite(0xF480 + i, b)
+    xwrite(0xFF10, cmd)
+    wait_idle()
+    clear_slot(s)
+
 # EC-space bytes the write commands may touch without --force: the battery
 # trip point (BTPC, big-endian u16 at 0x91-0x92), written by Windows' _BTP.
 WRITABLE = (0x91, 0x92)
@@ -170,6 +181,20 @@ elif cmd == 'btp-plugin':
         ec_write(0x92, v & 0xff)
         print('trip point set to %d, reads back %d' % (v, (ec_read(0x91) << 8) | ec_read(0x92)))
         time.sleep(1)
+elif cmd == 'inputcur':
+    # What Windows' EmuEC.sys sends after every PD contract (docs/power.md,
+    # "Why awake charging stalls"): 0x90 SecEcSetInputChargeValue = input
+    # current limit in mA (LE16), 0x91 SecEcSetTAInfoWatt = [W, mV / 100].
+    ma = int(sys.argv[2], 0)
+    watts = int(sys.argv[3], 0) if len(sys.argv) > 3 else 0
+    mv = int(sys.argv[4], 0) if len(sys.argv) > 4 else 0
+    if not 100 <= ma <= 3250 and '--force' not in sys.argv:
+        sys.exit('refusing %d mA: keep it within 100-3250 and below the contract (--force to override)' % ma)
+    ex_cmd(0x90, [ma & 0xff, ma >> 8])
+    print('0x90 input current %d mA sent' % ma)
+    if watts:
+        ex_cmd(0x91, [watts & 0xff, (mv // 100) & 0xff])
+        print('0x91 adapter %d W / %d mV sent' % (watts, mv))
 elif cmd == 'dump':
     for row in range(0, 0x100, 16):
         print('%02x: %s' % (row, ' '.join('%02x' % ec_read(row + i) for i in range(16))))

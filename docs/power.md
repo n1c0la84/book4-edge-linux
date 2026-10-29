@@ -1069,6 +1069,50 @@ contract and the battery every 10 s and reports capacity gained, average
 power into the battery and whether the readings froze. Run below ~80 %:
 awake vs. asleep, 60 W vs. 65 W, then again with fix A.
 
+### Why awake charging stalls: nobody sets the charger's input limit (29 October)
+
+**The stall is real at low charge.** 29 October, Arch (`book4s`), 65 W
+charger plugged in awake at 16:33 (`request 1 failed: -110`, 5 V, then
+20 V / 3.25 A), measured at **7 %**: at idle the battery current is
+0-0.17 A (~1-2 W). Under CPU load (6 busy loops) the driver reports
+`Charging` with +2.5-3.4 A, but the battery is **discharging**: voltage
+14.6 -> 13.1 V and `charge_now` 210 -> 105 mAh in about a minute.
+`samsung-galaxybook-ec` loses the direction while AC is online, so Omarchy's
+widget shows "charging" under load and "holding" at idle. Either way the
+laptop draws only about **5-7 W** from a 65 W contract: an input limit,
+not a battery limit.
+
+**What Windows does that Linux does not.** The DSDT's `EMEC` (`SAM0604`,
+the S2MM006 device) is served by `EmuEC.sys` (`emuec.inf`, 492 144 bytes;
+also owns SBS addresses 0x09/0x0B on `IC21` = I2C 0x890000, disabled in our
+DT). After every contract its `SetSnkMaxInputCurrent_to_battery`
+(0x1400366d8) computes the limit from the PDO (mV x mA, 95 % margin;
+`Calculate_Limit_Watt`) and hands it to the EC through 0x14002eca0:
+
+| EC ext. command | `EmuEC.sys` name | payload | sent |
+|---|---|---|---|
+| `0x90` | `SecEcSetInputChargeValue` (0x140005928) | input current, mA, LE16 | ramp 490 mA (0x1ea), 200 ms, 1300 mA (0x514), 200 ms, then the limit; default 1500 / 2000 mA by cable type |
+| `0x91` | `SecEcSetTAInfoWatt` (0x140005a58) | [adapter W, adapter mV / 100] | with each 0x90 |
+
+Both go through IOCTL `0x30800` (16-byte buffer, byte 0 = command) to
+`EC2.sys`, which for commands >= 0x80 runs `SecEne9058KbcSendExCmdFull`
+(0x1400066a0): parameters to XDATA F480.., command to FF10. That is the
+mailbox `ectool.py` already drives for 0x88/0x89. Its length table at
+0x14000c5a0 has `90 02 00 00` (2 in, 0 out); length 0 means the default 2
+bytes, so 0x91 also takes 2. **Linux never sends 0x90/0x91**, so the
+charger keeps whatever limit it had; 490 mA at 20 V (~9.8 W, ~7-8 W after
+conversion) matches the measured draw. When the charger was present at boot
+or before sleep, UEFI or the EC's own default may have set something
+better, which would explain the earlier "sleep charges fine" readings.
+
+Test: [`tools/power/inputcur-test.sh`](../tools/power/inputcur-test.sh)
+[FINAL_MA] [W] [MV] (default 3000 65 20000; sudo for the EC only) records
+the idle battery current, sends Windows' ramp with
+`ectool.py inputcur MA W MV`, then records again. Several amps at idle
+afterwards = cause confirmed; the fix is then for `samsung-emuec` to send
+0x90/0x91 after each contract (through `samsung-galaxybook-ec`, which owns
+the mailbox).
+
 ## CPU frequency scaling was off (5 October 2026)
 
 There was **no cpufreq at all** (no `/sys/devices/system/cpu/cpufreq/policy*`):
