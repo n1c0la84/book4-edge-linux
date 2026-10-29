@@ -7,6 +7,12 @@ within each section. What is already done is listed at the end.
 
 **Now (20 October):**
 
+- [ ] **Live stick, then an installer** (29 October): boot-test
+      `install/arch/live-image.sh` (EL1 and EL2 entries). Next: an installer
+      on the stick that copies its system to sda5 as a new subvolume (old
+      `arch` kept) with its own boot chain on the internal ESP (no Fedora
+      GRUB), dry-run first; later a public variant without tcblaunch.exe and
+      firmware (extracted from the Windows partition at first boot).
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the

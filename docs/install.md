@@ -111,3 +111,11 @@ still picks the firmware's other entries.
   snapshots taken before updates can be restored from it.
 - Old test entries and kernels: `bash install/arch/boot-cleanup.sh`.
 - A rescue stick: `install/arch/rescue-usb.sh` (built, never boot-tested).
+- A private live stick of the whole installed system (29 October, not yet
+  boot-tested): `install/arch/live-image.sh build` makes `~/book4-live.img`
+  from a read-only snapshot of the arch subvolume, plus the desktop
+  configuration (no personal files, connections, pairings, fingerprints or
+  keys) and its own boot chain (GRUB with cutmem; EL2 via UEFI Shell +
+  qebspil + slbounce; EL1 directly). No Fedora inside, nothing written to the
+  internal disk. `live-image.sh write IMG /dev/sdX` puts it on a stick. It
+  carries tcblaunch.exe and the Windows firmware: never publish the image.
