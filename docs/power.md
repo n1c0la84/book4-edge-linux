@@ -1109,7 +1109,17 @@ Test: [`tools/power/inputcur-test.sh`](../tools/power/inputcur-test.sh)
 [FINAL_MA] [W] [MV] (default 3000 65 20000; sudo for the EC only) records
 the idle battery current, sends Windows' ramp with
 `ectool.py inputcur MA W MV`, then records again. Several amps at idle
-afterwards = cause confirmed; the fix is then for `samsung-emuec` to send
+afterwards = cause confirmed.
+
+First run (29 October 18:03, 4 %, 65 W, contract made awake at 16:33):
+idle current 0.11-0.20 A before. Only the first step went out (0x90 490 mA
++ 0x91 65 W / 20 V); the next one found the mailbox still busy after
+31 ms (`ex_cmd` now waits up to 1 s). Even so, 30 s later: **1.13-1.26 A
+at idle, battery voltage 14.75 -> 15.07 V** (rising, so real charging),
+~18 W into the battery instead of ~2.5 W. More than 490 mA x 20 V can
+carry, so the EC seems to act on 0x91 (adapter watts) or does not take 0x90
+as a plain input-current cap; the full ramp to 3000 mA is still to run. The
+fix is for `samsung-emuec` to send
 0x90/0x91 after each contract (through `samsung-galaxybook-ec`, which owns
 the mailbox).
 

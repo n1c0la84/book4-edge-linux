@@ -55,8 +55,8 @@ def xread(a):
 def xwrite(a, v):
     xfer([0x40, 0x00, a >> 8, a & 0xff, v])
 
-def wait_idle():
-    for _ in range(31):                       # Windows: up to 30 retries, 1 ms apart
+def wait_idle(tries=31):
+    for _ in range(tries):                    # Windows: up to 30 retries, 1 ms apart
         if xread(0xFF10) == 0:
             return
         time.sleep(0.001)
@@ -105,13 +105,15 @@ def ec_write(off, val):
     clear_slot(s)
 
 def ex_cmd(cmd, params):
-    """SecEne9058KbcSendExCmdFull: params to F480.., then the command to FF10."""
-    wait_idle()
+    """SecEne9058KbcSendExCmdFull: params to F480.., then the command to FF10.
+    The EC can stay busy well past 31 ms after a charger command (29 Oct:
+    the next 0x90 found FF10 still set), so wait up to ~1 s here."""
+    wait_idle(1000)
     s = get_slot()
     for i, b in enumerate(params):
         xwrite(0xF480 + i, b)
     xwrite(0xFF10, cmd)
-    wait_idle()
+    wait_idle(1000)
     clear_slot(s)
 
 # EC-space bytes the write commands may touch without --force: the battery
