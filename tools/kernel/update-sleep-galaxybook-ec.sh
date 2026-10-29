@@ -40,9 +40,17 @@ p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
 # update-sleep-emuec.sh: per-patch reverse dry-runs break once patches stack).
 git show HEAD:drivers/platform/arm64/samsung-galaxybook-ec.c > drivers/platform/arm64/samsung-galaxybook-ec.c
 rm -f drivers/platform/arm64/samsung-galaxybook-ec.c.orig drivers/platform/arm64/samsung-galaxybook-ec.c.rej
+# HEAD may already carry some of them: forward first, else skip if it
+# reverses cleanly at this point of the series.
 for f in \$p/*.patch; do
-    patch -s -p1 -d drivers/platform/arm64 -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
-    echo \"   applied: \$(basename \$f)\" >&2
+    if patch -s -N -p1 -d drivers/platform/arm64 --dry-run -i \$f >/dev/null 2>&1; then
+        patch -s -N -p1 -d drivers/platform/arm64 -i \$f >&2
+        echo \"   applied: \$(basename \$f)\" >&2
+    elif patch -s -p1 -d drivers/platform/arm64 --dry-run -R -i \$f >/dev/null 2>&1; then
+        echo \"   already in the tree: \$(basename \$f)\" >&2
+    else
+        echo \"error: \$(basename \$f) does not apply\" >&2; exit 1
+    fi
 done
 rm -f drivers/platform/arm64/samsung-galaxybook-ec.c.orig
 grep -q galaxybook_battery_update drivers/platform/arm64/samsung-galaxybook-ec.c || { echo 'error: refresh code still missing' >&2; exit 1; }

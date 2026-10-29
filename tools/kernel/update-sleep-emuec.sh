@@ -42,9 +42,17 @@ p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
 # half-applied).
 git show HEAD:drivers/usb/typec/samsung-emuec.c > drivers/usb/typec/samsung-emuec.c
 rm -f drivers/usb/typec/samsung-emuec.c.orig drivers/usb/typec/samsung-emuec.c.rej
+# HEAD may already carry some of them (0001 is in Anatase's tree): forward
+# first, else skip if it reverses cleanly at this point of the series.
 for f in \$p/*.patch; do
-    patch -s -p1 -d drivers/usb/typec -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
-    echo \"   applied: \$(basename \$f)\" >&2
+    if patch -s -N -p1 -d drivers/usb/typec --dry-run -i \$f >/dev/null 2>&1; then
+        patch -s -N -p1 -d drivers/usb/typec -i \$f >&2
+        echo \"   applied: \$(basename \$f)\" >&2
+    elif patch -s -p1 -d drivers/usb/typec --dry-run -R -i \$f >/dev/null 2>&1; then
+        echo \"   already in the tree: \$(basename \$f)\" >&2
+    else
+        echo \"error: \$(basename \$f) does not apply\" >&2; exit 1
+    fi
 done
 rm -f drivers/usb/typec/samsung-emuec.c.orig
 grep -q 'pm: quiesced' drivers/usb/typec/samsung-emuec.c || { echo 'error: quiesce code still missing' >&2; exit 1; }
