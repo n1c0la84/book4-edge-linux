@@ -111,11 +111,17 @@ still picks the firmware's other entries.
   snapshots taken before updates can be restored from it.
 - Old test entries and kernels: `bash install/arch/boot-cleanup.sh`.
 - A rescue stick: `install/arch/rescue-usb.sh` (built, never boot-tested).
-- A private live stick of the whole installed system (29 October, not yet
-  boot-tested): `install/arch/live-image.sh build` makes `~/book4-live.img`
+- A private live ISO of the whole installed system (29 October, not yet
+  boot-tested): `install/arch/live-iso.sh build` makes `~/book4-live.iso`
+  (squashfs + tmpfs overlay, initramfs hook `userspace/initcpio/*/book4live`)
   from a read-only snapshot of the arch subvolume, plus the desktop
   configuration (no personal files, connections, pairings, fingerprints or
-  keys) and its own boot chain (GRUB with cutmem; EL2 via UEFI Shell +
-  qebspil + slbounce; EL1 directly). No Fedora inside, nothing written to the
-  internal disk. `live-image.sh write IMG /dev/sdX` puts it on a stick. It
-  carries tcblaunch.exe and the Windows firmware: never publish the image.
+  keys) and its own boot chain (`install/arch/lib/book4-grub.sh`: GRUB with
+  cutmem; EL2 via UEFI Shell + qebspil + slbounce; EL1 directly). No Fedora
+  inside. `live-iso.sh write ISO /dev/sdX` puts it on a stick. It carries
+  tcblaunch.exe and the Windows firmware: never publish the ISO.
+- Reset from that ISO: `sudo book4-install` shows the plan; `--wipe` erases
+  every Linux partition (sda4, sda5: Arch and Fedora), keeps Windows, and
+  installs the ISO's system on one new btrfs partition (subvolume `arch`,
+  kernel in `/boot/book4`) with GRUB in `\EFI\book4\` and boot entry
+  "Book4" first. ESP files are only added or replaced.

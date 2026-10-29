@@ -1,0 +1,33 @@
+#!/usr/bin/ash
+# SPDX-License-Identifier: GPL-2.0-only
+# Book4 Edge live ISO root: book4live=LABEL on the kernel command line names
+# the ISO's volume. Mounts it, its live/airootfs.sfs and a tmpfs overlay as
+# the root. Everything stays under /run/book4live (switch_root moves /run),
+# where the installer finds the untouched squashfs.
+
+run_hook() {
+    [ -n "$(getarg book4live)" ] && mount_handler=book4live_mount_handler
+}
+
+book4live_mount_handler() {
+    local label dev i=0 r=/run/book4live
+    label=$(getarg book4live)
+    dev=/dev/disk/by-label/$label
+    msg ":: book4live: waiting for $dev"
+    while [ ! -b "$dev" ] && [ $i -lt 300 ]; do
+        sleep 0.1; i=$((i + 1))
+    done
+    if [ ! -b "$dev" ]; then
+        err "book4live: $dev not found"
+        launch_interactive_shell
+    fi
+    mkdir -p $r/iso $r/sfs $r/cow
+    mount -t iso9660 -o ro "$dev" $r/iso &&
+    mount -t squashfs -o ro,loop $r/iso/live/airootfs.sfs $r/sfs &&
+    mount -t tmpfs -o size=75%,mode=0755 cow $r/cow &&
+    mkdir -p $r/cow/upper $r/cow/work &&
+    mount -t overlay overlay -o lowerdir=$r/sfs,upperdir=$r/cow/upper,workdir=$r/cow/work "$1" || {
+        err "book4live: could not mount the live root"
+        launch_interactive_shell
+    }
+}

@@ -1,0 +1,17 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+
+build() {
+    add_module isofs
+    add_module squashfs
+    add_module loop
+    add_module overlay
+    add_runscript
+}
+
+help() {
+    cat <<HELPEOF
+Galaxy Book4 Edge live ISO: mounts the ISO named by book4live=LABEL, its
+live/airootfs.sfs and a tmpfs overlay as the root (under /run/book4live).
+HELPEOF
+}
