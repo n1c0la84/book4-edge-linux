@@ -1129,7 +1129,11 @@ command (`mboxLiCACheckChargingCurrent`, `CMD_CHG_CUR`,
 `VAL_CHG_CURR_1808`), so Windows may charge at ~1.8 A; not needed for the
 stall. Log: `~/inputcur-test-20261029-1806.log`.
 
-**Fix (written 29 October, not yet built or tested):**
+**Fix (29 October, installed and working):** after a reboot into the
+patched modules, an awake plug-in at 21:17 logged `charger input limit
+2850 mA (15 W, 5000 mV)` for the 5 V step and `3087 mA (65 W, 20000 mV)`
+0.4 s later for 20 V, no errors (battery at 98 %, so no current test yet;
+expect ~1.5 A at idle below ~50 %).
 `drivers/anatase/patches/0005` makes the `samsung-emuec` supplies list
 `samsung-galaxybook-battery` in `supplied_to`;
 `patches-galaxybook-ec/0002` gives the battery an
