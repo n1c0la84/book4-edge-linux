@@ -36,13 +36,15 @@ inner="set -euo pipefail
 cd ~/src/patchwork-sleep
 [ \"\$(make -s LOCALVERSION=s kernelrelease)\" = $rel ]
 p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
+# Start from the tree's own (Anatase) file and apply the whole series: a
+# reverse dry-run per patch cannot tell 'already applied' once later patches
+# change its context (29 Oct: 0002 was re-applied over 0003/0004 and left
+# half-applied).
+git show HEAD:drivers/usb/typec/samsung-emuec.c > drivers/usb/typec/samsung-emuec.c
+rm -f drivers/usb/typec/samsung-emuec.c.orig drivers/usb/typec/samsung-emuec.c.rej
 for f in \$p/*.patch; do
-    if patch -s -p1 -d drivers/usb/typec --dry-run -R -f -i \$f >/dev/null 2>&1; then
-        echo \"   already in the tree: \$(basename \$f)\" >&2
-    else
-        patch -s -p1 -d drivers/usb/typec -f -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
-        echo \"   applied: \$(basename \$f)\" >&2
-    fi
+    patch -s -p1 -d drivers/usb/typec -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
+    echo \"   applied: \$(basename \$f)\" >&2
 done
 rm -f drivers/usb/typec/samsung-emuec.c.orig
 grep -q 'pm: quiesced' drivers/usb/typec/samsung-emuec.c || { echo 'error: quiesce code still missing' >&2; exit 1; }

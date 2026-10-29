@@ -36,13 +36,13 @@ inner="set -euo pipefail
 cd ~/src/patchwork-sleep
 [ \"\$(make -s LOCALVERSION=s kernelrelease)\" = $rel ]
 p=\$(mktemp -d); echo $patches | base64 -d | tar -xz -C \$p
+# Start from the tree's own (Anatase) file and apply the whole series (see
+# update-sleep-emuec.sh: per-patch reverse dry-runs break once patches stack).
+git show HEAD:drivers/platform/arm64/samsung-galaxybook-ec.c > drivers/platform/arm64/samsung-galaxybook-ec.c
+rm -f drivers/platform/arm64/samsung-galaxybook-ec.c.orig drivers/platform/arm64/samsung-galaxybook-ec.c.rej
 for f in \$p/*.patch; do
-    if patch -s -p1 -d drivers/platform/arm64 --dry-run -R -f -i \$f >/dev/null 2>&1; then
-        echo \"   already in the tree: \$(basename \$f)\" >&2
-    else
-        patch -s -p1 -d drivers/platform/arm64 -f -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
-        echo \"   applied: \$(basename \$f)\" >&2
-    fi
+    patch -s -p1 -d drivers/platform/arm64 -i \$f >&2 || { echo \"error: \$(basename \$f) does not apply\" >&2; exit 1; }
+    echo \"   applied: \$(basename \$f)\" >&2
 done
 rm -f drivers/platform/arm64/samsung-galaxybook-ec.c.orig
 grep -q galaxybook_battery_update drivers/platform/arm64/samsung-galaxybook-ec.c || { echo 'error: refresh code still missing' >&2; exit 1; }
