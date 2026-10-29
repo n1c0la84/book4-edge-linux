@@ -28,6 +28,13 @@ time, so the originals stay identifiable and the patches can be sent upstream:
 - `0001-samsung-galaxybook-ec-refresh-battery-on-read.patch`: battery
   values were only read at plug/unplug events and stayed stale in between;
   re-read when older than one second.
+- `0002-samsung-galaxybook-ec-pass-the-pd-contract-to-the-ec.patch`
+  (29 October, with `patches/0005-samsung-emuec-supply-the-galaxybook-battery.patch`):
+  sends the EC the charger input limit (extended commands 0x90/0x91) after
+  each PD contract, as Windows' EmuEC.sys does; without it a 65 W charger
+  delivered ~10 W while awake (docs/power.md, "Why awake charging stalls").
+  Install both: `tools/kernel/update-sleep-emuec.sh`, then
+  `tools/kernel/update-sleep-galaxybook-ec.sh`.
 
 `patches-experimental/` is **not** applied by any script:
 

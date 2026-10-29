@@ -1,0 +1,240 @@
+From: Nicola <nicola084@gmail.com>
+Subject: [PATCH] platform/arm64: samsung-galaxybook-ec: pass the USB PD contract to the EC
+
+The EC drives the battery charger but does not see the USB PD contract,
+which samsung-emuec negotiates. Windows' EmuEC.sys tells it after every
+contract with two extended mailbox commands (decoded from EmuEC.sys and
+EC2.sys): 0x90 SecEcSetInputChargeValue, the input current limit in mA
+(little-endian, 95 % of the contract current), and 0x91 SecEcSetTAInfoWatt,
+[adapter watts, adapter voltage / 100 mV]; a fresh attach is ramped through
+490 and 1300 mA, 200 ms apart. Linux never sent them, so the charger kept
+a low default limit: on a Galaxy Book4 Edge 14" with a 65 W adapter at 20 V
+the idle battery current was 0.1-0.2 A at 4 % and the battery discharged
+under load. Sending them by hand (tools/ec/ectool.py inputcur) raised it
+to a steady 1.58 A.
+
+Implement external_power_changed() for the battery: take the online USB PD
+supply that lists this battery in supplied_to (samsung-emuec,
+patches/0005) with the largest contract, and send 0x90/0x91 when the limit
+changes, ramping as Windows does after an attach. Run it once at probe for
+a contract made before the battery was registered. The EC stays busy for
+more than 30 ms after these commands, so wait up to 500 polls here.
+
+Applies after patches-galaxybook-ec/0001. See docs/power.md, "Why awake
+charging stalls".
+---
+--- a/samsung-galaxybook-ec.c
++++ b/samsung-galaxybook-ec.c
+@@ -16,6 +16,8 @@
+ #include <linux/interrupt.h>
+ #include <linux/jiffies.h>
+ #include <linux/leds.h>
++#include <linux/math64.h>
++#include <linux/minmax.h>
+ #include <linux/module.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+@@ -23,6 +25,7 @@
+ #include <linux/platform_profile.h>
+ #include <linux/slab.h>
+ #include <linux/string.h>
++#include <linux/unaligned.h>
+ 
+ #define GALAXYBOOK_EC_FLAGS		0x80
+ #define GALAXYBOOK_EC_BAT_STATUS	0x84
+@@ -64,6 +67,8 @@
+ 	struct galaxybook_battery_data data;
+ 	/* jiffies of the last successful battery read, under lock. */
+ 	unsigned long refreshed;
++	/* Charger input limit last sent to the EC, mA; 0 when none, under lock. */
++	unsigned int input_ma;
+ };
+ 
+ static int galaxybook_ec_read_mailbox(struct i2c_client *client, u16 address,
+@@ -88,13 +93,13 @@
+ 	return 0;
+ }
+ 
+-static int galaxybook_ec_wait_ready(struct i2c_client *client)
++static int galaxybook_ec_wait_ready_tries(struct i2c_client *client, int tries)
+ {
+ 	u8 command;
+ 	int ret, i;
+ 
+ 	/* Wait for the command register to clear. */
+-	for (i = 0; i < 30; i++) {
++	for (i = 0; i < tries; i++) {
+ 		ret = galaxybook_ec_read_mailbox(client, 0xff10, &command);
+ 		if (ret)
+ 			return ret;
+@@ -107,6 +112,11 @@
+ 	return -ETIMEDOUT;
+ }
+ 
++static int galaxybook_ec_wait_ready(struct i2c_client *client)
++{
++	return galaxybook_ec_wait_ready_tries(client, 30);
++}
++
+ static int galaxybook_kbd_backlight_set(struct led_classdev *led,
+ 				      enum led_brightness brightness)
+ {
+@@ -360,6 +370,140 @@
+ 	ec->refreshed = jiffies;
+ }
+ 
++/* Extended mailbox command: parameters to 0xf480.., command to 0xff10. */
++static int galaxybook_ec_ex_cmd(struct samsung_galaxybook_ec *ec, u8 command,
++				const u8 *params, int count)
++{
++	u8 select[] = { 0x40, 0x00, 0xf4, 0x80, 0x00 };
++	u8 execute[] = { 0x40, 0x00, 0xff, 0x10, command };
++	int ret, i;
++
++	lockdep_assert_held(&ec->lock);
++
++	/* The EC can stay busy for well over 30 ms after a charger command. */
++	ret = galaxybook_ec_wait_ready_tries(ec->client, 500);
++	if (ret)
++		return ret;
++
++	for (i = 0; i < count; i++) {
++		select[3] = 0x80 + i;
++		select[4] = params[i];
++		ret = i2c_master_send(ec->client, select, sizeof(select));
++		if (ret != sizeof(select))
++			return ret < 0 ? ret : -EIO;
++		usleep_range(5000, 6000);
++	}
++
++	ret = i2c_master_send(ec->client, execute, sizeof(execute));
++	if (ret != sizeof(execute))
++		return ret < 0 ? ret : -EIO;
++
++	return galaxybook_ec_wait_ready_tries(ec->client, 500);
++}
++
++/*
++ * The EC drives the charger but does not see the USB PD contract: Windows'
++ * EmuEC.sys sends it after every contract, as extended command 0x90 (input
++ * current limit, mA, little-endian) and 0x91 (adapter watts, adapter voltage
++ * in 100 mV), ramping a fresh attach through 490 and 1300 mA 200 ms apart.
++ * Without them the charger stays at a low default limit and a 65 W adapter
++ * delivers about 10 W.
++ */
++static int galaxybook_ec_set_input(struct samsung_galaxybook_ec *ec,
++				   unsigned int ma, unsigned int watts,
++				   unsigned int mv)
++{
++	u8 adapter[] = { min(watts, 255U), min(mv / 100, 255U) };
++	u8 current_ma[2];
++	int ret;
++
++	put_unaligned_le16(ma, current_ma);
++	ret = galaxybook_ec_ex_cmd(ec, 0x90, current_ma, sizeof(current_ma));
++	if (ret)
++		return ret;
++
++	return galaxybook_ec_ex_cmd(ec, 0x91, adapter, sizeof(adapter));
++}
++
++struct galaxybook_input {
++	struct power_supply *battery;
++	u64 uw;
++	unsigned int uv;
++	unsigned int ua;
++};
++
++static int galaxybook_find_input(struct power_supply *psy, void *data)
++{
++	struct galaxybook_input *in = data;
++	union power_supply_propval online, uv, ua;
++	size_t i;
++	u64 uw;
++
++	for (i = 0; i < psy->num_supplicants; i++)
++		if (!strcmp(psy->supplied_to[i], in->battery->desc->name))
++			break;
++	if (i == psy->num_supplicants)
++		return 0;
++
++	if (power_supply_get_property(psy, POWER_SUPPLY_PROP_ONLINE, &online) ||
++	    !online.intval ||
++	    power_supply_get_property(psy, POWER_SUPPLY_PROP_VOLTAGE_NOW, &uv) ||
++	    power_supply_get_property(psy, POWER_SUPPLY_PROP_CURRENT_MAX, &ua) ||
++	    uv.intval <= 0 || ua.intval <= 0)
++		return 0;
++
++	uw = div_u64((u64)uv.intval * ua.intval, 1000000);
++	if (uw > in->uw) {
++		in->uw = uw;
++		in->uv = uv.intval;
++		in->ua = ua.intval;
++	}
++	return 0;
++}
++
++static void galaxybook_battery_external_power_changed(struct power_supply *psy)
++{
++	struct samsung_galaxybook_ec *ec = power_supply_get_drvdata(psy);
++	struct galaxybook_input in = { .battery = psy };
++	static const unsigned int ramp[] = { 490, 1300 };
++	unsigned int ma, watts, mv;
++	int ret = 0, i;
++
++	power_supply_for_each_psy(&in, galaxybook_find_input);
++
++	guard(mutex)(&ec->lock);
++
++	if (!in.uw) {
++		ec->input_ma = 0;
++		return;
++	}
++
++	/* EmuEC.sys keeps a 5 % margin below the contract current. */
++	ma = in.ua / 1000 * 95 / 100;
++	watts = div_u64(in.uw, 1000000);
++	mv = in.uv / 1000;
++	if (ma == ec->input_ma)
++		return;
++
++	for (i = 0; !ec->input_ma && i < ARRAY_SIZE(ramp) && ramp[i] < ma; i++) {
++		ret = galaxybook_ec_set_input(ec, ramp[i], watts, mv);
++		if (ret)
++			break;
++		msleep(200);
++	}
++	if (!ret)
++		ret = galaxybook_ec_set_input(ec, ma, watts, mv);
++	if (ret) {
++		dev_warn(&ec->client->dev, "failed to set charger input limit: %d\n", ret);
++		ec->input_ma = 0;
++		return;
++	}
++
++	ec->input_ma = ma;
++	dev_info(&ec->client->dev, "charger input limit %u mA (%u W, %u mV)\n",
++		 ma, watts, mv);
++}
++
+ static enum power_supply_property galaxybook_battery_properties[] = {
+ 	POWER_SUPPLY_PROP_STATUS,
+ 	POWER_SUPPLY_PROP_PRESENT,
+@@ -469,6 +613,7 @@
+ 	.properties = galaxybook_battery_properties,
+ 	.num_properties = ARRAY_SIZE(galaxybook_battery_properties),
+ 	.get_property = galaxybook_battery_get_property,
++	.external_power_changed = galaxybook_battery_external_power_changed,
+ };
+ 
+ static const struct power_supply_desc galaxybook_ac_desc = {
+@@ -679,6 +824,9 @@
+ 		return dev_err_probe(&client->dev, PTR_ERR(ec->ac),
+ 				     "failed to register AC supply\n");
+ 
++	/* A contract made before the battery was registered was not passed on. */
++	galaxybook_battery_external_power_changed(ec->battery);
++
+ 	ec->kbd_backlight.name = "samsung-galaxybook::kbd_backlight";
+ 	ec->kbd_backlight.max_brightness = 3;
+ 	ec->kbd_backlight.brightness_set_blocking = galaxybook_kbd_backlight_set;

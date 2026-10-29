@@ -1,0 +1,41 @@
+From: Nicola <nicola084@gmail.com>
+Subject: [PATCH] usb: typec: samsung-emuec: declare the Galaxy Book battery as supplied
+
+The EC (samsung-galaxybook-ec) charges the battery from these ports but
+never learns the PD contract, so on a Galaxy Book4 Edge 14" the charger
+stays at a low default input limit: a 65 W adapter negotiated at 20 V
+delivers about 10 W, the battery charges at ~2 W when idle and discharges
+under load. Windows' EmuEC.sys passes each contract to the EC.
+
+List "samsung-galaxybook-battery" in supplied_to, so every
+power_supply_changed() on a port (contract made or changed, detach) calls
+the battery's external_power_changed(), where samsung-galaxybook-ec sends
+the limit (patches-galaxybook-ec/0002). Harmless without that patch.
+
+Applies after patches/0001-0004. See docs/power.md, "Why awake charging
+stalls".
+---
+--- a/samsung-emuec.c
++++ b/samsung-emuec.c
+@@ -214,6 +214,12 @@
+ 	POWER_SUPPLY_PROP_CURRENT_MAX,
+ };
+ 
++/*
++ * The EC charges the battery from these ports but does not see the PD
++ * contract; samsung-galaxybook-ec passes it on from external_power_changed.
++ */
++static char *samsung_emuec_supplied_to[] = { "samsung-galaxybook-battery" };
++
+ static void samsung_emuec_unregister_partner(struct samsung_emuec *pdic)
+ {
+ 	usb_power_delivery_unregister_capabilities(pdic->source_caps);
+@@ -1064,6 +1070,8 @@
+ 	pdic->psy_desc.get_property = samsung_emuec_get_property;
+ 	psy_config.drv_data = pdic;
+ 	psy_config.fwnode = of_fwnode_handle(pdic->connector);
++	psy_config.supplied_to = samsung_emuec_supplied_to;
++	psy_config.num_supplicants = ARRAY_SIZE(samsung_emuec_supplied_to);
+ 
+ 	pdic->psy = devm_power_supply_register(dev, &pdic->psy_desc, &psy_config);
+ 	if (IS_ERR(pdic->psy)) {

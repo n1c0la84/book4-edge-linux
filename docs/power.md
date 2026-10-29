@@ -1127,7 +1127,17 @@ first run); after 490 / 1300 / 3000 mA with 65 W / 20 V each time:
 phase now limits it, not the input. `EmuEC.sys` also has a charge-current
 command (`mboxLiCACheckChargingCurrent`, `CMD_CHG_CUR`,
 `VAL_CHG_CURR_1808`), so Windows may charge at ~1.8 A; not needed for the
-stall. Log: `~/inputcur-test-20261029-1806.log`. The fix is for
+stall. Log: `~/inputcur-test-20261029-1806.log`.
+
+**Fix (written 29 October, not yet built or tested):**
+`drivers/anatase/patches/0005` makes the `samsung-emuec` supplies list
+`samsung-galaxybook-battery` in `supplied_to`;
+`patches-galaxybook-ec/0002` gives the battery an
+`external_power_changed()` that picks the best online contract and sends
+0x90 (95 % of the contract current) and 0x91, with Windows' 490/1300 mA
+ramp on a fresh attach, and logs `charger input limit N mA (W, mV)`.
+Open: whether the EC keeps the limit across s2idle (emuec does not report
+an unchanged contract after resume, so nothing is resent). The fix was for
 `samsung-emuec` to send
 0x90/0x91 after each contract (through `samsung-galaxybook-ec`, which owns
 the mailbox).
