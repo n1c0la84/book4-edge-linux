@@ -1118,8 +1118,17 @@ idle current 0.11-0.20 A before. Only the first step went out (0x90 490 mA
 at idle, battery voltage 14.75 -> 15.07 V** (rising, so real charging),
 ~18 W into the battery instead of ~2.5 W. More than 490 mA x 20 V can
 carry, so the EC seems to act on 0x91 (adapter watts) or does not take 0x90
-as a plain input-current cap; the full ramp to 3000 mA is still to run. The
-fix is for `samsung-emuec` to send
+as a plain input-current cap.
+
+**Full ramp (18:06, 5 %): confirmed.** Before 1.17-1.28 A (left from the
+first run); after 490 / 1300 / 3000 mA with 65 W / 20 V each time:
+**1.579-1.580 A, flat**, voltage 15.20 -> 15.25 V, 5 -> 7 % in 2 minutes,
+~24 W into the battery. A flat current means the battery's constant-current
+phase now limits it, not the input. `EmuEC.sys` also has a charge-current
+command (`mboxLiCACheckChargingCurrent`, `CMD_CHG_CUR`,
+`VAL_CHG_CURR_1808`), so Windows may charge at ~1.8 A; not needed for the
+stall. Log: `~/inputcur-test-20261029-1806.log`. The fix is for
+`samsung-emuec` to send
 0x90/0x91 after each contract (through `samsung-galaxybook-ec`, which owns
 the mailbox).
 
