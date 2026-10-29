@@ -94,7 +94,10 @@ cmd_write() {
 
 cmd_build() {
     local out=${1:-$HOME/book4-live.iso}
-    local M A E TOP SNAP CMDLINE EL1ARGS EL2ARGS d f
+    local CMDLINE EL1ARGS EL2ARGS d f
+    # Global, not local: cleanup() runs from the EXIT trap, after this
+    # function has returned.
+    M= A= E= TOP= SNAP=
 
     echo "== 0. checks"
     [[ $(findmnt -n -o SOURCE /) == *"[/arch]" ]] || { echo "/ is not the arch subvolume." >&2; exit 1; }
@@ -196,6 +199,28 @@ cmd_build() {
 passwd -l root >/dev/null
 pacman-key --init >/dev/null 2>&1
 pacman-key --populate archlinuxarm omarchy >/dev/null 2>&1
+"
+    # Keys this machine added by hand for third-party repos (e.g.
+    # openai-chatgpt): without them pacman rejects those databases. Every
+    # public key of the host's keyring that the fresh one lacks, except the
+    # host's own master key, is imported and locally signed.
+    fprs() {
+        sudo gpg --homedir "$1" --batch --with-colons --list-keys 2>/dev/null | awk -F: '
+            $1 == "pub" { want = 1; next }
+            want && $1 == "fpr" { f = $10; want = 0 }
+            $1 == "uid" && f != "" { if ($10 !~ /Pacman Keyring Master Key/) print f; f = "" }' | sort -u
+    }
+    local extra
+    extra=$(comm -23 <(fprs /etc/pacman.d/gnupg) <(fprs "$A/etc/pacman.d/gnupg"))
+    if [ -n "$extra" ]; then
+        # shellcheck disable=SC2086
+        sudo gpg --homedir /etc/pacman.d/gnupg --batch --armor --export $extra | sudo tee "$A/root/extra-keys.asc" >/dev/null
+        ns pacman-key --add /root/extra-keys.asc >/dev/null 2>&1
+        for f in $extra; do ns pacman-key --lsign-key "$f" >/dev/null 2>&1; done
+        sudo rm -f "$A/root/extra-keys.asc"
+        echo "   third-party pacman keys carried over: $(wc -w <<<"$extra")"
+    fi
+    ns /bin/bash -euc "
 pacman -S --noconfirm --needed grub squashfs-tools efibootmgr dosfstools rsync >/dev/null
 systemctl disable sshd >/dev/null 2>&1 || true
 "
