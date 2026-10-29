@@ -1,0 +1,11 @@
+[Unit]
+Description=Book4: plain-text journal copy that survives hard resets
+After=systemd-journald.service local-fs.target
+
+[Service]
+ExecStart=/usr/local/bin/book4-live-log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

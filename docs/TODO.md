@@ -15,6 +15,16 @@ within each section. What is already done is listed at the end.
       GRUB: give them a Fedora-less path (`/boot/book4` + `book4-grub.sh`).
       Later a public variant without tcblaunch.exe and firmware (extracted
       from the Windows partition at first boot).
+- [ ] **Awake reset at EL2, 29 October ~13:55** (book4s, 21 h 55 min up, on
+      battery at ~46 %, no charger change): PMIC RTC back at 2024-05-29, so
+      the PMIC itself went down. LightCraft 0.15 (wgpu/Vulkan compute on the
+      Adreno) had been open since 13:50; 22 October's awake reset also came
+      minutes after a new GUI app. The journal lost the whole boot: the next
+      boot found `system.journal` damaged, the rename failed (EBUSY) and the
+      file was replaced. Since then `install/arch/crash-log.sh` (journald
+      sync 10 s + a plain-text copy per boot in `/var/log/book4-live/`).
+      Next: reproduce with LightCraft on battery, `dmesg -w` over SSH to a
+      second machine, then the same on the charger.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the
