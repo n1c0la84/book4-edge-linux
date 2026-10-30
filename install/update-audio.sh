@@ -16,8 +16,8 @@ install -D -m 644 "$REPO"/userspace/audio/pipewire/book4-speakers-wireplumber.co
     ~/.config/wireplumber/wireplumber.conf.d/book4-speakers.conf
 systemctl --user restart wireplumber pipewire pipewire-pulse
 sleep 3
-# The raw sink's volume is the amplifiers' gain; the Speakers sink's volume is
-# the one to use day to day.
+# The amplifiers' gain is fixed by the UCM profile (PA Volume 23); every sink
+# uses software volume, the Speakers sink's is the one to use day to day.
 RAW=alsa_output.platform-sound.HiFi__Speaker__sink
 id=$(pw-dump | python3 -c "import json,sys; print(next((o['id'] for o in json.load(sys.stdin) if ((o.get('info') or {}).get('props') or {}).get('node.name')=='$RAW'),''))")
 [ -n "$id" ] && wpctl set-volume "$id" 1.0 && wpctl set-mute "$id" 0

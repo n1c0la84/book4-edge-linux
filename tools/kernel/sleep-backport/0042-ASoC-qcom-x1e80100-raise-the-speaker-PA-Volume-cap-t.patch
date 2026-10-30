@@ -1,0 +1,65 @@
+From ba86d641d000827a6d00d37d695487260d690782 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Fri, 30 Oct 2026 13:28:32 +0100
+Subject: [PATCH] ASoC: qcom: x1e80100: raise the speaker PA Volume cap to 23
+ (book4)
+
+The cap of 6 was meant as 0 dB, but on the WSA883x amplifiers of the
+Galaxy Book4 Edge PA Volume 0..15 is a single flat gain step (3 and 6
+measured identical through the VI feedback), so it limited nothing and the
+speakers played far below the Windows level. 16..23 are clean 1.5 dB steps
+(measured: +1.48 ... +4.51 dB per step pair, current THD <= 0.04 %); 23 is
++12 dB over the floor, about the output of the Windows driver's DRE mode.
+Ten minutes of music at full volume at 23, with a 120 Hz woofer high-pass
+in the PipeWire crossover, warmed the voice coils by ~3 degC (woofer) and
+<1 degC (tweeter), against a ~120 degC rating in the Samsung calibration
+data. Not for upstream as is: the scale is specific to this machine.
+
+Assisted-by: Claude Opus 5.5
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01ALoC6yerK2c2q13o4h7F4t
+---
+ sound/soc/qcom/x1e80100.c | 22 +++++++++++++---------
+ 1 file changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/sound/soc/qcom/x1e80100.c b/sound/soc/qcom/x1e80100.c
+index c81df41ac..20cd1773c 100644
+--- a/sound/soc/qcom/x1e80100.c
++++ b/sound/soc/qcom/x1e80100.c
+@@ -35,20 +35,24 @@ static int x1e80100_snd_init(struct snd_soc_pcm_runtime *rtd)
+ 	case WSA_CODEC_DMA_RX_0:
+ 	case WSA_CODEC_DMA_RX_1:
+ 		/*
+-		 * Set limit of -3 dB on Digital Volume and 0 dB on PA Volume
+-		 * to reduce the risk of speaker damage until we have active
+-		 * speaker protection in place.
++		 * Set limit of -3 dB on Digital Volume and a PA Volume cap to
++		 * reduce the risk of speaker damage until we have active
++		 * speaker protection in place. On the Galaxy Book4 Edge's
++		 * WSA883x, PA Volume 0..15 is one flat step (the old cap of 6
++		 * limited nothing) and 16..23 add 1.5 dB each: 23 is +12 dB,
++		 * about the Windows driver's output, measured clean with the
++		 * voice coils warming ~3 degC at full volume (VI feedback).
+ 		 */
+ 		snd_soc_limit_volume(card, "WSA WSA_RX0 Digital Volume", 81);
+ 		snd_soc_limit_volume(card, "WSA WSA_RX1 Digital Volume", 81);
+ 		snd_soc_limit_volume(card, "WSA2 WSA_RX0 Digital Volume", 81);
+ 		snd_soc_limit_volume(card, "WSA2 WSA_RX1 Digital Volume", 81);
+-		snd_soc_limit_volume(card, "SpkrLeft PA Volume", 6);
+-		snd_soc_limit_volume(card, "SpkrRight PA Volume", 6);
+-		snd_soc_limit_volume(card, "WooferLeft PA Volume", 6);
+-		snd_soc_limit_volume(card, "TweeterLeft PA Volume", 6);
+-		snd_soc_limit_volume(card, "WooferRight PA Volume", 6);
+-		snd_soc_limit_volume(card, "TweeterRight PA Volume", 6);
++		snd_soc_limit_volume(card, "SpkrLeft PA Volume", 23);
++		snd_soc_limit_volume(card, "SpkrRight PA Volume", 23);
++		snd_soc_limit_volume(card, "WooferLeft PA Volume", 23);
++		snd_soc_limit_volume(card, "TweeterLeft PA Volume", 23);
++		snd_soc_limit_volume(card, "WooferRight PA Volume", 23);
++		snd_soc_limit_volume(card, "TweeterRight PA Volume", 23);
+ 		break;
+ 	case DISPLAY_PORT_RX_0:
+ 		dp_pcm_id = 0;
+-- 
+2.56.0
+
