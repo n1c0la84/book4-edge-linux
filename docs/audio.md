@@ -84,19 +84,23 @@ uses it, and for an installed sleep kernel `install/el2/sleep-dtb.sh
 day: tweeters attached, fingerprint and camera work, deep sleep unchanged.
 
 Software: the UCM profile switches the tweeters with the woofers when their
-controls exist (same profile for both DTBs), sets their PA like the woofers',
+controls exist (same profile for both DTBs), sets all four amplifiers' PA
+Volume to 23 (+12 dB, see below; the woofers' used to be left to alsactl),
 and puts the macros' digital gain at the kernel's cap (81 = -3 dB; test
 scripts had left it at 72 = -12 dB, which alsactl kept: "very low volume").
-The kernel also caps PA Volume at 6, a flat -3 dB in the driver's TLV, so
-loudness is limited on purpose until Linux has speaker protection; Windows
-is louder (smart-amp protection and Dolby processing). To make up some of it, the
-speaker filter starts with a look-ahead limiter (`ladspa-swh-plugins`,
-+9 dB since 28 October, +6 before; peaks held at -1 dBFS): louder on average, same peaks. A PipeWire filter-chain,
+The Speaker device has no hardware mixer element: PipeWire uses software
+volume for all four channels. The speaker filter starts with a look-ahead
+limiter (`ladspa-swh-plugins`, +9 dB since 28 October, +6 before; peaks held
+at -1 dBFS): louder on average, same peaks. A PipeWire filter-chain,
 [`pipewire/book4-speakers.conf`](../userspace/audio/pipewire/book4-speakers.conf),
-is a WirePlumber *smart filter* on the Speaker sink: woofers get full-range
-stereo, tweeters a 2 kHz 4th-order Linkwitz-Riley high-pass. A WirePlumber
-rule disables up-mixing on the raw 4-channel sink so nothing full-range
-reaches the tweeters by accident. `install/update-audio.sh` installs all of it.
+is a WirePlumber *smart filter* on the Speaker sink: woofers get a 120 Hz,
+tweeters a 2 kHz 4th-order Linkwitz-Riley high-pass (two Butterworth biquads
+each). A WirePlumber rule disables up-mixing on the raw 4-channel sink so
+nothing full-range reaches the tweeters by accident. On Fedora,
+`install/update-audio.sh` installs all of it; on a running Arch, install the
+changed files by hand (`sudo install -m 644 userspace/audio/ucm2/*.conf
+/usr/share/alsa/ucm2/Qualcomm/x1e80100/`, the PipeWire/WirePlumber files
+under `~/.config`) and restart `wireplumber pipewire pipewire-pulse`.
 
 **Which output to pick** (5 October, Arch/Omarchy). Select the hardware
 Speaker sink, labelled **"Speakers"** by the WirePlumber rule; the crossover
@@ -134,6 +138,61 @@ with 3 kHz or more). The variant with shared ports
 both amps on `<1 2 3 7>`) also plays, but sends the woofer's full-range
 signal to the tweeter: test only. A filter-chain output port cannot be both
 linked inside the graph and a graph output (`use copy`).
+
+## Loudness and speaker feedback (30 October)
+
+**The PA gain.** The kernel capped PA Volume at 6, meant as "0 dB until
+Linux has speaker protection". Measured through the amplifiers' own voltage
+and current feedback, PA Volume 0..15 is a single flat gain step on these
+WSA883x (3 and 6 give identical output), so the cap limited nothing, and
+16..23 are clean 1.5 dB steps (current distortion at most 0.04 %): 23 is
++12 dB over the old level, about what the amplifiers deliver in the mode
+the Windows driver uses. The daily kernel now caps at 23
+([`sleep-backport/0042`](../tools/kernel/sleep-backport)) and the UCM
+profile sets 23. With the woofers' 120 Hz high-pass (a laptop woofer
+reproduces nothing below that, and below its ~620 Hz resonance the cone
+moves more for the same voltage), ten minutes of music at full volume at
+23 warmed the voice coils by about 3 °C (woofer) and under 1 °C (tweeter),
+against about 120 °C in Samsung's calibration data; no rattling.
+
+**A hidden -31 dB.** The crossover's own input volume ("Speaker crossover
+(automatic)") had been saved by WirePlumber at 3 % (30 % in panels), most
+likely while the crossover was briefly the default output, and was
+restored at every start: a -31 dB stage under the volume slider that no
+panel shows as the output. Measured with monitor taps on both sides of the
+crossover. It must stay at 100 %
+(`~/.local/state/wireplumber/stream-properties`, key
+`Speaker crossover (automatic)`).
+
+**VI feedback** (kernel branch `book4/7.2-sleep-spk` in
+n1c0la84/linux-book4-edge, test boot "el2-spk"; not in the daily kernel).
+The WSA883x voltage/current sense works on the right pair: each 32-bit word
+is V (low 16 bits) and I (high 16 bits) of one speaker, word 0 the woofer,
+word 1 the tweeter. It needed a WSA883x "VI Capture" DAI and source port, a
+VI capture link and topology on `WSA_CODEC_DMA_TX_0`, the amplifiers' banked
+SoundWire clock divider (`HOST_CLK_DIV2_CTL` = 1 on bank switches, as WSA881x
+does; without it the data is a clipped oscillation), the WSA macro's
+speaker-protection path init, and the sense-ADC values Windows uses (`ADC_6`
+0x0a, `ISENSE2` 0x40). A stepped-sine sweep shows a textbook impedance curve
+(woofer: flat ~1.05 to 160 Hz, resonance at ~620 Hz, inductive rise). The
+crossover carries two silent pilot tones (18 Hz to the woofers, 19.5 kHz to
+the tweeters, amplitude 0 unless a monitor turns them on): the coil
+resistance at a fixed pilot frequency, and so the coil temperature, can be
+read independently of the music, as Windows' protection does with its pilot.
+The monitor tools are private, next to the reverse-engineering notes. The
+left pair (WSA2) is not captured yet; nothing protects the speakers
+automatically.
+
+Pitfalls: the woofer's voltage sense compresses softly at high output at PA
+Volume 3 (-5.7 %, a different state per gain setting), so a resistance read
+from loud music is a few percent off; a fixed pilot avoids most of it.
+**Never hand the PA gain to the amplifiers' DRE** (dynamic range
+enhancement: clearing `DRE_CTL_1` bit 0 after start-up, as Qualcomm's
+downstream driver does, or never setting it, as Windows does): on upstream's
+configuration the output was heavily distorted, about 12 dB above the
+capped level, and one such test ended in a power-level reset of the whole
+machine. One SoundWire "Bus clash" (right woofer amplifier) was seen when a
+VI capture started during playback at PA 23; it did not recur.
 
 Test scripts: [`tools/audio`](../tools/audio) (`speakers-voices.sh`,
 `speakers-check.sh`; the rest are the investigation's raw tests).
