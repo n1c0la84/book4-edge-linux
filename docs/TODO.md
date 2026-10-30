@@ -1,11 +1,11 @@
 # Open points
 
-State on 20 October 2026 (14" NP940XMA): Arch Linux ARM with Omarchy, daily
-at EL2 on the sleep kernel `7.2.7-book4s` with full s2idle deep sleep;
-Fedora next to it as the build host. Roughly in order of everyday usefulness
-within each section. What is already done is listed at the end.
+How the machine runs today, what is in progress and the hard rules:
+[STATE.md](STATE.md). This file is the full list of open points, roughly in
+order of everyday usefulness within each section; what is done is listed at
+the end.
 
-**Now (20 October):**
+**Now:**
 
 - [ ] **Live ISO and reset installer** (29 October): boot-test
       `install/arch/live-iso.sh` (EL1 and EL2 entries), then

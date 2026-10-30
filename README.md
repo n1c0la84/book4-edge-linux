@@ -14,6 +14,7 @@ kernels in a Fedora container. Both run kernels built from Anatase's
 [n1c0la84/linux-book4-edge](https://github.com/n1c0la84/linux-book4-edge)
 ([docs/kernel.md](docs/kernel.md)).
 
+- **Current state, in one page:** [docs/STATE.md](docs/STATE.md)
 - **Set it up from scratch:** [docs/install.md](docs/install.md)
 - **Keep it updated:** [docs/updates.md](docs/updates.md)
 - **Open points:** [docs/TODO.md](docs/TODO.md)
