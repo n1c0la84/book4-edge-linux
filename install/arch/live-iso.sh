@@ -145,9 +145,12 @@ cmd_build() {
     echo "== 2. system, from a read-only snapshot of the arch subvolume -> $A"
     sudo mount -o subvolid=5 "UUID=$ROOT_UUID" "$TOP"
     sudo btrfs -q subvolume snapshot -r "$TOP/arch" "$TOP/$SNAP"
+    # /var/log: the directories only (services expect them), no file: the
+    # crash-log copies in book4-live/, the sleep CSV and wtmp are this
+    # machine's history.
     set -f   # patterns for rsync, not for this shell
     local ex=(/home/* /root/* /tmp/* /var/tmp/* /var/cache/* /boot/* /swap /swapfile /.snapshots /lost+found
-        /var/log/journal/* '/var/log/*.log' '/var/log/*.log.*' '/var/log/*.old' /var/lib/systemd/coredump/*
+        /var/log/** /var/lib/systemd/coredump/*
         /var/lib/systemd/random-seed /var/lib/systemd/credential.secret /var/lib/systemd/pstore/*
         /var/lib/fprint/* /var/lib/bluetooth/* /var/lib/NetworkManager/* /etc/NetworkManager/system-connections/*
         /var/lib/iwd/* /var/lib/dhcpcd/* /var/lib/upower/* /var/lib/tpm2-tss/* /var/lib/private/*
@@ -156,7 +159,8 @@ cmd_build() {
     set +f
     for d in /usr/lib/modules/*; do [ "$(basename "$d")" = "$K" ] || ex+=("$d"); done
     sudo mkdir -p "$A"
-    sudo rsync -aHAX --numeric-ids --delete --delete-excluded --info=progress2 "${ex[@]/#/--exclude=}" "$TOP/$SNAP/" "$A/"
+    sudo rsync -aHAX --numeric-ids --delete --delete-excluded --info=progress2 \
+        --include='/var/log/**/' "${ex[@]/#/--exclude=}" "$TOP/$SNAP/" "$A/"
     sudo btrfs -q subvolume delete "$TOP/$SNAP"
 
     echo "== 3. home: desktop customizations only"
