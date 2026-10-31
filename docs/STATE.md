@@ -17,6 +17,9 @@ Details live in the linked docs; open work in [TODO.md](TODO.md); history in
   `tools/kernel/sleep-backport/`), **at EL2**: firmware entry "Book4 EL2
   (slbounce)" -> UEFI Shell in `\EFI\book4-el2\` (qebspil + slbounce) ->
   Fedora's GRUB -> entry `el2-sleep` ([el2.md](el2.md)).
+- **Android development:** Google Android CLI `1.1.16717390` for Linux ARM64
+  is installed at `~/.local/bin/android`; its SDK root is `~/Android/Sdk`
+  (31 October 2026).
 - **Fedora:** owns `/boot` and GRUB, and is the kernel build environment
   (Arch builds in a Fedora container, `install/arch/fedora-shell.sh`). The EL1
   kernel `7.2.7-book4` stays: Fedora's default and the kernel to build
