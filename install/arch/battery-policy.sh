@@ -1,13 +1,15 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Low battery: a last warning at 5 % and a clean power-off at 3 %.
+# Low battery: warnings at 8 % and 5 % (after Omarchy's at 10 %) and a clean
+# power-off at 3 %.
 # Omarchy's shell warns once at 10 %; UPower's critical action was "Auto",
 # which picks hybrid sleep/hibernation because the swap file exists; that
 # resume resets this machine, and on 20 October (EL2, before EFI variables
 # worked there) the machine tried to sleep at the last percent and died.
 #   /etc/UPower/UPower.conf.d/70-book4.conf   PowerOff at 3 %
 #   ~/.local/bin/book4-battery-warn + user timer book4-battery-warn.timer
-#        (every minute; one critical notification per discharge at <= 5 %)
+#        (every minute; one critical notification per discharge at <= 8 %
+#        and at <= 5 %)
 #   /etc/udev/rules.d/91-book4-boost.rules   the 4.0 GHz CPU boost on the
 #        charger only (needs sleep-backport 0037 for schedutil to use it)
 # Run on Arch as your user:  bash install/arch/battery-policy.sh [undo]

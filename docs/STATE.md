@@ -1,6 +1,6 @@
 # State
 
-**Updated 30 October 2026.** The one page to read at the start of every
+**Updated 31 October 2026.** The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.
@@ -31,6 +31,11 @@ Iris hardware video decode; EFI variables and RTC; KVM; battery and charging
 through the Samsung EC, awake charging included since 29 October (PD contract
 passed to the EC, [ec-protocol.md](ec-protocol.md)); Wi-Fi (firmware c5-00302,
 [firmware.md](firmware.md)).
+
+Low battery: Omarchy warns at 10 %, `book4-battery-warn` at 8 % and 5 %,
+UPower powers off at 3 %. Under heavy load the EC's reading drops from ~8 %
+to 0 in seconds (30 October, all cores busy: dead at "8 %"), so plug in at
+the 8 % warning.
 
 Not working: external monitor over USB-C (AUX timeouts); NPU inference
 (dspqueue hang; dspsignal port 0041 written, untested).

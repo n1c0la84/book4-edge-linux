@@ -70,7 +70,7 @@ Then boot Arch, and on Arch:
     deletes the module trees of every kernel but the running one.
 11. Arch as GRUB's default, plus the suspend defaults (`pcie_port_pm=force`,
     no USB wakeup): `bash install/arch/boot-defaults.sh`. Then the low-battery
-    policy (a last warning at 5 %, a clean power-off at 3 %):
+    policy (warnings at 8 % and 5 %, a clean power-off at 3 %):
     `bash install/arch/battery-policy.sh`. And a log of every sleep (minutes,
     mAh, watts, deep-sleep residency): `bash install/arch/sleep-log.sh`.
     Optional: the Copilot key as Super (keyd): `bash install/arch/copilot-key.sh`.
