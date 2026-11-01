@@ -45,6 +45,11 @@ the end.
       resets, try the fix that does not cost idle power, clearing
       `SCTLR_EL1_DZE` and emulating DC ZVA for EL0 (Zyngier's Oryon
       erratum), before dropping CL5. Check power.md's sleep numbers after.
+      **Reproduced 1 November 13:10** (book4s, EL2, battery): `crash.c`
+      (x1e-crash `bb344c4`, `gcc -O2`) reset the machine within seconds,
+      the screen froze first, and the PMIC RTC came back at 2024-05-29: the
+      same signature as the three awake resets. Cause confirmed as far as
+      a reproducer can confirm it. Next: the DZE-off + emulation patch.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the
