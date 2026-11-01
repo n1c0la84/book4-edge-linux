@@ -57,7 +57,8 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   RTC resets to 2024-05-29, nothing logged; the third one froze the screen
   first, with Chrome open): `install/arch/crash-log.sh` keeps a text journal
   per boot in `/var/log/book4-live/` (worked: 30 s more than the journal,
-  still no clue). Next: reproduce with LightCraft on battery.
+  still no clue). Lead: the X1 DC ZVA + CL5 erratum (TODO.md); next:
+  run the `x1e-crash` reproducer once.
 - **Speaker VI feedback** (optional): works on the right pair on the test
   branch `book4/7.2-sleep-spk` (boot entry `el2-spk`); left pair not
   captured. Notes in `~/src/qcaudio-re` (private).

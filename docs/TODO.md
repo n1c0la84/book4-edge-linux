@@ -34,6 +34,17 @@ the end.
       warning. Google Chrome had been open since ~12:20 (27 min, so a weaker
       link to a newly opened GPU app than on 29 October). The crash-log
       service worked: it kept 30 s more than the journal.
+      **Best lead (1 November): the X1 DC ZVA erratum.** Same symptoms
+      reported upstream ("hang and then reset", nothing logged, in use or
+      idle): icecream95/x1e-crash (reproducer `crash.c`, DC ZVA after the
+      cluster leaves CL5), Jens Glathe's RFC "hamoa: Drop cluster_cl5 idle
+      state" (lore `20260604-dc_zva_mitigation-v1-1`, suggested by Marc
+      Zyngier, band-aid), Ubuntu LP #2158523 (T14s, resets every few hours).
+      Our running DT has CL5 (`0x01000054`) in every cluster domain. Next:
+      run `crash.c` once on book4s (expect a reset; `sync` first); if it
+      resets, try the fix that does not cost idle power, clearing
+      `SCTLR_EL1_DZE` and emulating DC ZVA for EL0 (Zyngier's Oryon
+      erratum), before dropping CL5. Check power.md's sleep numbers after.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the
