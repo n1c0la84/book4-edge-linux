@@ -25,6 +25,15 @@ the end.
       sync 10 s + a plain-text copy per boot in `/var/log/book4-live/`).
       Next: reproduce with LightCraft on battery, `dmesg -w` over SSH to a
       second machine, then the same on the charger.
+      **Third one, 1 November ~12:43** (book4s, boot `e00a5e3f`, 1 h 45 min
+      up, ~1 h after waking from a 24 h sleep, on battery at ~62 %): the
+      owner saw the screen freeze, then the machine rebooted. PMIC RTC back
+      at 2024-05-29 00:00 again, so again a full PMIC power-on. Nothing in
+      the log: the journal stops at 12:42:08, the plain-text copy at 12:42:39
+      (uptime 6322 s), with only the timers' routine lines and no kernel
+      warning. Google Chrome had been open since ~12:20 (27 min, so a weaker
+      link to a newly opened GPU app than on 29 October). The crash-log
+      service worked: it kept 30 s more than the journal.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the

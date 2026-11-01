@@ -1,6 +1,6 @@
 # State
 
-**Updated 31 October 2026.** The one page to read at the start of every
+**Updated 1 November 2026.** The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.
@@ -53,9 +53,11 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   A reset erases Fedora too, so before using it for real: back up both
   homes, and give the kernel tools a Fedora-less path (build environment,
   `/boot/book4`, `lib/book4-grub.sh` instead of Fedora's GRUB).
-- **Awake resets at EL2** (22 and 29 October, PMIC goes down, nothing
-  logged): `install/arch/crash-log.sh` now keeps a text journal per boot in
-  `/var/log/book4-live/`. Next: reproduce with LightCraft on battery.
+- **Awake resets at EL2** (22 and 29 October, 1 November; PMIC goes down,
+  RTC resets to 2024-05-29, nothing logged; the third one froze the screen
+  first, with Chrome open): `install/arch/crash-log.sh` keeps a text journal
+  per boot in `/var/log/book4-live/` (worked: 30 s more than the journal,
+  still no clue). Next: reproduce with LightCraft on battery.
 - **Speaker VI feedback** (optional): works on the right pair on the test
   branch `book4/7.2-sleep-spk` (boot entry `el2-spk`); left pair not
   captured. Notes in `~/src/qcaudio-re` (private).
