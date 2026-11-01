@@ -58,9 +58,11 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   first, with Chrome open): `install/arch/crash-log.sh` keeps a text journal
   per boot in `/var/log/book4-live/` (worked: 30 s more than the journal,
   still no clue). Cause: the X1 DC ZVA + CL5 erratum,
-  reproduced with `x1e-crash` on 1 November (TODO.md). Fix: sleep-backport
+  reproduced with `x1e-crash` on 1 November (TODO.md). Fixed by sleep-backport
   0043 (DZE off + DC ZVA emulation, CL5 kept) and 0044 (KVM guests:
-  `HCR_EL2.TDZ`), written, not yet built or tested.
+  `HCR_EL2.TDZ`), running since 1 November: the reproducer survives on
+  the host and gets SIGILL in the VM. Watch: no awake reset for a few
+  days.
 - **Speaker VI feedback** (optional): works on the right pair on the test
   branch `book4/7.2-sleep-spk` (boot entry `el2-spk`); left pair not
   captured. Notes in `~/src/qcaudio-re` (private).

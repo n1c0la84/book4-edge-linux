@@ -65,8 +65,13 @@ the end.
       features: detected: Broken DC ZVA", EL0 reads `DCZID_EL0=0x14`
       (DZP=1), and `crash.c` ran 9 min / ~1040 rounds without a reset (it
       reset within seconds before); stopped there for the reboot to #6
-      (0043 + 0044, built incrementally). Full 10000-round run on #6:
-      pending.
+      (0043 + 0044, built incrementally). **Verified on #6:** `crash.c`
+      ran all 10000 rounds (61 min, rc 0) on the host. In the Debian VM
+      (guest kernel 6.12.113) `DCZID_EL0` reads DZP=1, `crash.c` dies at
+      once with SIGILL, the host logs "kvm: Unsupported guest access" and
+      stays up. Left: a few days of normal use without an awake reset, and
+      power.md's sleep numbers re-measured (CL5 is kept, so no change
+      expected); then close this item.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the
