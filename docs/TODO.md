@@ -49,7 +49,16 @@ the end.
       (x1e-crash `bb344c4`, `gcc -O2`) reset the machine within seconds,
       the screen froze first, and the PMIC RTC came back at 2024-05-29: the
       same signature as the three awake resets. Cause confirmed as far as
-      a reproducer can confirm it. Next: the DZE-off + emulation patch.
+      a reproducer can confirm it.
+      **Fix written (1 November):** sleep-backport 0043 (fork
+      `book4/7.2-sleep` 561807a80), x1e-sleep's version of Zyngier's Oryon
+      erratum: DZE cleared, EL0 `DC ZVA` emulated, `clear_page`/`memset`/MTE
+      never use it, CL5 kept. Not built yet. Test: build and install
+      (`build-sleep-kernel.sh`), check `dmesg | grep 'Broken DC ZVA'`, then
+      `crash.c` must finish all 10000 rounds; then a few days of normal
+      use, and power.md's sleep numbers unchanged. Open: KVM guests can
+      still execute DC ZVA (no `HCR_EL2.TDZ`), so the sandbox VM may still
+      reset the host; the test branch `book4/7.2-sleep-spk` lacks 0043.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the
