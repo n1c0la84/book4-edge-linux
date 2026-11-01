@@ -61,6 +61,12 @@ the end.
       DC ZVA left traps to an UNDEF. Test: in the sandbox VM, `crash.c`
       should die with SIGILL (host log: "Unsupported guest access") and the
       host survive. The test branch `book4/7.2-sleep-spk` lacks 0043/0044.
+      **Built and booted (1 November):** book4s #5 (0043) printed "CPU
+      features: detected: Broken DC ZVA", EL0 reads `DCZID_EL0=0x14`
+      (DZP=1), and `crash.c` ran 9 min / ~1040 rounds without a reset (it
+      reset within seconds before); stopped there for the reboot to #6
+      (0043 + 0044, built incrementally). Full 10000-round run on #6:
+      pending.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the
