@@ -59,8 +59,8 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   per boot in `/var/log/book4-live/` (worked: 30 s more than the journal,
   still no clue). Cause: the X1 DC ZVA + CL5 erratum,
   reproduced with `x1e-crash` on 1 November (TODO.md). Fix: sleep-backport
-  0043 (DZE off + DC ZVA emulation, CL5 kept), written, not yet built or
-  tested.
+  0043 (DZE off + DC ZVA emulation, CL5 kept) and 0044 (KVM guests:
+  `HCR_EL2.TDZ`), written, not yet built or tested.
 - **Speaker VI feedback** (optional): works on the right pair on the test
   branch `book4/7.2-sleep-spk` (boot entry `el2-spk`); left pair not
   captured. Notes in `~/src/qcaudio-re` (private).

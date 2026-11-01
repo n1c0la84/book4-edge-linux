@@ -56,9 +56,11 @@ the end.
       never use it, CL5 kept. Not built yet. Test: build and install
       (`build-sleep-kernel.sh`), check `dmesg | grep 'Broken DC ZVA'`, then
       `crash.c` must finish all 10000 rounds; then a few days of normal
-      use, and power.md's sleep numbers unchanged. Open: KVM guests can
-      still execute DC ZVA (no `HCR_EL2.TDZ`), so the sandbox VM may still
-      reset the host; the test branch `book4/7.2-sleep-spk` lacks 0043.
+      use, and power.md's sleep numbers unchanged. 0044 (6810f4d6d) covers
+      KVM guests: `HCR_EL2.TDZ` on every vCPU, so guests see DZP=1 and any
+      DC ZVA left traps to an UNDEF. Test: in the sandbox VM, `crash.c`
+      should die with SIGILL (host log: "Unsupported guest access") and the
+      host survive. The test branch `book4/7.2-sleep-spk` lacks 0043/0044.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the

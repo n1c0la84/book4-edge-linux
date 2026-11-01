@@ -1,0 +1,44 @@
+From 6810f4d6da7da7d695effb9c07210e1edf6ee15a Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Sun, 1 Nov 2026 13:43:49 +0100
+Subject: [PATCH] KVM: arm64: Qualcomm Oryon X1: trap the guests' DC ZVA
+ (book4)
+
+The DC ZVA erratum (previous patch) only covers the host: a guest's
+kernel and programs execute DC ZVA on the real CPUs, and after CL5 that
+can reset the whole machine. Set HCR_EL2.TDZ for every vCPU when the
+erratum is present. DCZID_EL0.DZP then reads as 1 at EL1 and EL0, so a
+Linux guest's clear_page/memset and glibc never issue DC ZVA; one that
+does anyway traps to KVM, which has no handler for it and injects an
+UNDEF (with one "Unsupported guest access" line in the host log) instead
+of letting it reach the CPU.
+
+Assisted-by: Claude Opus 5.5
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ arch/arm64/include/asm/kvm_emulate.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm64/include/asm/kvm_emulate.h b/arch/arm64/include/asm/kvm_emulate.h
+index 5bf3d7e1d..902af8730 100644
+--- a/arch/arm64/include/asm/kvm_emulate.h
++++ b/arch/arm64/include/asm/kvm_emulate.h
+@@ -114,6 +114,15 @@ static inline void vcpu_reset_hcr(struct kvm_vcpu *vcpu)
+ 	 */
+ 	if (!cpus_have_final_cap(ARM64_HAS_STAGE2_FWB))
+ 		vcpu->arch.hcr_el2 |= HCR_TVM;
++
++	/*
++	 * Qualcomm Oryon X1: DC ZVA after CL5 can reset the SoC, and a guest
++	 * runs it on the real CPUs. TDZ makes DCZID_EL0.DZP read as 1 at EL1
++	 * and EL0, so guests that check it stop using DC ZVA; any DC ZVA
++	 * still issued traps and gets an UNDEF instead of reaching the CPU.
++	 */
++	if (cpus_have_final_cap(ARM64_WORKAROUND_QCOM_ORYON_DC_ZVA))
++		vcpu->arch.hcr_el2 |= HCR_TDZ;
+ }
+ 
+ static inline unsigned long *vcpu_hcr(struct kvm_vcpu *vcpu)
+-- 
+2.56.0
+
