@@ -97,7 +97,7 @@ cmd_build() {
     local CMDLINE EL1ARGS EL2ARGS d f
     # Global, not local: cleanup() runs from the EXIT trap, after this
     # function has returned.
-    M= A= E= TOP= SNAP=
+    M= A= E= TOP= SNAP= FB= FE=
 
     echo "== 0. checks"
     [[ $(findmnt -n -o SOURCE /) == *"[/arch]" ]] || { echo "/ is not the arch subvolume." >&2; exit 1; }
@@ -134,12 +134,16 @@ cmd_build() {
 
     echo "== 1. inputs: kernel, DTBs (sda4), EL2 files (internal ESP)"
     mkdir -p "$M/fboot" "$M/fesp" "$TOP"
-    sudo mount -o ro "$DEV_BOOT" "$M/fboot"
-    sudo mount -o ro "$DEV_ESP" "$M/fesp"
-    for f in "$M/fboot/vmlinuz-$K" "$M/fboot/dtb-test/book4-sleep.dtb" "$M/fboot/dtb-test/book4-sleep-el2.dtb" \
-             "$M/fesp/$EL2DIR"/{Shellaa64.efi,qebspilaa64.efi,slbounce.efi,tcblaunch.exe} \
-             "$M/fesp/$FWDIR"/{qcadsp8380.mbn,adsp_dtbs.elf,qccdsp8380.mbn,cdsp_dtbs.elf}; do
-        sudo test -s "$f" || { echo "missing: ${f#$M/}" >&2; exit 1; }
+    # Reuse a mount if there is one (Arch automounts the ESP at /efi), else
+    # mount read-only here: a second, read-only mount of a mounted FAT fails.
+    FB=$(findmnt -rn -o TARGET -S "$(readlink -f "$DEV_BOOT")" | head -1 || true)
+    FE=$(findmnt -rn -o TARGET -S "$(readlink -f "$DEV_ESP")" | head -1 || true)
+    [ -n "$FB" ] || { FB=$M/fboot; sudo mount -o ro "$DEV_BOOT" "$FB"; }
+    [ -n "$FE" ] || { FE=$M/fesp; sudo mount -o ro "$DEV_ESP" "$FE"; }
+    for f in "$FB/vmlinuz-$K" "$FB/dtb-test/book4-sleep.dtb" "$FB/dtb-test/book4-sleep-el2.dtb" \
+             "$FE/$EL2DIR"/{Shellaa64.efi,qebspilaa64.efi,slbounce.efi,tcblaunch.exe} \
+             "$FE/$FWDIR"/{qcadsp8380.mbn,adsp_dtbs.elf,qccdsp8380.mbn,cdsp_dtbs.elf}; do
+        sudo test -s "$f" || { echo "missing: ${f}" >&2; exit 1; }
     done
 
     echo "== 2. system, from a read-only snapshot of the arch subvolume -> $A"
@@ -234,11 +238,11 @@ systemctl disable sshd >/dev/null 2>&1 || true
 
     echo "== 5. boot files, installer"
     # In the system too: the installer puts them on the internal disk.
-    sudo install -D -m 644 "$M/fboot/vmlinuz-$K" "$A/boot/book4/vmlinuz"
-    sudo install -D -m 644 "$M/fboot/dtb-test/book4-sleep.dtb" "$A/boot/book4/book4-el1.dtb"
-    sudo install -D -m 644 "$M/fboot/dtb-test/book4-sleep-el2.dtb" "$A/boot/book4/book4-el2.dtb"
+    sudo install -D -m 644 "$FB/vmlinuz-$K" "$A/boot/book4/vmlinuz"
+    sudo install -D -m 644 "$FB/dtb-test/book4-sleep.dtb" "$A/boot/book4/book4-el1.dtb"
+    sudo install -D -m 644 "$FB/dtb-test/book4-sleep-el2.dtb" "$A/boot/book4/book4-el2.dtb"
     for f in Shellaa64.efi qebspilaa64.efi slbounce.efi tcblaunch.exe; do
-        sudo install -D -m 644 "$M/fesp/$EL2DIR/$f" "$A/usr/lib/book4/efi/$f"
+        sudo install -D -m 644 "$FE/$EL2DIR/$f" "$A/usr/lib/book4/efi/$f"
     done
     sudo install -D -m 644 "$REPO/install/arch/lib/book4-grub.sh" "$A/usr/local/lib/book4/book4-grub.sh"
     sudo install -D -m 644 "$REPO/install/el2/startup-installed.nsh" "$A/usr/local/lib/book4/startup-installed.nsh"
@@ -273,7 +277,8 @@ EOF
     sudo cp "$A/usr/lib/book4/efi/"* "$E/$EL2DIR/"
     sudo cp "$A/usr/lib/book4/efi/tcblaunch.exe" "$E/tcblaunch.exe"
     sudo install -m 644 "$REPO/install/el2/startup-live.nsh" "$E/$EL2DIR/startup.nsh"
-    sudo cp "$M/fesp/$FWDIR"/* "$E/$FWDIR/"
+    # The glob under sudo: /efi is root-only (dmask 0077).
+    sudo sh -c 'cp "$1"/* "$2"/' _ "$FE/$FWDIR" "$E/$FWDIR"
     sudo touch "$E/book4-live.id"
     book4_grub_cfg "Book4 live" "$K" /book4 "book4live=$LABEL" "$EL2ARGS" "$EL1ARGS" |
         sudo tee "$E/book4/grub.cfg" >/dev/null
