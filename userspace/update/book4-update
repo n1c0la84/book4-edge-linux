@@ -102,7 +102,7 @@ if ((snapshot)); then
 fi
 
 before=$(pacman -Q)
-pacnew_before=$(find /etc -name '*.pacnew' 2>/dev/null | sort)
+pacnew_before=$({ find /etc -name '*.pacnew' 2>/dev/null || true; } | sort)
 
 say "System packages"
 sudo env OMARCHY_ALLOW_DIRECT_PACMAN=1 pacman -Syu
@@ -134,7 +134,7 @@ if command -v Hyprland >/dev/null && [ -f "$HOME/.config/hypr/hyprland.lua" ]; t
     fi
 fi
 
-new_pacnew=$(comm -13 <(echo "$pacnew_before") <(find /etc -name '*.pacnew' 2>/dev/null | sort) | grep . || true)
+new_pacnew=$(comm -13 <(echo "$pacnew_before") <({ find /etc -name '*.pacnew' 2>/dev/null || true; } | sort) | grep . || true)
 [[ -z $new_pacnew ]] || { warn "New .pacnew files to merge:"; echo "$new_pacnew"; }
 
 orphans=$(pacman -Qtdq 2>/dev/null || true)

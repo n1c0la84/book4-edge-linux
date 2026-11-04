@@ -30,6 +30,9 @@ Details live in the linked docs; open work in [TODO.md](TODO.md); history in
   rollback steps in `book4-update --help`), `pacman -Syu`, `yay -Sua`,
   `mise up`, then Hyprland config check, .pacnew, orphans, pending Omarchy
   migrations and a newer flea release. `--check` lists what is pending.
+  Snapshots now (4 November): `arch-pre-omarchy-20261003-1109` (0.7 GB of
+  its own) and `arch-pre-update-20261104-0934`; Fedora's `root` + `home`
+  hold ~22 GB (the kernel tree `~/src/patchwork` is in Fedora's home).
 - **Pacman:** full `-Syu` on 4 November (113 packages, clean; mkinitcpio
   stays IgnorePkg). Checked first as boot-safe: Arch has no kernel package,
   no mkinitcpio preset and no `pkgbase`, so pacman hooks write nothing to
