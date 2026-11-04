@@ -96,7 +96,13 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   (7.2.7-book4)" entry has no logged boot since at least 19 October; its
   kernel and DTB are Fedora's and boot, so it stops in Arch's initramfs of
   10 October or right after it. Second stick test (4 November, ISO of 13:23): booted after a few
-  bounces (not resets) at EL1: no `/dev/kvm`; whether the EL2 entry was
+  bounces (not resets) at EL1: no `/dev/kvm`. A photo of the "second GRUB"
+  shows the FIRST menu (full entries, 5 s countdown; grub-el2.cfg has only EL2
+  entries and 1 s): the UEFI Shell chainloaded from GRUB returns at once, so
+  GRUB re-shows its menu and retries; grub-el2.efi probably never ran, and
+  the morning's loop was likely the same thing. Next: from GRUB's console,
+  `chainloader ($esp)/EFI/book4-el2/Shellaa64.efi` + `boot`, and see whether
+  the Shell errors, runs startup.nsh and returns, or sits at `Shell>`; whether the EL2 entry was
   chosen and slbounce did not switch is unknown (next time: EL2 entry, then
   `/proc/cmdline` and `dmesg | grep 'started at EL'`); `book4-install`
   plan correct (keeps sda1-3, wipes sda4-5); the bar showed the battery at 0 %
