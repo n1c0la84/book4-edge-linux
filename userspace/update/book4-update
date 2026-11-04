@@ -1,0 +1,151 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# book4-update: this machine's `omarchy update`. Omarchy's own updater assumes
+# its x86_64 package repository, snapper and Limine; here Omarchy is a local
+# build on IgnorePkg, packages come from Arch Linux ARM, and / is the `arch`
+# subvolume of a btrfs shared with Fedora. Steps:
+#   1. show what is pending (pacman, AUR, mise, flea) and ask
+#   2. prune the pacman cache to 2 versions (before the snapshot, which would
+#      otherwise pin what it deletes)
+#   3. read-only snapshot of the `arch` subvolume to
+#      <btrfs top level>/book4-snapshots/arch-<date>, keeping the newest 2
+#   4. pacman -Syu (interactive), yay -Sua, mise up
+#   5. after: Hyprland --verify-config on our config, relogin hint, new
+#      .pacnew files, orphans, pending Omarchy migrations (never run here:
+#      review them against the hard rules in docs/STATE.md first)
+# Nothing here touches /boot, the ESP or the kernel (sync-kernel.sh owns those).
+#
+# Usage:  book4-update           update (asks before changing anything)
+#         book4-update --check   only show what is pending, no root needed
+#         book4-update --no-snapshot
+#
+# Rollback from a snapshot (Arch broken; boot Fedora, or a TTY as root):
+#   mount -o subvolid=5 UUID=<root uuid> /mnt
+#   mv /mnt/arch /mnt/arch.broken
+#   btrfs subvolume snapshot /mnt/book4-snapshots/arch-<date> /mnt/arch
+#   reboot; once fine: btrfs subvolume delete /mnt/arch.broken
+# Rollback of single packages: pacman -U /var/cache/pacman/pkg/<old>.pkg.tar.*
+set -euo pipefail
+
+KEEP_SNAPSHOTS=2
+MIN_FREE_GB=5
+check=0 snapshot=1
+for a in "$@"; do
+    case $a in
+        --check) check=1 ;;
+        --no-snapshot) snapshot=0 ;;
+        -h|--help) sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
+        *) echo "Unknown option: $a (see --help)" >&2; exit 2 ;;
+    esac
+done
+
+[ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
+((EUID != 0)) || { echo "Run as your user (sudo is used inside; yay and mise need your home)." >&2; exit 1; }
+
+say() { printf '\n\e[1;32m== %s\e[0m\n' "$*"; }
+warn() { printf '\e[33m%s\e[0m\n' "$*" >&2; }
+
+flea_latest() {
+    pacman -Q flea &>/dev/null || return 0
+    local have new
+    have=$(pacman -Q flea | awk '{print $2}' | sed 's/-[0-9]*$//')
+    new=$(curl -fsS --max-time 10 https://api.github.com/repos/thisisgm/flea/releases/latest 2>/dev/null |
+        jq -r '.tag_name // empty' | sed 's/^v//') || true
+    if [[ -n $new && $new != "$have" ]]; then
+        echo "flea $have -> $new  (local build: bash install/arch/flea.sh $new)"
+    fi
+}
+
+show_pending() {
+    say "Pending: repositories"
+    checkupdates 2>/dev/null || echo "(none)"
+    say "Pending: AUR"
+    yay -Qua 2>/dev/null || echo "(none)"
+    say "Pending: mise"
+    mise outdated 2>/dev/null | grep . || echo "(none)"
+    local f
+    f=$(flea_latest)
+    if [[ -n $f ]]; then say "Pending: local builds"; echo "$f"; fi
+}
+
+show_pending
+((check == 0)) || exit 0
+
+free_gb=$(df --output=avail -BG / | tail -1 | tr -dc 0-9)
+((free_gb >= MIN_FREE_GB)) || { echo "Only ${free_gb} GB free on /; need ${MIN_FREE_GB} GB." >&2; exit 1; }
+
+echo
+read -r -p "Update now? [y/N] " ans
+[[ $ans == [yY]* ]] || exit 0
+
+say "Prune package cache (keep 2 versions)"
+sudo paccache -rk2 || warn "Could not prune the package cache."
+
+if ((snapshot)); then
+    say "Snapshot of the arch subvolume"
+    uuid=$(findmnt -no UUID /)
+    sub=$(findmnt -no FSROOT /); sub=${sub#/}
+    [[ $(findmnt -no FSTYPE /) == btrfs && -n $sub ]] || { echo "/ is not a btrfs subvolume." >&2; exit 1; }
+    top=$(sudo mktemp -d /run/book4-update.XXXXXX)
+    cleanup() { sudo umount "$top" 2>/dev/null || true; sudo rmdir "$top" 2>/dev/null || true; }
+    trap cleanup EXIT
+    sudo mount -o subvolid=5 "UUID=$uuid" "$top"
+    sudo mkdir -p "$top/book4-snapshots"
+    name=$sub-$(date +%Y%m%d-%H%M%S)
+    sudo btrfs subvolume snapshot -r "$top/$sub" "$top/book4-snapshots/$name"
+    mapfile -t old < <(sudo find "$top/book4-snapshots" -mindepth 1 -maxdepth 1 -name "$sub-*" -printf '%f\n' |
+        sort | head -n -"$KEEP_SNAPSHOTS")
+    for o in "${old[@]}"; do
+        sudo btrfs subvolume delete "$top/book4-snapshots/$o"
+    done
+    cleanup; trap - EXIT
+    echo "Snapshot: book4-snapshots/$name (rollback: book4-update --help)"
+fi
+
+before=$(pacman -Q)
+pacnew_before=$(find /etc -name '*.pacnew' 2>/dev/null | sort)
+
+say "System packages"
+sudo env OMARCHY_ALLOW_DIRECT_PACMAN=1 pacman -Syu
+
+if pacman -Qqm | grep -q .; then
+    say "AUR packages"
+    yay -Sua || warn "AUR update failed; the system update above stands."
+fi
+
+if command -v mise >/dev/null; then
+    say "mise tools"
+    MISE_MINIMUM_RELEASE_AGE=0 mise up || warn "mise update failed."
+fi
+
+say "After the update"
+changed=$(diff <(echo "$before") <(pacman -Q) | grep -c '^>' || true)
+echo "$changed package(s) installed or changed."
+
+if command -v Hyprland >/dev/null && [ -f "$HOME/.config/hypr/hyprland.lua" ]; then
+    if Hyprland --verify-config -c "$HOME/.config/hypr/hyprland.lua" 2>&1 | grep -q '^config ok'; then
+        echo "Hyprland $(pacman -Q hyprland | awk '{print $2}'): config ok."
+    else
+        warn "Hyprland reports config errors:"
+        Hyprland --verify-config -c "$HOME/.config/hypr/hyprland.lua" 2>&1 | tail -20
+    fi
+    exe=$(readlink "/proc/$(pgrep -x Hyprland | head -1)/exe" 2>/dev/null || true)
+    if [[ $exe == *"(deleted)"* ]]; then
+        warn "Hyprland was updated: log out and back in, then check hyprctl configerrors and the lock screen."
+    fi
+fi
+
+new_pacnew=$(comm -13 <(echo "$pacnew_before") <(find /etc -name '*.pacnew' 2>/dev/null | sort) | grep . || true)
+[[ -z $new_pacnew ]] || { warn "New .pacnew files to merge:"; echo "$new_pacnew"; }
+
+orphans=$(pacman -Qtdq 2>/dev/null || true)
+[[ -z $orphans ]] || echo "Orphans (not removed; meson and sassc build Omarchy): $(echo $orphans)"
+
+if command -v omarchy-migrate >/dev/null; then
+    pending=$(omarchy-migrate --pending 2>/dev/null | grep . || true)
+    [[ -z $pending ]] || { warn "Omarchy migrations pending (review before running omarchy-migrate):"; echo "$pending"; }
+fi
+
+f=$(flea_latest)
+[[ -z $f ]] || echo "$f"
+echo "Done."

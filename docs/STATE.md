@@ -24,6 +24,12 @@ Details live in the linked docs; open work in [TODO.md](TODO.md); history in
   only in the x86_64-only Omarchy Package Repository, so `omarchy pkg add
   flea` fails here and `omarchy update` never updates it. Rebuild each
   release with `install/arch/flea.sh <version>`.
+- **Updates:** `book4-update` (`userspace/update/`, installed by
+  `install/arch/update.sh`) instead of `omarchy update`: cache prune,
+  read-only snapshot of `arch` to `<btrfs top>/book4-snapshots/` (2 kept;
+  rollback steps in `book4-update --help`), `pacman -Syu`, `yay -Sua`,
+  `mise up`, then Hyprland config check, .pacnew, orphans, pending Omarchy
+  migrations and a newer flea release. `--check` lists what is pending.
 - **Pacman:** full `-Syu` on 4 November (113 packages, clean; mkinitcpio
   stays IgnorePkg). Checked first as boot-safe: Arch has no kernel package,
   no mkinitcpio preset and no `pkgbase`, so pacman hooks write nothing to
