@@ -84,8 +84,12 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   after GRUB without reaching the root filesystem (no log). That entry is
   stale: old EL1 kernel, Arch initramfs of 10 October, unused since EL2
   became daily (every logged Arch boot since 21 October is book4s at EL2).
-  A working Arch EL1 fallback would be book4s + book4-sleep.dtb (the
-  stick's EL1 entry, which boots). Rebuild the ISO before the next test.
+  Arch EL1 fallback since 4 November: GRUB entry "Arch Linux (7.2.7-book4) -
+  test: el1-book4s" (`test-entry.sh add el1-book4s`: book4s, book4-sleep.dtb,
+  the stick's EL1 arguments; not booted yet). The old "Arch Linux
+  (7.2.7-book4)" entry has no logged boot since at least 19 October; its
+  kernel and DTB are Fedora's and boot, so it stops in Arch's initramfs of
+  10 October or right after it. Rebuild the ISO before the next test.
   A reset erases Fedora too, so before using it for real: back up both
   homes, and give the kernel tools a Fedora-less path (build environment,
   `/boot/book4`, `lib/book4-grub.sh` instead of Fedora's GRUB).
