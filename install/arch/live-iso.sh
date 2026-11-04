@@ -11,6 +11,7 @@
 #
 #   bash install/arch/live-iso.sh build [ISO]          (default ~/book4-live.iso)
 #   bash install/arch/live-iso.sh write ISO /dev/sdX   (WIPES the stick)
+#   bash install/arch/live-iso.sh clean                (frees the ~14 GB work tree)
 #
 # Run as your user on Arch (sudo inside), booted from el2-sleep (7.2.7-book4s
 # at EL2): the ISO gets the running kernel, its two sleep DTBs from /boot
@@ -49,7 +50,7 @@ KEEPALIVE=
 (( EUID != 0 )) || { echo "Run as your user, not as root." >&2; exit 1; }
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
 
-usage() { sed -n '12,13p' "$0" | sed 's/^# //' >&2; exit 1; }
+usage() { sed -n '12,14p' "$0" | sed 's/^# //' >&2; exit 1; }
 
 keep_sudo() {
     sudo -v
@@ -326,8 +327,26 @@ EOF
     echo "  bash $0 write $out /dev/sdX"
 }
 
+# The work tree only (airootfs/, the ESP staging, efiboot.img); the next build
+# copies the system again from scratch. The ISO itself stays: delete it by
+# hand once the stick boots.
+cmd_clean() {
+    local ok
+    [ -d "$W" ] || { echo "No work tree at $W."; exit 0; }
+    [ -e "$W/efiboot.img" ] || [ -e "$W/airootfs/etc/mkinitcpio.conf.d/book4-live.conf" ] ||
+        { echo "$W does not look like live-iso.sh's work tree; not touching it." >&2; exit 1; }
+    ! findmnt -rn -o TARGET | grep -q "^$W" || { echo "Something is mounted under $W." >&2; exit 1; }
+    sudo du -sh "$W"
+    read -r -p "Delete the work tree $W? [y/N] " ok
+    [ "$ok" = y ] || [ "$ok" = Y ] || { echo "Aborted."; exit 1; }
+    sudo rm -rf --one-file-system "$W/airootfs" "$W/efi" "$W/efiboot.img" "$W/iso"
+    rmdir "$W" 2>/dev/null || true
+    df -h / | tail -1
+}
+
 case ${1:-} in
     build) shift; cmd_build "$@" ;;
     write) shift; cmd_write "$@" ;;
+    clean) shift; cmd_clean ;;
     *) usage ;;
 esac

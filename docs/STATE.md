@@ -71,7 +71,7 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
 - **Live ISO and reset installer** (29-30 October,
   [install.md](install.md#undo-and-recovery)): `install/arch/live-iso.sh`
   builds `~/book4-live.iso` (private: tcblaunch.exe and Windows firmware
-  inside), never booted yet. Next: write a stick, boot EL2 then EL1, run
+  inside; rebuilt 4 November with the DC ZVA kernel), never booted yet. Next: write a stick, boot EL2 then EL1, run
   `sudo book4-install` (plan only) and review it before any `--wipe`.
   A reset erases Fedora too, so before using it for real: back up both
   homes, and give the kernel tools a Fedora-less path (build environment,
@@ -121,7 +121,7 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
 - Private, local only: `~/src/qcaudio-re` (speakers), `~/src/qcpep-re`,
   `~/src/qcsubsys-re`, `~/src/book4-acpi` (power), `~/src/el2-usb`,
   `~/src/ext` (qebspil, x1e-sleep), `~/src/slbounce`, `~/src/omarchy-build`,
-  `~/src/book4-iso` (ISO work tree; its 14 GB `airootfs/` copy was deleted on 4 November for space, the next `live-iso.sh` run copies it again), `~/npu`.
+  `~/src/book4-iso` (ISO work tree, ~14 GB; `live-iso.sh clean` deletes it, the next build copies the system again), `~/npu`.
 - Scripts still in `~` and not in the repo (one-offs from the speaker work):
   `fix-crossover-volume.sh`, `install-woofer-highpass.sh`,
   `spk-test-prep.sh`, `spk-tplg-reload.sh`, `spk-vi-sweep.sh`,
