@@ -142,6 +142,8 @@ systemd-nspawn -q -D "$T" --pipe lsinitcpio /boot/book4/initramfs.img | grep -q 
 mkdir -p "$T/boot/grub"
 book4_grub_cfg "Book4" "$KVER" /arch/boot/book4 "root=UUID=$RUUID rootflags=subvol=arch ro" "$EL2ARGS" "$EL1ARGS" \
     > "$T/boot/grub/grub.cfg"
+book4_grub_el2_cfg "Book4" "$KVER" /arch/boot/book4 "root=UUID=$RUUID rootflags=subvol=arch ro" "$EL2ARGS" "$EL1ARGS" \
+    > "$T/boot/grub/grub-el2.cfg"
 
 echo "== 4. ESP $esp"
 mkdir -p "$ESPM"

@@ -283,6 +283,8 @@ EOF
     sudo touch "$E/book4-live.id"
     book4_grub_cfg "Book4 live" "$K" /book4 "book4live=$LABEL" "$EL2ARGS" "$EL1ARGS" |
         sudo tee "$E/book4/grub.cfg" >/dev/null
+    book4_grub_el2_cfg "Book4 live" "$K" /book4 "book4live=$LABEL" "$EL2ARGS" "$EL1ARGS" |
+        sudo tee "$E/book4/grub-el2.cfg" >/dev/null
     # Not under /tmp: systemd-nspawn mounts an empty tmpfs there.
     book4_grub_embed 'search --no-floppy --set=root --file /book4-live.id' 'set esp=$root' '($root)/book4' |
         sudo tee "$A/root/embed.cfg" >/dev/null
@@ -296,12 +298,15 @@ EOF
     for f in EFI/BOOT/BOOTAA64.EFI EFI/book4-live/grub-el2.efi; do
         sudo grep -qa 'book4-live.id' "$E/$f" || { echo "$f lacks its built-in config." >&2; exit 1; }
     done
+    sudo grep -qa 'configfile $prefix/grub-el2.cfg' "$E/EFI/book4-live/grub-el2.efi" &&
+        ! sudo grep -qa 'grub-el2.cfg' "$E/EFI/BOOT/BOOTAA64.EFI" ||
+        { echo "The two GRUB images do not each load their own menu." >&2; exit 1; }
     local kb
     kb=$(( $(sudo du -sk "$E" | cut -f1) + 32768 ))
     sudo rm -f "$W/efiboot.img"
     sudo mkfs.vfat -C -n BOOK4LIVE "$W/efiboot.img" "$kb" >/dev/null
     sudo mcopy -s -i "$W/efiboot.img" "$E"/* ::/
-    sudo mdir -i "$W/efiboot.img" ::/book4-live.id >/dev/null || { echo "efiboot.img is incomplete." >&2; exit 1; }
+    { sudo mdir -i "$W/efiboot.img" ::/book4-live.id && sudo mdir -i "$W/efiboot.img" ::/book4/grub-el2.cfg; } >/dev/null || { echo "efiboot.img is incomplete." >&2; exit 1; }
 
     echo "== 7. squashfs (zstd; takes a while)"
     sudo mkdir -p "$W/iso/live"

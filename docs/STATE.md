@@ -73,7 +73,8 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   builds `~/book4-live.iso` (private: tcblaunch.exe and Windows firmware
   inside; rebuilt 4 November with the DC ZVA kernel). First boot of the
   stick (4 November): EL1 works (long black screen first); EL2 loops
-  GRUB -> slbounce -> GRUB (cause open); `book4-install` refused, which
+  GRUB -> slbounce -> GRUB without a reset (the second GRUB showed the
+  first menu; it now loads its own `grub-el2.cfg`, EL2 entries only); `book4-install` refused, which
   exposed a keep-list bug that put the MSR (sda2) on the wipe list (fixed,
   plus a refusal for unknown partitions without a filesystem). With the
   stick plugged in, the internal "Book4 EL2" Shell picked the stick's
