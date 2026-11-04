@@ -76,7 +76,7 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   GRUB -> slbounce -> GRUB without a reset (the second GRUB showed the
   first menu; it now loads its own `grub-el2.cfg`, EL2 entries only); `book4-install` refused, which
   exposed a keep-list bug that put the MSR (sda2) on the wipe list (fixed,
-  plus a refusal for unknown partitions without a filesystem). With the
+  plus a refusal for unknown partitions without a filesystem); checked against this disk's real table afterwards: keeps sda1-3, wipes only sda4-5. With the
   stick plugged in, the internal "Book4 EL2" Shell picked the stick's
   `\EFI\book4-el2\` and stopped at `FS3:\>` (startup-esp.nsh now also
   requires `\EFI\fedora\grubaa64.efi`; the ESP copy is updated by
