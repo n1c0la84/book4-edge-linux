@@ -168,7 +168,7 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
 - Scripts still in `~` and not in the repo (one-offs from the speaker work):
   `fix-crossover-volume.sh`, `install-woofer-highpass.sh`,
   `spk-test-prep.sh`, `spk-tplg-reload.sh`, `spk-vi-sweep.sh`,
-  `vi-capture-test.sh`, `vi-debug*.sh`; older: `audio-modules-prep.sh`
+  `vi-capture-test.sh`, `vi-debug*.sh`; `nas-mount.sh` (CIFS automount of the NAS share at `/mnt/storage`, credentials root-only in `/etc/samba/credentials/`, kept out of the ISO); older: `audio-modules-prep.sh`
   (obsolete), `npu-setup.sh`, `install-arch.sh`.
 
 ## Working protocol

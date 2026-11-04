@@ -168,7 +168,8 @@ cmd_build() {
         /var/lib/fprint/* /var/lib/bluetooth/* /var/lib/NetworkManager/* /etc/NetworkManager/system-connections/*
         /var/lib/iwd/* /var/lib/dhcpcd/* /var/lib/upower/* /var/lib/tpm2-tss/* /var/lib/private/*
         /var/lib/machines/* /var/lib/docker/* /var/lib/containerd/* /var/lib/libvirt/images/* /var/lib/plocate/*
-        /var/lib/book4/staged /etc/ssh/ssh_host_* /etc/pacman.d/gnupg/* /etc/machine-id)
+        /var/lib/book4/staged /etc/ssh/ssh_host_* /etc/pacman.d/gnupg/* /etc/machine-id
+        /etc/samba/credentials/* '/etc/fstab.before-*')
     set +f
     for d in /usr/lib/modules/*; do [ "$(basename "$d")" = "$K" ] || ex+=("$d"); done
     sudo mkdir -p "$A"
