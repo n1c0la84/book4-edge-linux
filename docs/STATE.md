@@ -81,7 +81,11 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   `\EFI\book4-el2\` and stopped at `FS3:\>` (startup-esp.nsh now also
   requires `\EFI\fedora\grubaa64.efi`; the ESP copy is updated by
   `~/book4-boot-check.sh`). Arch EL1 ("Arch Linux (7.2.7-book4)") hung
-  after GRUB: under investigation. Rebuild the ISO before the next test.
+  after GRUB without reaching the root filesystem (no log). That entry is
+  stale: old EL1 kernel, Arch initramfs of 10 October, unused since EL2
+  became daily (every logged Arch boot since 21 October is book4s at EL2).
+  A working Arch EL1 fallback would be book4s + book4-sleep.dtb (the
+  stick's EL1 entry, which boots). Rebuild the ISO before the next test.
   A reset erases Fedora too, so before using it for real: back up both
   homes, and give the kernel tools a Fedora-less path (build environment,
   `/boot/book4`, `lib/book4-grub.sh` instead of Fedora's GRUB).
