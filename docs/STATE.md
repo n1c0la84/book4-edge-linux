@@ -24,17 +24,16 @@ Details live in the linked docs; open work in [TODO.md](TODO.md); history in
   only in the x86_64-only Omarchy Package Repository, so `omarchy pkg add
   flea` fails here and `omarchy update` never updates it. Rebuild each
   release with `install/arch/flea.sh <version>`.
-- **Pacman:** 4 November ran `pacman -Sy` (for flea's deps) without `-u`;
-  114 updates pending until the next `-Syu`. Reviewed that day as
-  boot-safe: Arch has no kernel package, no mkinitcpio preset and no
-  `pkgbase`, so pacman hooks write nothing to Fedora's `/boot` or the ESP
-  (mkinitcpio itself is IgnorePkg); Book4 firmware is in
+- **Pacman:** full `-Syu` on 4 November (113 packages, clean; mkinitcpio
+  stays IgnorePkg). Checked first as boot-safe: Arch has no kernel package,
+  no mkinitcpio preset and no `pkgbase`, so pacman hooks write nothing to
+  Fedora's `/boot` or the ESP; Book4 firmware is in
   `/usr/lib/firmware/updates/` (no package owns it), and the one packaged
-  file the GPU loads, `qcom/gen70500_gmu.bin`, is byte-identical in
-  linux-firmware-qcom 20261019. Hyprland 0.57.1 (all-Lua config, legacy
-  .conf support removed) passes `--verify-config` on our config. Upgrade the
-  Hyprland stack as a whole (hyprlock/hyprtoolkit need the new hyprgraphics).
-  Old versions are in `/var/cache/pacman/pkg` for a `pacman -U` rollback.
+  file the GPU loads, `qcom/gen70500_gmu.bin`, was byte-identical. Hyprland
+  0.57.1 passed `--verify-config` on our Lua config; upgrade its stack as a
+  whole. The cache keeps one version per package, plus the previous
+  Hyprland stack and mesa for a `pacman -U` rollback (drop them with
+  `paccache -rk1` once 0.57 has run a few days).
 - **Fedora:** owns `/boot` and GRUB, and is the kernel build environment
   (Arch builds in a Fedora container, `install/arch/fedora-shell.sh`). The EL1
   kernel `7.2.7-book4` stays: Fedora's default and the kernel to build
@@ -113,7 +112,7 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
 - Private, local only: `~/src/qcaudio-re` (speakers), `~/src/qcpep-re`,
   `~/src/qcsubsys-re`, `~/src/book4-acpi` (power), `~/src/el2-usb`,
   `~/src/ext` (qebspil, x1e-sleep), `~/src/slbounce`, `~/src/omarchy-build`,
-  `~/src/book4-iso` (ISO work tree), `~/npu`.
+  `~/src/book4-iso` (ISO work tree; its 14 GB `airootfs/` copy was deleted on 4 November for space, the next `live-iso.sh` run copies it again), `~/npu`.
 - Scripts still in `~` and not in the repo (one-offs from the speaker work):
   `fix-crossover-volume.sh`, `install-woofer-highpass.sh`,
   `spk-test-prep.sh`, `spk-tplg-reload.sh`, `spk-vi-sweep.sh`,
