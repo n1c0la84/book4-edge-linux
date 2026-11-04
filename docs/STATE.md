@@ -99,8 +99,12 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   bounces (not resets) at EL1: no `/dev/kvm`. A photo of the "second GRUB"
   shows the FIRST menu (full entries, 5 s countdown; grub-el2.cfg has only EL2
   entries and 1 s): the UEFI Shell chainloaded from GRUB returns at once, so
-  GRUB re-shows its menu and retries; grub-el2.efi probably never ran, and
-  the morning's loop was likely the same thing. Next: from GRUB's console,
+  GRUB re-shows its menu and retries (the morning's loop was likely the same
+  thing). No key was pressed (only power held), so the boot that came up
+  most likely went through grub-el2.efi's EL2 entry after one good round,
+  yet ran at EL1: slbounce did not switch. Two faults then: the Shell
+  returning (intermittent) and no Secure Launch. Next: let it bounce untouched,
+  then `cat /proc/cmdline` (ecv=1 = EL2 entry) and `dmesg | grep 'started at EL'`; Next: from GRUB's console,
   `chainloader ($esp)/EFI/book4-el2/Shellaa64.efi` + `boot`, and see whether
   the Shell errors, runs startup.nsh and returns, or sits at `Shell>`; whether the EL2 entry was
   chosen and slbounce did not switch is unknown (next time: EL2 entry, then
