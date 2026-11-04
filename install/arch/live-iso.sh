@@ -74,6 +74,14 @@ cmd_write() {
     local iso=${1:-} dev=${2:-} ok bytes
     [ -n "$iso" ] && [ -n "$dev" ] || usage
     [ -s "$iso" ] || { echo "$iso not found." >&2; exit 1; }
+    # The desktop automounts a stick that already holds an ISO (udisks, under
+    # /run/media): unmount those; any other mount still stops check_stick.
+    local p m
+    for p in $(lsblk -lnpo NAME "$dev" 2>/dev/null); do
+        for m in $(findmnt -rn -o TARGET -S "$p"); do
+            [[ $m == /run/media/* ]] && udisksctl unmount -b "$p" >/dev/null && echo "unmounted $p ($m)"
+        done
+    done
     check_stick "$dev"
     bytes=$(stat -c %s "$iso")
     (( $(lsblk -bdno SIZE "$dev") >= bytes )) ||
