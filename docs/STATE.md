@@ -103,7 +103,11 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   thing). No key was pressed (only power held), so the boot that came up
   most likely went through grub-el2.efi's EL2 entry after one good round,
   yet ran at EL1: slbounce did not switch. Two faults then: the Shell
-  returning (intermittent) and no Secure Launch. Next: let it bounce untouched,
+  returning (intermittent) and no Secure Launch. Agreed for the next ISO
+  (not done yet): startup-live.nsh logs to `\book4-boot.log` on the stick
+  (which fs, each `load`'s result, the second GRUB), and `write` adds a
+  `BOOK4-LOG` partition where a live service keeps the journal and dmesg,
+  so the whole boot can be read back from Arch. Next: let it bounce untouched,
   then `cat /proc/cmdline` (ecv=1 = EL2 entry) and `dmesg | grep 'started at EL'`; Next: from GRUB's console,
   `chainloader ($esp)/EFI/book4-el2/Shellaa64.efi` + `boot`, and see whether
   the Shell errors, runs startup.nsh and returns, or sits at `Shell>`; whether the EL2 entry was
