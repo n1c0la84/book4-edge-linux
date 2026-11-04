@@ -24,10 +24,17 @@ Details live in the linked docs; open work in [TODO.md](TODO.md); history in
   only in the x86_64-only Omarchy Package Repository, so `omarchy pkg add
   flea` fails here and `omarchy update` never updates it. Rebuild each
   release with `install/arch/flea.sh <version>`.
-- **Pacman:** 4 November ran `pacman -Sy` (to install flea's deps) without
-  `-u`: the databases are new, the system is not, 113 updates pending
-  (Hyprland 0.57, mesa, linux-firmware-qcom 20261019). Review them, then
-  `pacman -Su`, before installing anything else from the repos.
+- **Pacman:** 4 November ran `pacman -Sy` (for flea's deps) without `-u`;
+  114 updates pending until the next `-Syu`. Reviewed that day as
+  boot-safe: Arch has no kernel package, no mkinitcpio preset and no
+  `pkgbase`, so pacman hooks write nothing to Fedora's `/boot` or the ESP
+  (mkinitcpio itself is IgnorePkg); Book4 firmware is in
+  `/usr/lib/firmware/updates/` (no package owns it), and the one packaged
+  file the GPU loads, `qcom/gen70500_gmu.bin`, is byte-identical in
+  linux-firmware-qcom 20261019. Hyprland 0.57.1 (all-Lua config, legacy
+  .conf support removed) passes `--verify-config` on our config. Upgrade the
+  Hyprland stack as a whole (hyprlock/hyprtoolkit need the new hyprgraphics).
+  Old versions are in `/var/cache/pacman/pkg` for a `pacman -U` rollback.
 - **Fedora:** owns `/boot` and GRUB, and is the kernel build environment
   (Arch builds in a Fedora container, `install/arch/fedora-shell.sh`). The EL1
   kernel `7.2.7-book4` stays: Fedora's default and the kernel to build
