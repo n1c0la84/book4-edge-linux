@@ -6,13 +6,18 @@
 # only for EL2 DTBs), load slbounce (Secure-Launch to EL2 at
 # ExitBootServices, only for a DTB with the GPU zap shader disabled), then
 # Fedora's GRUB. Normal (EL1) GRUB entries boot as usual from here too.
+# The ESP is the filesystem with both qebspil and Fedora's GRUB: the Book4
+# live stick has its own \EFI\book4-el2\ (no \EFI\fedora\) and, when it is
+# plugged in, can be mapped before the internal ESP.
 for %i run (0 63)
-  if exist fs%i:\EFI\book4-el2\qebspilaa64.efi then
-    set esp fs%i
-    goto ESP
+  if exist fs%i:\EFI\fedora\grubaa64.efi then
+    if exist fs%i:\EFI\book4-el2\qebspilaa64.efi then
+      set esp fs%i
+      goto ESP
+    endif
   endif
 endfor
-echo "book4-el2: \EFI\book4-el2\qebspilaa64.efi not found on fs0-fs63"
+echo "book4-el2: no fs0-fs63 has both \EFI\book4-el2\qebspilaa64.efi and \EFI\fedora\grubaa64.efi"
 goto END
 :ESP
 %esp%:

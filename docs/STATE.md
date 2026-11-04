@@ -1,6 +1,6 @@
 # State
 
-**Updated 4 November 2026.** The one page to read at the start of every
+**Updated 4 November 2026 (afternoon).** The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.
@@ -71,8 +71,16 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
 - **Live ISO and reset installer** (29-30 October,
   [install.md](install.md#undo-and-recovery)): `install/arch/live-iso.sh`
   builds `~/book4-live.iso` (private: tcblaunch.exe and Windows firmware
-  inside; rebuilt 4 November with the DC ZVA kernel), never booted yet. Next: write a stick, boot EL2 then EL1, run
-  `sudo book4-install` (plan only) and review it before any `--wipe`.
+  inside; rebuilt 4 November with the DC ZVA kernel). First boot of the
+  stick (4 November): EL1 works (long black screen first); EL2 loops
+  GRUB -> slbounce -> GRUB (cause open); `book4-install` refused, which
+  exposed a keep-list bug that put the MSR (sda2) on the wipe list (fixed,
+  plus a refusal for unknown partitions without a filesystem). With the
+  stick plugged in, the internal "Book4 EL2" Shell picked the stick's
+  `\EFI\book4-el2\` and stopped at `FS3:\>` (startup-esp.nsh now also
+  requires `\EFI\fedora\grubaa64.efi`; the ESP copy is updated by
+  `~/book4-boot-check.sh`). Arch EL1 ("Arch Linux (7.2.7-book4)") hung
+  after GRUB: under investigation. Rebuild the ISO before the next test.
   A reset erases Fedora too, so before using it for real: back up both
   homes, and give the kernel tools a Fedora-less path (build environment,
   `/boot/book4`, `lib/book4-grub.sh` instead of Fedora's GRUB).
