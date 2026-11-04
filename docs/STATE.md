@@ -65,8 +65,9 @@ the 8 % warning.
 
 Charging through a powered USB-C hub does not work (4 November): the
 laptop is the power source on that port, the partner shows no USB PD and
-no `PD contract` is logged, so the input-limit fix never runs. To test:
-plug the hub into power first, then into the laptop.
+no `PD contract` is logged, so the input-limit fix never runs. Replugged
+with its charger already in (14:21): the same. The hub is a VIA VL817
+(2109:2817). Next: does it charge a phone, or the laptop under Windows?
 
 Not working: external monitor over USB-C (AUX timeouts); NPU inference
 (dspqueue hang; dspsignal port 0041 written, untested).
@@ -95,9 +96,11 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   (7.2.7-book4)" entry has no logged boot since at least 19 October; its
   kernel and DTB are Fedora's and boot, so it stops in Arch's initramfs of
   10 October or right after it. Second stick test (4 November, ISO of 13:23): booted after a few
-  bounces (EL1 or EL2 unknown: check `/proc/cmdline` next time); `book4-install`
+  bounces (not resets) at EL1: no `/dev/kvm`; whether the EL2 entry was
+  chosen and slbounce did not switch is unknown (next time: EL2 entry, then
+  `/proc/cmdline` and `dmesg | grep 'started at EL'`); `book4-install`
   plan correct (keeps sda1-3, wipes sda4-5); the bar showed the battery at 0 %
-  in the live session (to check); the internal disk rebooted fine with the
+  in the live session (not the battery, per the owner); the internal disk rebooted fine with the
   stick still in.
   A reset erases Fedora too, so before using it for real: back up both
   homes, and give the kernel tools a Fedora-less path (build environment,
