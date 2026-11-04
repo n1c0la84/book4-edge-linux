@@ -63,6 +63,11 @@ UPower powers off at 3 %. Under heavy load the EC's reading drops from ~8 %
 to 0 in seconds (30 October, all cores busy: dead at "8 %"), so plug in at
 the 8 % warning.
 
+Charging through a powered USB-C hub does not work (4 November): the
+laptop is the power source on that port, the partner shows no USB PD and
+no `PD contract` is logged, so the input-limit fix never runs. To test:
+plug the hub into power first, then into the laptop.
+
 Not working: external monitor over USB-C (AUX timeouts); NPU inference
 (dspqueue hang; dspsignal port 0041 written, untested).
 
@@ -89,7 +94,11 @@ Not working: external monitor over USB-C (AUX timeouts); NPU inference
   the stick's EL1 arguments; not booted yet). The old "Arch Linux
   (7.2.7-book4)" entry has no logged boot since at least 19 October; its
   kernel and DTB are Fedora's and boot, so it stops in Arch's initramfs of
-  10 October or right after it. Rebuild the ISO before the next test.
+  10 October or right after it. Second stick test (4 November, ISO of 13:23): booted after a few
+  bounces (EL1 or EL2 unknown: check `/proc/cmdline` next time); `book4-install`
+  plan correct (keeps sda1-3, wipes sda4-5); the bar showed the battery at 0 %
+  in the live session (to check); the internal disk rebooted fine with the
+  stick still in.
   A reset erases Fedora too, so before using it for real: back up both
   homes, and give the kernel tools a Fedora-less path (build environment,
   `/boot/book4`, `lib/book4-grub.sh` instead of Fedora's GRUB).
