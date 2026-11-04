@@ -7,8 +7,10 @@
 #   1. show what is pending (pacman, AUR, mise, flea) and ask
 #   2. prune the pacman cache to 2 versions (before the snapshot, which would
 #      otherwise pin what it deletes)
-#   3. read-only snapshot of the `arch` subvolume to
-#      <btrfs top level>/book4-snapshots/arch-<date>, keeping the newest 2
+#   3. read-only snapshot of the `arch` subvolume with
+#      tools/backup/snapshot-arch.sh (top level of sda5, arch-pre-update-<date>,
+#      next to arch-pre-omarchy-*); keeps the newest 2 arch-pre-update-*,
+#      never deletes any other snapshot
 #   4. pacman -Syu (interactive), yay -Sua, mise up
 #   5. after: Hyprland --verify-config on our config, relogin hint, new
 #      .pacnew files, orphans, pending Omarchy migrations (never run here:
@@ -22,11 +24,12 @@
 # Rollback from a snapshot (Arch broken; boot Fedora, or a TTY as root):
 #   mount -o subvolid=5 UUID=<root uuid> /mnt
 #   mv /mnt/arch /mnt/arch.broken
-#   btrfs subvolume snapshot /mnt/book4-snapshots/arch-<date> /mnt/arch
+#   btrfs subvolume snapshot /mnt/arch-pre-update-<date> /mnt/arch
 #   reboot; once fine: btrfs subvolume delete /mnt/arch.broken
 # Rollback of single packages: pacman -U /var/cache/pacman/pkg/<old>.pkg.tar.*
 set -euo pipefail
 
+REPO=$(cd "$(dirname "$(readlink -f "$0")")/../.." && pwd)
 KEEP_SNAPSHOTS=2
 MIN_FREE_GB=5
 check=0 snapshot=1
@@ -83,23 +86,19 @@ sudo paccache -rk2 || warn "Could not prune the package cache."
 
 if ((snapshot)); then
     say "Snapshot of the arch subvolume"
-    uuid=$(findmnt -no UUID /)
-    sub=$(findmnt -no FSROOT /); sub=${sub#/}
-    [[ $(findmnt -no FSTYPE /) == btrfs && -n $sub ]] || { echo "/ is not a btrfs subvolume." >&2; exit 1; }
+    bash "$REPO/tools/backup/snapshot-arch.sh" pre-update
+    # Keep the newest KEEP_SNAPSHOTS arch-pre-update-*; other snapshots
+    # (arch-pre-omarchy-*, hand-made labels) are never touched.
     top=$(sudo mktemp -d /run/book4-update.XXXXXX)
     cleanup() { sudo umount "$top" 2>/dev/null || true; sudo rmdir "$top" 2>/dev/null || true; }
     trap cleanup EXIT
-    sudo mount -o subvolid=5 "UUID=$uuid" "$top"
-    sudo mkdir -p "$top/book4-snapshots"
-    name=$sub-$(date +%Y%m%d-%H%M%S)
-    sudo btrfs subvolume snapshot -r "$top/$sub" "$top/book4-snapshots/$name"
-    mapfile -t old < <(sudo find "$top/book4-snapshots" -mindepth 1 -maxdepth 1 -name "$sub-*" -printf '%f\n' |
+    sudo mount -o subvolid=5 "UUID=$(findmnt -no UUID /)" "$top"
+    mapfile -t old < <(sudo find "$top" -mindepth 1 -maxdepth 1 -name 'arch-pre-update-*' -printf '%f\n' |
         sort | head -n -"$KEEP_SNAPSHOTS")
     for o in "${old[@]}"; do
-        sudo btrfs subvolume delete "$top/book4-snapshots/$o"
+        sudo btrfs subvolume delete "$top/$o"
     done
     cleanup; trap - EXIT
-    echo "Snapshot: book4-snapshots/$name (rollback: book4-update --help)"
 fi
 
 before=$(pacman -Q)

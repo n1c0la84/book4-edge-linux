@@ -26,7 +26,7 @@ Details live in the linked docs; open work in [TODO.md](TODO.md); history in
   release with `install/arch/flea.sh <version>`.
 - **Updates:** `book4-update` (`userspace/update/`, installed by
   `install/arch/update.sh`) instead of `omarchy update`: cache prune,
-  read-only snapshot of `arch` to `<btrfs top>/book4-snapshots/` (2 kept;
+  read-only snapshot via `tools/backup/snapshot-arch.sh` (`arch-pre-update-*`, 2 kept;
   rollback steps in `book4-update --help`), `pacman -Syu`, `yay -Sua`,
   `mise up`, then Hyprland config check, .pacnew, orphans, pending Omarchy
   migrations and a newer flea release. `--check` lists what is pending.
