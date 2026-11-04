@@ -1,6 +1,6 @@
 # State
 
-**Updated 1 November 2026.** The one page to read at the start of every
+**Updated 4 November 2026.** The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.
@@ -20,6 +20,14 @@ Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 - **Android development:** Google Android CLI `1.1.16717390` for Linux ARM64
   is installed at `~/.local/bin/android`; its SDK root is `~/Android/Sdk`
   (31 October 2026).
+- **Flea file manager** 0.4.0, built locally (4 November): upstream ships it
+  only in the x86_64-only Omarchy Package Repository, so `omarchy pkg add
+  flea` fails here and `omarchy update` never updates it. Rebuild each
+  release with `install/arch/flea.sh <version>`.
+- **Pacman:** 4 November ran `pacman -Sy` (to install flea's deps) without
+  `-u`: the databases are new, the system is not, 113 updates pending
+  (Hyprland 0.57, mesa, linux-firmware-qcom 20261019). Review them, then
+  `pacman -Su`, before installing anything else from the repos.
 - **Fedora:** owns `/boot` and GRUB, and is the kernel build environment
   (Arch builds in a Fedora container, `install/arch/fedora-shell.sh`). The EL1
   kernel `7.2.7-book4` stays: Fedora's default and the kernel to build
