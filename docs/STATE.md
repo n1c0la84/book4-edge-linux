@@ -1,6 +1,6 @@
 # State
 
-**Updated 4 November 2026 (afternoon).** The one page to read at the start of every
+**Updated 5 November 2026.** The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.
@@ -17,6 +17,10 @@ Details live in the linked docs; open work in [TODO.md](TODO.md); history in
   `tools/kernel/sleep-backport/`), **at EL2**: firmware entry "Book4 EL2
   (slbounce)" -> UEFI Shell in `\EFI\book4-el2\` (qebspil + slbounce) ->
   Fedora's GRUB -> entry `el2-sleep` ([el2.md](el2.md)).
+- **Kernel base:** on end-of-life 7.2 by choice (5 November); revisit if 7.4
+  becomes long-term, findings in [TODO.md](TODO.md). The `clk.c` warnings
+  during `systemd-sleep` on 4 November (17:36) set the `W` taint flag and have
+  not been looked into.
 - **Android development:** Google Android CLI `1.1.16717390` for Linux ARM64
   is installed at `~/.local/bin/android`; its SDK root is `~/Android/Sdk`
   (31 October 2026).

@@ -161,8 +161,22 @@ the end.
       the collapse as before, sound working.
 - [ ] **Run `install/arch/boot-cleanup.sh`**: drop the October test entries,
       the PDC test kernel and unused test DTBs.
-- [ ] **Move to 7.3** once Anatase has a 7.3 tree: most of
-      `tools/kernel/sleep-backport/` is in 7.3 already.
+- [ ] **Move off 7.2, revisit at 7.4** (owner's decision, 5 November: no
+      kernel move for now). Trigger: 7.4 is released and announced as
+      long-term (expected 20 or 27 December 2026, may slip to January; not
+      confirmed). Idea: a branch from stable, without Anatase, carrying our
+      patches plus the Samsung drivers and device tree, on a test boot entry
+      first. Findings to reuse (5 November):
+      - 7.2 is end of life (last release 7.2.15). Our `anatase-7.2` base's
+        Makefile history stops at 7.2.7, and Anatase had no 7.3 branch.
+      - Of the 56 commits in `anatase-7.2..book4/7.2-sleep`, 15 are in v7.3 by
+        exact subject (PDC, LPASS macros, geni). The other 41 had no match, so
+        a reworded patch could be among them.
+      - Needed from Anatase: `samsung-galaxybook-ec.c`, `samsung-emuec.c`, the
+        `x1-samsung-*` device tree, and in-file patches such as the QSEECOM
+        allowlist. Only file names were compared, so a full diff is still to do.
+      - Check whether upstream's `qcom_q6v5_pas` late attach support (v7.3) can
+        replace our remoteproc attach patches.
 - [ ] **Hibernation resume resets the machine** (EL1): `pm_test` plan in
       [power.md](power.md); low priority now that s2idle sleeps deeply.
 - [ ] **Fedora's role** (undecided): build host only, or retire it and move
