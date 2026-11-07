@@ -161,6 +161,17 @@ the end.
       the collapse as before, sound working.
 - [ ] **Run `install/arch/boot-cleanup.sh`**: drop the October test entries,
       the PDC test kernel and unused test DTBs.
+- [ ] **Primary USB-C controller fails after sleep** (7 November, 18:38;
+      not investigated). A USB stick wasn't detected on that port:
+      `a600000.usb` (`dwc3-qcom`) was in runtime PM `error`, `usb2`/`usb3`
+      logged "can't set config #1, error -16", and
+      `gcc_usb3_prim_phy_pipe_clk` warned "already disabled" and "already
+      unprepared". The same clock warnings appeared during `systemd-sleep` on
+      4 November (17:36), so they are likely the source of the `W` taint flag.
+      `a200000.usb` and `a800000.usb` worked, and the stick worked on the
+      other port. Reboot to recover. Next: find whether it fails on every
+      resume, and which sleep change (sleep-backport, DTS) touches this
+      controller's clock.
 - [ ] **Move off 7.2, revisit at 7.4** (owner's decision, 5 November: no
       kernel move for now). Trigger: 7.4 is released and announced as
       long-term (expected 20 or 27 December 2026, may slip to January; not
