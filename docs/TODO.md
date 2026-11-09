@@ -72,6 +72,12 @@ the end.
       stays up. Left: a few days of normal use without an awake reset, and
       power.md's sleep numbers re-measured (CL5 is kept, so no change
       expected); then close this item.
+      **9 November:** birkskyum (omarchy#15860) says linux-omarchy carries
+      Glathe's cluster_cl5 drop, so the hang can't happen there. Replied that
+      SS1/DRIPS sit behind CL5 here (ACPI `_LPI` parent state 3; 0x0200C354),
+      so the drop likely costs DRIPS s2idle, and **offered a measurement**:
+      same kernel, DT with and without CL5, s2idle power and DRIPS entry
+      counts. Do it if they want the numbers.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the
