@@ -1,6 +1,6 @@
 # State
 
-**Updated 7 November 2026.** The one page to read at the start of every
+**Updated 9 November 2026** (arewearmyet.com survey: [related-work.md](related-work.md)). The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.

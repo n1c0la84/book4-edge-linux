@@ -87,6 +87,23 @@ USB-C and audio. The maintainer reports a 14" too.
   Architectural note: the community port is Arch userspace on an **Ubuntu
   kernel** (`7.2.0-18-qcom-x1e`). So "port this to Arch" really means "which
   kernel carries the Samsung drivers", and today the answer is only Anatase's.
+  **Update 9 November 2026: Samsung is covered now.** The tracker
+  arewearmyet.com (repo `birkskyum/arewearmyet`) lists the 14" as
+  "Bootable: Problems": the stock 4.5.0rc1 image resets in a loop (no tree);
+  with an owner's board package (`hegjon/omarchy-galaxy-book4-edge`, an
+  NP944XMA, Omarchy team) it runs daily on linux-omarchy 7.3 with the **v8
+  device-tree series** posted to linux-arm-msm (mstoretv, 30 September;
+  copy in the tracker's `device-trees/samsung-galaxy-book4-edge-14/`).
+  Tree, hardware IDs and firmware (`samsung-galaxy-book4-edge-firmware`)
+  are on Omarchy's edge channel; firmware not in linux-firmware.
+  Hardware IDs: `ubuntu/stubble#98` (open) takes only IDs that include
+  the BIOS version or baseboard `NP944XMA-MC1US`. This machine reports
+  baseboard `NP940XMA-KB1IT` (European model) with a different SKU string, so the
+  stock image will most likely **not** pick the tree on an NP940XMA unless the BIOS
+  version happens to match: our `fwupdtool hwids` would close that gap
+  (needs the owner's OK to post). The 15" row notes charging stuck at 5 V
+  without a userspace tool (`book4-pd-charge`); our kernel-side PD fix
+  ([ec-protocol.md](ec-protocol.md)) is the same problem.
 - `mtssoh/nixos-samsung-galaxy-book4edge` — NixOS, early.
 - `Nehal-aditya/book4-edge-kali`, `-kali-live` — Kali, early.
 
