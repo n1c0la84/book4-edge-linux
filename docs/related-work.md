@@ -98,10 +98,13 @@ USB-C and audio. The maintainer reports a 14" too.
   are on Omarchy's edge channel; firmware not in linux-firmware.
   Hardware IDs: `ubuntu/stubble#98` (open) takes only IDs that include
   the BIOS version or baseboard `NP944XMA-MC1US`. This machine reports
-  baseboard `NP940XMA-KB1IT` (European model) with a different SKU string, so the
-  stock image will most likely **not** pick the tree on an NP940XMA unless the BIOS
-  version happens to match: our `fwupdtool hwids` would close that gap
-  (needs the owner's OK to post). The 15" row notes charging stuck at 5 V
+  baseboard `NP940XMA-KB1IT` (European model), SKU `GALAXY A5A5-PAKY`, BIOS
+  P00AKY.053. Checked 9 November: **none of the PR's six IDs match this machine**,
+  so the stock image won't pick the tree on an NP940XMA. `systemd-analyze chid`
+  gives the IDs without root (no fwupd needed); the baseboard ones are
+  `8fc369d5-d5a6-54b7-84a2-2c26ca106430` (MFPS+mp), `0569ad99-d9c0-586c-bd74-3871407fe316`
+  (MS+mp), `8f53b329-2c93-50a5-9fef-2602b9f58565` (MP+mp). Not posted yet (needs
+  the owner's OK). The 15" row notes charging stuck at 5 V
   without a userspace tool (`book4-pd-charge`); our kernel-side PD fix
   ([ec-protocol.md](ec-protocol.md)) is the same problem.
 - `mtssoh/nixos-samsung-galaxy-book4edge` — NixOS, early.
