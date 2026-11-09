@@ -103,8 +103,14 @@ USB-C and audio. The maintainer reports a 14" too.
   so the stock image won't pick the tree on an NP940XMA. `systemd-analyze chid`
   gives the IDs without root (no fwupd needed); the baseboard ones are
   `8fc369d5-d5a6-54b7-84a2-2c26ca106430` (MFPS+mp), `0569ad99-d9c0-586c-bd74-3871407fe316`
-  (MS+mp), `8f53b329-2c93-50a5-9fef-2602b9f58565` (MP+mp). Not posted yet (needs
-  the owner's OK). The 15" row notes charging stuck at 5 V
+  (MS+mp), `8f53b329-2c93-50a5-9fef-2602b9f58565` (MP+mp).
+  **Posted 9 November** (owner's OK): the IDs on
+  [stubble#98](https://github.com/ubuntu/stubble/pull/98#issuecomment-6750168776),
+  the model report [birkskyum/arewearmyet#10](https://github.com/birkskyum/arewearmyet/issues/10)
+  (fwupdtool output, what works), and our status (sleep, DC ZVA fix, EC PD
+  fix, speakers, offer to test) on the Omarchy Book4 Edge thread
+  [omacom/omarchy#15860](https://github.com/omacom/omarchy/discussions/15860#discussioncomment-19501222).
+  Watch those three for replies. The 15" row notes charging stuck at 5 V
   without a userspace tool (`book4-pd-charge`); our kernel-side PD fix
   ([ec-protocol.md](ec-protocol.md)) is the same problem.
 - `mtssoh/nixos-samsung-galaxy-book4edge` — NixOS, early.
