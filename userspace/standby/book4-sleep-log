@@ -8,7 +8,7 @@
 #   report: one journal line (journalctl -t book4-sleep) and a CSV row in
 #          /var/log/book4-sleep.csv: minutes asleep, mAh, W, residency, and
 #          the boot (el1, el2-sleep, or a variant of tools/power/el2-dt-test.sh:
-#          el2-mods, el2-nomisc) and the radios' rfkill state
+#          el2-mods, el2-nomisc, el2-omshape, el2-nocl5) and the radios' rfkill state
 # After sleeps of 30 min or more on battery, also a desktop notification
 # (time asleep, W, days a full battery would last, deep-sleep share).
 # Sleeps with the charger plugged in at either end are logged without a
@@ -32,6 +32,11 @@ boot() {  # which entry: el1, el2-sleep (daily) or a tools/power/el2-dt-test.sh 
     local r
     grep -q 'id_aa64mmfr0.ecv=1' /proc/cmdline || { echo el1; return; }
     [ -e /sys/firmware/devicetree/base/regulator-misc-3p3/regulator-always-on ] || { echo el2-nomisc; return; }
+    # CL4 only in the clusters (4 bytes = one phandle): omshape without a system state, nocl5 with
+    if [ "$(stat -c %s /sys/firmware/devicetree/base/psci/power-domain-cpu-cluster0/domain-idle-states 2>/dev/null)" = 4 ]; then
+        [ -e /sys/firmware/devicetree/base/psci/power-domain-system/domain-idle-states ] && echo el2-nocl5 || echo el2-omshape
+        return
+    fi
     r=$(od -A n -t u4 --endian=big /sys/firmware/devicetree/base/soc@0/pinctrl@f100000/gpio-reserved-ranges 2>/dev/null | tr -s ' ')
     case "$r" in *" 44 4"*) echo el2-sleep ;; *" 45 3"*) echo el2-mods ;; *) echo el2 ;; esac
 }

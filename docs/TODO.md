@@ -87,6 +87,13 @@ the end.
       `sleep-drain.sh <variant>` (1 h+, battery) and one night; then a
       table in power.md and a reply with the numbers only (no holding
       reply). `el2-dt-test.sh <v> undo` after.
+      **A (omshape), 10 November:** awake baseline 6.18 W (22 %, 17:35;
+      B was 5.36 W on 23 October, not the same conditions: redo B). Sleep
+      21:41-21:42, 61 min: 70 mAh = 1.20 W (±35 mAh EC step, so 0.6-1.8 W),
+      `cxsd`/`ddr`/system-pd 0: no rail collapse, no DDR self-refresh.
+      Overnight run still to do. The sleep log called both sleeps of this
+      boot (20:40, 21:42) `el2-sleep`; fixed in book4-sleep-log (reinstall
+      with `install/arch/sleep-log.sh`), the two CSV rows stay mislabelled.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the
