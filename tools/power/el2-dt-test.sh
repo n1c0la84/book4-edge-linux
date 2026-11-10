@@ -14,12 +14,20 @@
 #           The touchpad and keyboard declare no supply; if they share the
 #           rail on the board, they lose power in sleep too (the keyboard
 #           would then not wake the machine; the lid still does).
+#   omshape linux-omarchy's shape (omarchy#15860, asked by its maintainer):
+#           clusters without CL5 (as Jens Glathe's cluster_cl5 drop) and
+#           no system-level idle state (7.3's hamoa.dtsi has none), so
+#           s2idle never asks for SS1 or DRIPS. Same kernel, DC ZVA
+#           patches included (harmless: the hang needs CL5).
+#   nocl5   clusters without CL5, SS1 and DRIPS kept: does the firmware
+#           still enter DRIPS (its PSCI parameter carries CL5's 0x50)?
+#           Expect no DRIPS entries, or a failed or hung suspend.
 #
 # Run on Arch as your user:  bash tools/power/el2-dt-test.sh VARIANT [undo]
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/../.." && pwd)
 variant=${1:-}; action=${2:-}
-case "$variant" in mods|nomisc) ;; *) sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1 ;; esac
+case "$variant" in mods|nomisc|omshape|nocl5) ;; *) sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1 ;; esac
 src=/dtb-test/book4-sleep-el2.dtb
 dst=/dtb-test/book4-sleep-el2-$variant.dtb
 name=el2-$variant
@@ -53,6 +61,21 @@ nomisc)
         { echo "error: $misc is not VREG_MISC_3P3 in $src" >&2; exit 1; }
     fdtput -d "$work/v.dtb" $misc regulator-always-on
     echo "   $misc (VREG_MISC_3P3): regulator-always-on removed" ;;
+omshape|nocl5)
+    # CL4 by its phandle, checked by PSCI parameter rather than assumed.
+    cl4=/cpus/domain-idle-states/cluster-sleep-0
+    [ "$(fdtget -t x "$work/v.dtb" $cl4 arm,psci-suspend-param)" = 1000044 ] ||
+        { echo "error: $cl4 is not CL4 (0x01000044) in $src" >&2; exit 1; }
+    ph=$(fdtget -t u "$work/v.dtb" $cl4 phandle)
+    for c in 0 1 2; do
+        pd=/psci/power-domain-cpu-cluster$c
+        echo "   $pd: domain-idle-states $(fdtget -t x "$work/v.dtb" $pd domain-idle-states) -> $(printf %x "$ph") (CL4 only)"
+        fdtput -t u "$work/v.dtb" $pd domain-idle-states "$ph"
+    done
+    if [ "$variant" = omshape ]; then
+        fdtput -d "$work/v.dtb" /psci/power-domain-system domain-idle-states
+        echo "   /psci/power-domain-system: domain-idle-states removed (no SS1, no DRIPS)"
+    fi ;;
 esac
 sudo mount /dev/sda4 "$b"
 sudo install -m 644 "$work/v.dtb" "$b$dst"; sync

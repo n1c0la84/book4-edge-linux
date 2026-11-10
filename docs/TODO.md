@@ -77,7 +77,16 @@ the end.
       SS1/DRIPS sit behind CL5 here (ACPI `_LPI` parent state 3; 0x0200C354),
       so the drop likely costs DRIPS s2idle, and **offered a measurement**:
       same kernel, DT with and without CL5, s2idle power and DRIPS entry
-      counts. Do it if they want the numbers.
+      counts. **He wants them** (9 November 20:20): our kernel in
+      linux-omarchy's shape (no CL5, no system state; 7.3's hamoa.dtsi has
+      no `system_pd` state at all) next to the current one. Ready (10
+      November): `tools/power/el2-dt-test.sh omshape` (A) and `nocl5` (C:
+      no CL5, SS1/DRIPS kept, tests our claim), dry-run on the live DT.
+      Per variant (B = `el2-sleep`): after boot check the live DT and
+      `/sys/kernel/debug/pm_genpd/*/idle_states`; `awake-test.sh baseline`;
+      `sleep-drain.sh <variant>` (1 h+, battery) and one night; then a
+      table in power.md and a reply with the numbers only (no holding
+      reply). `el2-dt-test.sh <v> undo` after.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
       EFI variables, RTC offset, `efibootmgr` or `HibernateLocation`. SHM-bridge
       mode alone did not help; SHM bridges owned by Linux itself did (as on the

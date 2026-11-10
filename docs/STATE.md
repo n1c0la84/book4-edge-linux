@@ -1,8 +1,12 @@
 # State
 
-**Updated 9 November 2026** (arewearmyet.com survey; NP940XMA IDs and our
-status posted on stubble#98, arewearmyet#10 and omarchy#15860, links in
-[related-work.md](related-work.md); watch for replies). The one page to read at the start of every
+**Updated 10 November 2026**: NP940XMA IDs merged in linux-omarchy 7.3-42
+(omarchy-pkgs#2391) and in stubble#98 (links in
+[related-work.md](related-work.md)). Two tests asked for in omarchy#15860:
+the CL5/DRIPS sleep comparison (`el2-dt-test.sh omshape|nocl5`, steps in
+[TODO.md](TODO.md)) and booting the next Omarchy edge image from USB when
+birkskyum links it (live only; report how far it gets + `journalctl -k -b`,
+redacted). The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.
