@@ -91,7 +91,12 @@ the end.
       B was 5.36 W on 23 October, not the same conditions: redo B). Sleep
       21:41-21:42, 61 min: 70 mAh = 1.20 W (±35 mAh EC step, so 0.6-1.8 W),
       `cxsd`/`ddr`/system-pd 0: no rail collapse, no DDR self-refresh.
-      Overnight run still to do. The sleep log called both sleeps of this
+      **Overnight 10-11 November (22:29-08:28, 600 min, battery, radios
+      on): 867 mAh = 14.56 Wh = 1.46 W**, `cxsd`/`ddr` 0 % (sleep log; the
+      script stopped on "suspend already in progress", the lid had started
+      it). B has only one clean battery sleep of hours: 21 October, 249
+      min, 0.90 W; most B nights were on the charger. Next: one B night on
+      battery (normal entry, unplugged), B awake baseline, then C. The sleep log called both sleeps of this
       boot (20:40, 21:42) `el2-sleep`; fixed in book4-sleep-log (reinstall
       with `install/arch/sleep-log.sh`), the two CSV rows stay mislabelled.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
