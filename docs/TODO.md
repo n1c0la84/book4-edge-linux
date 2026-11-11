@@ -118,7 +118,7 @@ the end.
       `sync_state()`, PCIe root ports allowed into D3 (7.3 d4c79b63d82d, not
       in our 7.2), geni force suspend (we have it, 0014), and the ADSP
       standby message (`qcom_adsp_pwr_lmts`: blacklisted here, it crashed
-      our ADSP). Ask turbineBMW which EL. The Dell XPS EL1 thread, read in
+      our ADSP). Asked turbineBMW which EL (11 November, omarchy-pkgs#1315 comment 6790521071); watch for the answer. The Dell XPS EL1 thread, read in
       full 11 November (power.md): no CXSD/AOSD at EL1 there either (Burch
       0.43 W with every APPS vote zeroed; Packett DDR LPM only, via the
       qcrypto driver dropping the QCE boot vote). So #1315 is the only
