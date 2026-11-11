@@ -96,7 +96,34 @@ the end.
       script stopped on "suspend already in progress", the lid had started
       it). B has only one clean battery sleep of hours: 21 October, 249
       min, 0.90 W; most B nights were on the charger. Next: one B night on
-      battery (normal entry, unplugged), B awake baseline, then C. The sleep log called both sleeps of this
+      battery (normal entry, unplugged), B awake baseline, then C.
+      **B awake, 11 November: 5.97 W** (A 6.18 W): CL5 is worth ~0.2 W awake.
+      **Correction (11 November): linux-omarchy 7.3 is variant C, not A.**
+      Mainline v7.3 `hamoa.dtsi` has `domain_ss3` (DRIPS, Maulik Shah's
+      "Add deepest idle state") and CL5; omarchy-pkgs only drops CL5
+      (`2151`, Glathe) and its Book4 Edge tree (`2592`) has no idle-state
+      overrides. birkskyum's "no system-level idle state" is wrong, and so
+      is our claim in the thread that the CL5 drop costs DRIPS: Omarchy's
+      7.2.8 kernel with the CL5 drop and DRIPS reached 99.9 % CX/AOSS/DDR on
+      a Surface Pro 11 (omarchy-pkgs#1315, ~0.25 W). C is the run that
+      matters; correct both points when posting.
+      **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
+      Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
+      Here at EL1 (19 October) the system domain was entered once and held,
+      no collapse. Elsewhere: Surface Pro 11 issue
+      (dwhinham/archiso-aarch64-sp11#38): EL1 1.06 W, no CXSD, EL2 0.26 W.
+      But #1315 (turbineBMW, SP11, Omarchy kernel, no slbounce mentioned in
+      the PR or his repos, so probably EL1) got 0.25 W with four fixes our
+      19 October EL1 test may have lacked: GMU driver so gcc reaches
+      `sync_state()`, PCIe root ports allowed into D3 (7.3 d4c79b63d82d, not
+      in our 7.2), geni force suspend (we have it, 0014), and the ADSP
+      standby message (`qcom_adsp_pwr_lmts`: blacklisted here, it crashed
+      our ADSP). Ask turbineBMW which EL. The Dell XPS EL1 thread
+      (Burch/Packett) could not be read: lore.kernel.org refuses automated
+      access; read it in a browser. Test: boot "Arch Linux (7.2.7-book4) -
+      test: el1-book4s" (B's sleep kernel and DT at EL1, never booted; if it
+      hangs, hold power), one sleep of 1 h+ on battery, read the sleep log
+      (`cxsd`, W). If no collapse, the gain needs EL2 or #1315's fixes. The sleep log called both sleeps of this
       boot (20:40, 21:42) `el2-sleep`; fixed in book4-sleep-log (reinstall
       with `install/arch/sleep-log.sh`), the two CSV rows stay mislabelled.
 - [x] **EFI variables at EL2** (21 October): qseecom failed with -22, so no
