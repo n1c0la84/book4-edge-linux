@@ -118,9 +118,16 @@ the end.
       `sync_state()`, PCIe root ports allowed into D3 (7.3 d4c79b63d82d, not
       in our 7.2), geni force suspend (we have it, 0014), and the ADSP
       standby message (`qcom_adsp_pwr_lmts`: blacklisted here, it crashed
-      our ADSP). Ask turbineBMW which EL. The Dell XPS EL1 thread
-      (Burch/Packett) could not be read: lore.kernel.org refuses automated
-      access; read it in a browser. Test: boot "Arch Linux (7.2.7-book4) -
+      our ADSP). Ask turbineBMW which EL. The Dell XPS EL1 thread, read in
+      full 11 November (power.md): no CXSD/AOSD at EL1 there either (Burch
+      0.43 W with every APPS vote zeroed; Packett DDR LPM only, via the
+      qcrypto driver dropping the QCE boot vote). So #1315 is the only
+      possible EL1 collapse on X1E, unconfirmed. For our EL1 run also
+      record: apss/aosd/cxsd/ddr from `tools/power/suspend-test.sh`,
+      `state_synced` of 100000.clock-controller, whether the crypto node is
+      on, and that CNTV is armed (Burch: stock s2idle never collapses APSS
+      at EL1 because `tick_freeze()` disarms CNTV; our `cntv_arm` covered
+      that on 19 October). Test: boot "Arch Linux (7.2.7-book4) -
       test: el1-book4s" (B's sleep kernel and DT at EL1, never booted; if it
       hangs, hold power), one sleep of 1 h+ on battery, read the sleep log
       (`cxsd`, W). If no collapse, the gain needs EL2 or #1315's fixes. The sleep log called both sleeps of this

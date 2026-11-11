@@ -48,8 +48,19 @@ github.com/justririll/x1e-sleep (ASUS Vivobook S15, X1E80100, jglathe 7.2 at
 EL2 via slbounce, DSPs started by qebspil): `aosd`/`cxsd`/`ddr` for ~99.7 %
 of sleep, ~0.25 W (Windows ~0.23 W), from ~4 W. And on linux-arm-msm,
 "x1e80100: no AOSD/CXSD in suspend with APPS votes at zero" (Michael Burch,
-Dell XPS 13 9345, 8 October; replies from Konrad Dybcio and Val Packett, who
-reports aosd/cxsd since reproduced at nVHE EL2 and EL1). Their documented
+Dell XPS 13 9345, 8 October; replies from Konrad Dybcio and Val Packett).
+**Read in full 11 November: nobody in it reached CXSD/AOSD at EL1.** Burch,
+at EL1 under Gunyah, zeroed every APPS vote (BCMs, ARCs incl. xo.lvl, the
+active-only rpmh-regulator votes, boot-firmware LDOs l8b/l1c/l2c/l1i/l2i/
+ldof1, all modes RET/LPM) and quieted the ADSP: aosd/cxsd still 0, 0.43 W
+(Windows 159 mW); the last cxpc voter is DRV21, outside what EL1 can read
+(the AOSS ARC and drv-1 RSC windows abort at EL1). Val Packett (Latitude
+7455) got DDR LPM only, not CXSD, once the qcrypto driver dropped the boot
+firmware's QCE vote; her "reproduced ... with nVHE EL2 and EL1 as well I
+think" is second-hand from IRC. Akhil's GMU sync-state RFT was rejected;
+without `CONFIG_FW_DEVLINK_SYNC_STATE_TIMEOUT` sync_state can stay pending
+on the GMU. Thread: lore.kernel.org/linux-arm-msm/20261008215540.15933-1-me@michaelburch.net/T/
+(lore refuses automated reads; owner pasted it). Their documented
 blockers and candidate differences for the Book4:
 - the firmware computes the APSS wake deadline from the **EL1 timers**: at
   EL2 their `el1tmr` writes the next deadline into `CNTP_CVAL_EL02` before
