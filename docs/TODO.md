@@ -218,9 +218,10 @@ the end.
       1. On the EL1 boot, before leaving it: `el1-sleep-prep.sh cntv
          masked=1` + 2 min asleep (control: expect `apss` 0); x1e-crash
          (icecream95/x1e-crash bb344c4, `sync` first) for 10 min.
-      2. CL5 dropped at EL1 (Omarchy's shape): an EL1 variant of
-         `el2-dt-test.sh nocl5` (base `book4-sleep.dtb`), boot it, prep,
-         2 min asleep: counters and the system domain's rejected count.
+      2. ~~CL5 dropped at EL1 (Omarchy's shape)~~: dropped 13 November.
+         Omarchy sleeps with `deep`, where cluster idle states play no
+         part; its s2idle fails at EL1 anyway (CNTV); and with x1e-crash
+         passing at EL1 birkskyum wants CL5 back. Only if he asks.
       3. The arming as a kernel patch, not a module (arch timer or the
          cpuidle-psci s2idle path, only when not in hyp mode), tested on
          book4s; then offer it on linux-arm-msm in Burch's thread and to

@@ -25,7 +25,7 @@ fails like ours did. **Late 13 November, EL1:** x1e-crash ran 10 min
 with CL5 in use, no reset; a `deep` suspend resumed cleanly with `cxsd`
 97.4 % and no timer module; both reported in omarchy#15860
 (discussioncomment-19601392), with the UFS-on-resume caveat. Next (plan
-in TODO.md): the `masked=1` control; then CL5 dropped at EL1, the CNTV arming as a kernel patch, the blog post's EL1
+in TODO.md): the `masked=1` control (optional), the CNTV arming as a kernel patch, the blog post's EL1
 claim, the VM check, a Windows
 battery-standby figure for the ~0.7 W, the Omarchy edge image with one
 suspend, then `el2-dt-test.sh omshape|nocl5 undo` and
