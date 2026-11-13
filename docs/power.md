@@ -11,10 +11,13 @@
   Without CL5 it refuses SS1 and DRIPS every time and one CPU spins
   (2.27 W); with no system state at all the SoC just stays up (1.46 W). A
   KVM guest left running probably blocks it too.
-- At EL1 (stock boot, Gunyah) the Book4 does not collapse with the full fix
-  set either (13 November: 1.42 W, `apss`/`cxsd`/`ddr` 0; DRIPS accepted
-  and held, no spin). linux-omarchy reports full collapse on other X1E
-  machines, EL unconfirmed.
+- At EL1 (stock boot, Gunyah) the Book4 collapses too (13 November:
+  `apss`/`cxsd`/`ddr` 97.9 % of a 141 s sleep) once CNTV is armed
+  **unmasked** at each idle entry in s2idle (`cntv_arm`): `tick_freeze()`
+  disables it, and Gunyah ignores a disabled or masked vCPU timer and then
+  holds DRIPS without collapsing APSS (1.42 W, all counters 0). It also
+  needs what the EL2 setup does: providers synced, UFS hold. No wattage
+  yet.
 
 **Status (19 October 2026, 22:39): full deep sleep with the DSPs running and
 audio working.** EL2 (slbounce, `qebspil` starting ADSP and CDSP, attached

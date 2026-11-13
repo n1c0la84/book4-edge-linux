@@ -14,10 +14,12 @@ CL5 at EL2); that says nothing about EL1, where linux-omarchy reports
 full collapse with the CL5 drop on a Surface Pro 11 and a Slim 7x; our
 "EL1 never collapses" rests on one test made before the last blocker was
 fixed; two B sleeps without collapse were probably a KVM guest left
-running. **EL1 run done the same day** (entry `el1-sleep`,
-`tools/experiments/el1-sleep-prep.sh`): no collapse with the full fix
-set, 1.42 W, and `apss` never counts under Gunyah, awake or asleep. Next:
-report it in omarchy#15860 (owner's OK first), the VM check, a Windows
+running. **EL1 deep sleep reached the same day** (entry `el1-sleep`,
+`tools/experiments/el1-sleep-prep.sh`): first no collapse (1.42 W,
+`apss` 0), then, with `cntv_arm` arming CNTV unmasked (Gunyah ignores a
+masked vCPU timer), `apss`/`cxsd`/`ddr` 97.9 % of a 141 s sleep. Next: an
+hour on battery at EL1 for the wattage, the `masked=1` control, then
+report in omarchy#15860 (owner's OK first), the VM check, a Windows
 battery-standby figure for the ~0.7 W, the Omarchy edge image with one
 suspend, then `el2-dt-test.sh omshape|nocl5 undo` and
 `test-entry.sh remove el1-sleep`. Still pending: the Omarchy edge image boot test (live only) when

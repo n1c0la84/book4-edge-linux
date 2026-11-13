@@ -187,6 +187,26 @@ the end.
       (`el1-sleep-prep.sh` had two bugs on the way: the wrong test-entry
       command, and `grep -q` in a pipe under pipefail failing the EL1
       check at EL1; both fixed.)
+      **EL1 DEEP SLEEP REACHED, 13 November 14:28.** The blocker was ours:
+      `cntv_arm` armed CNTV with its interrupt masked (copied from el1tmr,
+      where TrustZone reads the raw register). Gunyah counts a vCPU timer
+      only if it is enabled and unmasked (`arm_vm_timer_is_irq_enabled()`:
+      ENABLE && !IMASK, public source) and drops a masked one at vCPU
+      suspend, so it saw no wake deadline and never let APSS collapse.
+      With `cntv_arm` arming it unmasked (same ~10-day deadline; 4db73fa,
+      modules rebuilt, `el1-sleep-prep.sh cntv`), same boot, same prep:
+      141 s asleep (14:28:04-14:30:25), **`apss`, `cxsd` and `ddr` each 1
+      entry and 138.1 s = 97.9 %**, `aosd` 0 by design (aoss_cxsd_only),
+      DRIPS used once, 0 rejected, both DSPs running, resume clean. So the
+      Book4 reaches CX collapse and DDR self-refresh under Gunyah, with
+      Samsung's firmware, CL5 kept. Stock s2idle cannot: `tick_freeze()`
+      disables CNTV (Burch's finding on the XPS 13; there APSS collapsed
+      but CX did not). Next: 1 h+ on battery at EL1 for the wattage
+      (reload with `el1-sleep-prep.sh cntv` first: `status` removes the
+      module); `masked=1` once as the control; x1e-crash at EL1; what of
+      the prep a stock kernel lacks (forced sync_state, UFS hold); a
+      proper form of the CNTV arming (in the arch timer or cpuidle-psci
+      s2idle path) to offer upstream and to linux-omarchy.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,
@@ -533,9 +553,9 @@ To test (should work, never verified)
       **Solved at EL2 (19 October):** `el1tmr`, the 7.3 PDC/LPASS/geni
       fixes, the panel supplies and the VA/WSA macro votes; 97.5-99.9 % in
       `aosd`/`cxsd`/`ddr`, 1.55 W without the DSPs. Daily since 20 October
-      (`install/el2/sleep-setup.sh`). At EL1 under Gunyah it does not
-      collapse, with the full fix set either (13 November, see the
-      CL5/DRIPS item: `apss` never counts there). The rest of the board's power is under "Now" above;
+      (`install/el2/sleep-setup.sh`). **At EL1 under Gunyah too since 13
+      November** (CL5/DRIPS item): it needed CNTV armed unmasked in
+      s2idle; 97.9 % `cxsd`/`ddr` in a first 141 s sleep. The rest of the board's power is under "Now" above;
       everything tried on the way: [power.md](power.md).
 - [ ] **UFS `ref_clk` leak fix for 7.3**: fixed upstream by Qualcomm's
       `f07317a8d57f`, queued for 7.4 without `Cc: stable`. After 7.4-rc1:
