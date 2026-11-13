@@ -4,8 +4,9 @@
 kernel, battery, radios on; details in [TODO.md](TODO.md)): A (Omarchy
 shape, no CL5, no system state) 6.18 W awake, 1.46 W asleep, cxsd 0 %;
 B (daily: CL5 + SS1/DRIPS) 5.97 W, 0.70 W, cxsd 100 %; C (no CL5,
-SS1/DRIPS kept) 6.05 W, 2.27 W, cxsd 0 %. Next: table in power.md, reply
-to birkskyum in omarchy#15860, EL1 run, then `el2-dt-test.sh omshape|nocl5
+SS1/DRIPS kept) 6.05 W, 2.27 W, cxsd 0 %. Posted 13 November
+(omarchy#15860 discussioncomment-19584893; mainline v7.3 `system_pd` has
+DRIPS only, so linux-omarchy is about C). Next: table in power.md, EL1 run, then `el2-dt-test.sh omshape|nocl5
 undo`. Still pending: the Omarchy edge image boot test (live only) when
 birkskyum links it. The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
