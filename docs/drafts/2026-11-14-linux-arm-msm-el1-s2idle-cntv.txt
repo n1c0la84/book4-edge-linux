@@ -1,0 +1,89 @@
+To:      Michael Burch
+Cc:      linux-arm-msm, and everyone on the original thread
+Subject: Re: x1e80100: no AOSD/CXSD in suspend with APPS votes at zero - which vote is left?
+In-Reply-To: <20261008215540.15933-1-me@michaelburch.net>
+(plain text, no HTML)
+------------------------------------------------------------------------
+
+Hi Michael, all,
+
+On 10/8/26, Michael Burch wrote:
+> Separately: stock s2idle never collapses APSS here. tick_freeze()
+> disables CNTV, and APSS collapses only if CNTV is armed. With a test
+> cpu_pm notifier arming it, APSS collapses and firmware writes the APPS
+> RSC wake time; aosd/cxsd still stay 0. Is this known?
+
+I see the same on a second machine, and there CX does collapse once
+APSS does. Two details about the arming may be useful.
+
+Machine: Samsung Galaxy Book4 Edge 14" (NP940XMA, X1E80100), BIOS
+P00AKY.053, Linux at EL1 under Gunyah, mem_sleep = s2idle. The kernel is
+not mainline: 7.2.7 (Anatase tree) with the 7.3 PDC series and
+domain_ss3, the lpass tx/rx/va/wsa macro pm_clk conversions and the
+geni force suspend backported.
+
+s2idle on battery, boot votes released, CNTV left as tick_freeze()
+leaves it:
+
+  apss, aosd, cxsd, ddr   0 (apss 0 for the whole boot)
+  power-domain-system     one s2idle entry per suspend, 0 rejected
+  drain                   1.42 W (38 min)
+
+With a cpu_pm notifier that, at CPU_PM_ENTER, enables CNTV with a far
+deadline when the clock event device has left it disabled:
+
+  apss, cxsd, ddr         100 % of a 127 min suspend
+  drain                   0.77 W
+  (aosd 0 on purpose: AOSD is disabled over QMP, the machine hard-resets
+  in it about hourly)
+
+1. The timer has to be enabled and unmasked. My first version set
+   ENABLE | IMASK and changed nothing. Gunyah's public source agrees:
+   arm_vm_timer_is_irq_enabled() is ENABLE && !IMASK, a timer that fails
+   it is dequeued at vCPU suspend, and timer_lp_handle_power_cpu_suspend()
+   hands the CPU's next timeout to the low-power timer. What the
+   platform code does without a timeout is not public; what I see is
+   the system-level state accepted and held, and nothing going down.
+
+2. The compare value seems to have to stay inside the counter's 56
+   bits. now + 2^44 and now + 2^55 ticks collapse; now + 2^56 (the
+   clock event device's max_delta_ticks, give or take) behaves like no
+   deadline: apss/cxsd 0 over a 138 s suspend.
+
+mem_sleep = deep (PSCI SYSTEM_SUSPEND) needs none of this here: one deep
+suspend without the notifier resumed with apss/cxsd/ddr at 97 % of
+125 s. A Yoga Slim 7x at EL1 on 7.3 shows the same split (s2idle: apss
++0.1 s in 30 min, the rest 0; deep: 99 %), measured by birkskyum of
+linux-omarchy:
+https://github.com/omacom/omarchy/discussions/15860#discussioncomment-19597088
+
+For your DRV21 question, what is different here from your list, without
+knowing which of it matters: both DSPs run (Samsung's firmware from the
+Windows install, started by Linux); the ADSP standby message is not
+sent (Samsung's INF disables that interface and the ADSP crashes on
+it); sync_state is forced through sysfs on the providers that never get
+it; UFS keeps an active-only interconnect vote. The same kernel at EL2
+(slbounce) sleeps at 0.70 W.
+
+Code, as tested (out-of-tree module):
+https://github.com/n1c0la84/book4-edge-linux/blob/main/tools/power/sleep-modules/cntv_arm.c
+
+The same thing in the arch timer's existing CPU PM notifier, limited to
+the EL1 virtual timer on qcom,x1e80100. It is NOT built or tested yet,
+so it is only an illustration of where it could live:
+https://github.com/n1c0la84/linux-book4-edge/commit/10f75dbda1f7ed45f5b027bf3a9d086091a916b9
+https://github.com/n1c0la84/linux-book4-edge/commit/c2bcfa2d79ebb5d9c570eeefd1f36d1e4a5a1c83
+
+Is s2idle under Gunyah expected to work on these machines, and if so,
+should Linux keep a deadline armed there, or is SYSTEM_SUSPEND the
+intended path?
+
+Notes and raw numbers:
+https://github.com/n1c0la84/book4-edge-linux/blob/main/docs/power.md
+
+Disclosure: I did this work with an AI coding assistant (Claude), which
+also wrote the code and helped with this mail. Every test was run on
+the hardware, and the numbers are from those runs.
+
+Thanks,
+Nicola Nicodemo

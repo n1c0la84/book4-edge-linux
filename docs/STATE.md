@@ -1,6 +1,6 @@
 # State
 
-**Updated 13 November 2026**: CL5/DRIPS comparison measured (EL2, book4s
+**Updated 14 November 2026**: CL5/DRIPS comparison measured (EL2, book4s
 kernel, battery, radios on; details in [TODO.md](TODO.md)): A (Omarchy
 shape, no CL5, no system state) 6.18 W awake, 1.46 W asleep, cxsd 0 %;
 B (daily: CL5 + SS1/DRIPS) 5.97 W, 0.70 W, cxsd 100 %; C (no CL5,
@@ -26,8 +26,9 @@ with CL5 in use, no reset; a `deep` suspend resumed cleanly with `cxsd`
 97.4 % and no timer module; both reported in omarchy#15860
 (discussioncomment-19601392), with the UFS-on-resume caveat. The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
-tested). Next (plan in TODO.md): build and test 0045 at EL1 and EL2, then
-the owner sends it as an RFC, the blog post's EL1
+tested; parked, the build would replace the daily kernel). Instead: a
+reply on Burch's linux-arm-msm thread with the finding, drafted in
+`docs/drafts/` for the owner to send. Next (plan in TODO.md): the blog post's EL1
 claim, the VM check, a Windows
 battery-standby figure for the ~0.7 W, the Omarchy edge image with one
 suspend, then `el2-dt-test.sh omshape|nocl5 undo` and

@@ -90,3 +90,14 @@ machine family from opposite ends. See [related-work.md](related-work.md).
   the 14", and how they identified it; their EC command table applied to our
   backlight blinking problem; and the charging command namespace
   (`CMD_CHG_CUR` etc.), which may allow a charge limit.
+
+## To linux-arm-msm
+
+- **s2idle at EL1 under Gunyah needs CNTV armed, unmasked** (13 November
+  2026, [TODO.md](TODO.md) CL5/DRIPS item). Draft reply to Michael Burch's
+  thread of 8 October ("x1e80100: no AOSD/CXSD in suspend ..."):
+  [drafts/2026-11-14-linux-arm-msm-el1-s2idle-cntv.txt](drafts/2026-11-14-linux-arm-msm-el1-s2idle-cntv.txt).
+  Not sent: the owner sends it (plain text). The kernel-patch route
+  (sleep-backport 0045 as an RFC) is parked: it needs a kernel build that
+  replaces the daily kernel, and `deep` works without it.
+
