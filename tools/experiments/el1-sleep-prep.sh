@@ -18,7 +18,10 @@
 #
 # The boot entry must not carry clk_ignore_unused / pd_ignore_unused (the
 # "el1-book4s" entry of 4 November does). Once, from the daily system:
-#   bash install/arch/test-entry.sh add el1-sleep -id_aa64mmfr0.ecv=1 dtb=/dtb-test/book4-sleep.dtb
+#   bash install/arch/test-entry.sh add el1-sleep -clk_ignore_unused -pd_ignore_unused \
+#       kernel=/vmlinuz-7.2.7-book4s initrd=/initramfs-7.2.7-book4s-arch.img dtb=/dtb-test/book4-sleep.dtb
+# (test-entry.sh starts from the generated Arch entry: the old EL1 kernel
+# with both flags, so the kernel, initramfs and flags are what change.)
 # Then power on with F10, pick the firmware entry that is NOT "Book4 EL2
 # (slbounce)", and in GRUB the entry "... - test: el1-sleep". The screen
 # stays black for a while early in boot. If it hangs, hold power.
