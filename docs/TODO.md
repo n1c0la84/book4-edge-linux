@@ -207,6 +207,11 @@ the end.
       the prep a stock kernel lacks (forced sync_state, UFS hold); a
       proper form of the CNTV arming (in the arch timer or cpuidle-psci
       s2idle path) to offer upstream and to linux-omarchy.
+      **EL1 wattage, 13 November 15:21-17:27:** 127 min on battery,
+      radios on: 101 mAh = **0.77 W, `cxsd`/`ddr` 100.0 %**, resume
+      clean. Within the gauge's error of B at EL2 (0.70 W; one 35 mAh
+      step is 0.27 W over two hours), and against 1.42-1.86 W at EL1
+      without the arming. So on this laptop EL1 sleeps as well as EL2.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,

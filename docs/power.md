@@ -16,8 +16,9 @@
   **unmasked** at each idle entry in s2idle (`cntv_arm`): `tick_freeze()`
   disables it, and Gunyah ignores a disabled or masked vCPU timer and then
   holds DRIPS without collapsing APSS (1.42 W, all counters 0). It also
-  needs what the EL2 setup does: providers synced, UFS hold. No wattage
-  yet.
+  needs what the EL2 setup does: providers synced, UFS hold. **0.77 W,
+  `cxsd` 100 %, over 127 min on battery**: the same as EL2 within the
+  gauge's error.
 
 **Status (19 October 2026, 22:39): full deep sleep with the DSPs running and
 audio working.** EL2 (slbounce, `qebspil` starting ADSP and CDSP, attached

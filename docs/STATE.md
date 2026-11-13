@@ -17,9 +17,10 @@ fixed; two B sleeps without collapse were probably a KVM guest left
 running. **EL1 deep sleep reached the same day** (entry `el1-sleep`,
 `tools/experiments/el1-sleep-prep.sh`): first no collapse (1.42 W,
 `apss` 0), then, with `cntv_arm` arming CNTV unmasked (Gunyah ignores a
-masked vCPU timer), `apss`/`cxsd`/`ddr` 97.9 % of a 141 s sleep. Next: an
-hour on battery at EL1 for the wattage, the `masked=1` control, then
-report in omarchy#15860 (owner's OK first), the VM check, a Windows
+masked vCPU timer), `apss`/`cxsd`/`ddr` 97.9 % of a 141 s sleep, and
+**0.77 W with `cxsd` 100 % over 127 min on battery** (EL2: 0.70 W). Next:
+report in omarchy#15860 (owner's OK first), the `masked=1` control,
+x1e-crash at EL1, a proper form of the CNTV arming, the VM check, a Windows
 battery-standby figure for the ~0.7 W, the Omarchy edge image with one
 suspend, then `el2-dt-test.sh omshape|nocl5 undo` and
 `test-entry.sh remove el1-sleep`. Still pending: the Omarchy edge image boot test (live only) when
