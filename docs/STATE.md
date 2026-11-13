@@ -18,9 +18,11 @@ running. **EL1 deep sleep reached the same day** (entry `el1-sleep`,
 `tools/experiments/el1-sleep-prep.sh`): first no collapse (1.42 W,
 `apss` 0), then, with `cntv_arm` arming CNTV unmasked (Gunyah ignores a
 masked vCPU timer), `apss`/`cxsd`/`ddr` 97.9 % of a 141 s sleep, and
-**0.77 W with `cxsd` 100 % over 127 min on battery** (EL2: 0.70 W). Next:
-report in omarchy#15860 (owner's OK first), the `masked=1` control,
-x1e-crash at EL1, a proper form of the CNTV arming, the VM check, a Windows
+**0.77 W with `cxsd` 100 % over 127 min on battery** (EL2: 0.70 W),
+reported in omarchy#15860 (discussioncomment-19594936). Next (numbered
+plan in TODO.md): the `masked=1` control and x1e-crash at EL1, CL5
+dropped at EL1, the CNTV arming as a kernel patch, the blog post's EL1
+claim, the VM check, a Windows
 battery-standby figure for the ~0.7 W, the Omarchy edge image with one
 suspend, then `el2-dt-test.sh omshape|nocl5 undo` and
 `test-entry.sh remove el1-sleep`. Still pending: the Omarchy edge image boot test (live only) when

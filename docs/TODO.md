@@ -212,6 +212,31 @@ the end.
       clean. Within the gauge's error of B at EL2 (0.70 W; one 35 mAh
       step is 0.27 W over two hours), and against 1.42-1.86 W at EL1
       without the arming. So on this laptop EL1 sleeps as well as EL2.
+      Reported in omarchy#15860 (discussioncomment-19594936), asking
+      birkskyum for the Yoga's `apss` and what keeps CNTV armed there.
+      **Plan from here (13 November):**
+      1. On the EL1 boot, before leaving it: `el1-sleep-prep.sh cntv
+         masked=1` + 2 min asleep (control: expect `apss` 0); x1e-crash
+         (icecream95/x1e-crash bb344c4, `sync` first) for 10 min.
+      2. CL5 dropped at EL1 (Omarchy's shape): an EL1 variant of
+         `el2-dt-test.sh nocl5` (base `book4-sleep.dtb`), boot it, prep,
+         2 min asleep: counters and the system domain's rejected count.
+      3. The arming as a kernel patch, not a module (arch timer or the
+         cpuidle-psci s2idle path, only when not in hyp mode), tested on
+         book4s; then offer it on linux-arm-msm in Burch's thread and to
+         linux-omarchy (owner's OK for each).
+      4. What a stock kernel still lacks on the Book4: once the providers
+         sync by themselves UFS fails on resume without a hold ("Forcing
+         the sync breaks resume", power.md); check on the Omarchy edge
+         image and tell birkskyum before anyone installs.
+      5. The blog post "why it needed EL2" on nicolanicodemo.it is now
+         wrong about EL1: correct it (owner's OK).
+      6. Housekeeping: back to the daily EL2 entry (KVM, three weeks of
+         use; EL1 had a 48 h reset on 14 October); `el2-dt-test.sh
+         omshape undo`, `nocl5 undo`; keep `el1-sleep` until 1-3 are done;
+         the table in power.md.
+      7. Still open from before: the VM check, a Windows battery-standby
+         figure, the ~0.7 W of the board.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,
