@@ -162,6 +162,31 @@ the end.
       the firmware reads for the wake deadline (x1e-sleep: do not use
       el1tmr with guests running). To confirm: one sleep with `vm start`,
       one after `vm stop`. If so, the sleep hook should pause guests.
+      **EL1 run done, 13 November: no collapse.** Entry `el1-sleep`
+      (book4s, `book4-sleep.dtb`, no ignore_unused flags; black screen
+      from GRUB to the login, then normal), "started at EL1", PDC
+      pass-through, both DSPs started by Linux. Unprepared sleeps first
+      (gcc unsynced): 48 min, 1.86 W, 0 %. Then
+      `el1-sleep-prep.sh` (UFS hold, cntv_arm, AOSD off, 4 providers
+      forced, none left unsynced) and 38 min on battery (13:20-13:58):
+      **1.42 W, `aosd`/`cxsd`/`ddr` 0, `apss` 0**; resume clean. Read
+      after it: DRIPS (S1) used 3 times, rejected 0, each CPU 3 s2idle
+      entries (held, no spin); cntv_arm armed CNTV at 12 CPU_PM entries;
+      ADSP and CDSP asleep throughout by their own counters; LPASS clock
+      counts 0. **`apss` count 0 for the whole boot (3 h+)** although
+      Gunyah accepted SS1 182 520 times and cluster CL5 1 238 785 times
+      while awake: under the hypervisor the CPU subsystem itself never
+      power-collapses on this machine, at runtime or in suspend, so
+      nothing above it can. Same as Burch's XPS 13 at EL1 and our 19
+      October run; now with the full fix set, so it stands. Open: why
+      linux-omarchy reports collapse on the SP11 and Slim 7x (EL not
+      confirmed; different firmware/Gunyah build; or their GMU driver and
+      ADSP message, which we cannot test here). Deciding test: the Omarchy
+      edge image booted live on this laptop, one suspend, `cxsd`. Also
+      worth one read at EL2: does `apss` count while awake there?
+      (`el1-sleep-prep.sh` had two bugs on the way: the wrong test-entry
+      command, and `grep -q` in a pipe under pipefail failing the EL1
+      check at EL1; both fixed.)
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,
@@ -508,9 +533,9 @@ To test (should work, never verified)
       **Solved at EL2 (19 October):** `el1tmr`, the 7.3 PDC/LPASS/geni
       fixes, the panel supplies and the VA/WSA macro votes; 97.5-99.9 % in
       `aosd`/`cxsd`/`ddr`, 1.55 W without the DSPs. Daily since 20 October
-      (`install/el2/sleep-setup.sh`). At EL1 under Gunyah it has not
-      collapsed, but never with the full fix set (13 November, see the
-      CL5/DRIPS item: `tools/experiments/el1-sleep-prep.sh`). The rest of the board's power is under "Now" above;
+      (`install/el2/sleep-setup.sh`). At EL1 under Gunyah it does not
+      collapse, with the full fix set either (13 November, see the
+      CL5/DRIPS item: `apss` never counts there). The rest of the board's power is under "Now" above;
       everything tried on the way: [power.md](power.md).
 - [ ] **UFS `ref_clk` leak fix for 7.3**: fixed upstream by Qualcomm's
       `f07317a8d57f`, queued for 7.4 without `Cc: stable`. After 7.4-rc1:

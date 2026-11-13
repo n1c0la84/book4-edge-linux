@@ -11,8 +11,10 @@
   Without CL5 it refuses SS1 and DRIPS every time and one CPU spins
   (2.27 W); with no system state at all the SoC just stays up (1.46 W). A
   KVM guest left running probably blocks it too.
-- At EL1 (stock boot, Gunyah) the Book4 is untested with the full fix set;
-  linux-omarchy reports full collapse there on other X1E machines.
+- At EL1 (stock boot, Gunyah) the Book4 does not collapse with the full fix
+  set either (13 November: 1.42 W, `apss`/`cxsd`/`ddr` 0; DRIPS accepted
+  and held, no spin). linux-omarchy reports full collapse on other X1E
+  machines, EL unconfirmed.
 
 **Status (19 October 2026, 22:39): full deep sleep with the DSPs running and
 audio working.** EL2 (slbounce, `qebspil` starting ADSP and CDSP, attached
