@@ -1,12 +1,13 @@
 # State
 
-**Updated 10 November 2026**: NP940XMA IDs merged in linux-omarchy 7.3-42
-(omarchy-pkgs#2391) and in stubble#98 (links in
-[related-work.md](related-work.md)). Two tests asked for in omarchy#15860:
-the CL5/DRIPS sleep comparison (`el2-dt-test.sh omshape|nocl5`, steps in
-[TODO.md](TODO.md)) and booting the next Omarchy edge image from USB when
-birkskyum links it (live only; report how far it gets + `journalctl -k -b`,
-redacted). The one page to read at the start of every
+**Updated 13 November 2026**: CL5/DRIPS comparison measured (EL2, book4s
+kernel, battery, radios on; details in [TODO.md](TODO.md)): A (Omarchy
+shape, no CL5, no system state) 6.18 W awake, 1.46 W asleep, cxsd 0 %;
+B (daily: CL5 + SS1/DRIPS) 5.97 W, 0.70 W, cxsd 100 %; C (no CL5,
+SS1/DRIPS kept) 6.05 W, 2.27 W, cxsd 0 %. Next: table in power.md, reply
+to birkskyum in omarchy#15860, EL1 run, then `el2-dt-test.sh omshape|nocl5
+undo`. Still pending: the Omarchy edge image boot test (live only) when
+birkskyum links it. The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.

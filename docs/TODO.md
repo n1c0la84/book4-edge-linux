@@ -107,6 +107,18 @@ the end.
       7.2.8 kernel with the CL5 drop and DRIPS reached 99.9 % CX/AOSS/DDR on
       a Surface Pro 11 (omarchy-pkgs#1315, ~0.25 W). C is the run that
       matters; correct both points when posting.
+      **B sleep, 11-12 November (sleep log, battery, radios on):** 219 min
+      0.70 W, 226 min 0.70 W, 73 min 0.74 W, `cxsd`/`ddr` 99.9-100 %.
+      **C (nocl5), 12-13 November:** awake baseline 6.05 W (83 %).
+      **Overnight 22:20-08:27, 608 min, battery, radios on: 1386 mAh =
+      22.95 Wh = 2.27 W, `aosd`/`cxsd`/`ddr` 0 %**; the counters were
+      already 0 at suspend, so nothing collapsed during that whole boot.
+      Woke normally, no hang. So here (EL2, book4s kernel) DRIPS without
+      CL5 gives no collapse and draws more than A (1.46 W): our claim in
+      the thread holds on this machine, against #1315's SP11 report
+      (Omarchy kernel with the CL5 drop, 99.9 %); EL and DT differences
+      there are unknown. One night only. Summary: A 6.18 W awake / 1.46 W
+      asleep / 0 %; B 5.97 / 0.70 / 100 %; C 6.05 / 2.27 / 0 %.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,
