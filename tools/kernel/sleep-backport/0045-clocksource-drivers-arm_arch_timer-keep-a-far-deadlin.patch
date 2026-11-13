@@ -13,28 +13,33 @@ has a timer deadline: its public arm_vm_timer code counts a timer only if
 it is enabled and unmasked, and the next timeout is what it hands to its
 low-power timer at CPU suspend.
 
-At CPU_PM_ENTER, if the virtual timer is disabled or masked, program the
-furthest deadline the clock event device supports, and put the control
+At CPU_PM_ENTER, if the virtual timer is disabled or masked, program a
+deadline half the clock event device's range away, and put the control
 register back at CPU_PM_EXIT. Only at EL1 on the virtual timer, on
-qcom,x1e80100.
+qcom,x1e80100. The full range (max_delta_ticks, 2^56 - 1 here) does not
+work: the compare value then lies beyond the 56-bit counter and Gunyah
+behaves as with no deadline (cntv_arm far_secs=3752999689: apss/cxsd 0;
+far_secs=1876499844, half: apss/cxsd/ddr collapse).
 
 Replaces the out-of-tree test module cntv_arm (2^44 ticks, unmasked),
 with which the Book4 reached cxsd/ddr 100 % and 0.77 W over 127 min at
 EL1 on 13 November 2026. Not needed for mem_sleep=deep (PSCI
 SYSTEM_SUSPEND), which collapses without it.
 
+Fork book4/7.2-sleep: 10f75dbda and c2bcfa2d7, folded into one patch.
+
 Assisted-by: Claude Fable 5.2
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01Eg21zz6xsWYdX7DBM2kAaw
 ---
- drivers/clocksource/arm_arch_timer.c | 78 ++++++++++++++++++++++++++++
- 1 file changed, 78 insertions(+)
+ drivers/clocksource/arm_arch_timer.c | 80 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
 
 diff --git a/drivers/clocksource/arm_arch_timer.c b/drivers/clocksource/arm_arch_timer.c
-index 7b4a98df6..2fdfbf2c7 100644
+index 7b4a98df6..e900b0122 100644
 --- a/drivers/clocksource/arm_arch_timer.c
 +++ b/drivers/clocksource/arm_arch_timer.c
-@@ -970,6 +970,78 @@ static int arch_timer_dying_cpu(unsigned int cpu)
+@@ -970,6 +970,80 @@ static int arch_timer_dying_cpu(unsigned int cpu)
  
  #ifdef CONFIG_CPU_PM
  static DEFINE_PER_CPU(unsigned long, saved_cntkctl);
@@ -51,11 +56,13 @@ index 7b4a98df6..2fdfbf2c7 100644
 + * that is every CPU: the system-level PSCI state is accepted and held,
 + * but nothing is ever powered down.
 + *
-+ * Give such a CPU the furthest deadline the clock event device supports
-+ * for as long as it is in the idle state. Interrupts are disabled from
-+ * CPU_PM_ENTER to CPU_PM_EXIT, so should the deadline ever be reached,
-+ * the timer is back in its previous state before the interrupt can be
-+ * taken.
++ * Give such a CPU a deadline half the clock event device's range away
++ * for as long as it is in the idle state. The full range does not work:
++ * the compare value then lies beyond the counter's width, and the
++ * hypervisor treats it like no deadline at all. Interrupts are disabled
++ * from CPU_PM_ENTER to CPU_PM_EXIT, so should the deadline ever be
++ * reached, the timer is back in its previous state before the interrupt
++ * can be taken.
 + */
 +static bool arch_timer_idle_deadline __ro_after_init;
 +static DEFINE_PER_CPU(unsigned long, idle_deadline_saved_ctrl);
@@ -76,7 +83,7 @@ index 7b4a98df6..2fdfbf2c7 100644
 +
 +	__this_cpu_write(idle_deadline_saved_ctrl, ctrl);
 +	__this_cpu_write(idle_deadline_armed, true);
-+	set_next_event(ARCH_TIMER_VIRT_ACCESS, clk->max_delta_ticks, clk);
++	set_next_event(ARCH_TIMER_VIRT_ACCESS, clk->max_delta_ticks >> 1, clk);
 +}
 +
 +static void arch_timer_idle_deadline_exit(void)
@@ -113,7 +120,7 @@ index 7b4a98df6..2fdfbf2c7 100644
  static int arch_timer_cpu_pm_notify(struct notifier_block *self,
  				    unsigned long action, void *hcpu)
  {
-@@ -977,7 +1049,11 @@ static int arch_timer_cpu_pm_notify(struct notifier_block *self,
+@@ -977,7 +1051,11 @@ static int arch_timer_cpu_pm_notify(struct notifier_block *self,
  		__this_cpu_write(saved_cntkctl, arch_timer_get_cntkctl());
  
  		cpumask_clear_cpu(smp_processor_id(), &evtstrm_available);
@@ -125,7 +132,7 @@ index 7b4a98df6..2fdfbf2c7 100644
  		arch_timer_set_cntkctl(__this_cpu_read(saved_cntkctl));
  
  		if (arch_timer_have_evtstrm_feature())
-@@ -992,6 +1068,8 @@ static struct notifier_block arch_timer_cpu_pm_notifier = {
+@@ -992,6 +1070,8 @@ static struct notifier_block arch_timer_cpu_pm_notifier = {
  
  static int __init arch_timer_cpu_pm_init(void)
  {

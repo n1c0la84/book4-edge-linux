@@ -287,9 +287,15 @@ the end.
       a far timer deadline for the hypervisor". Not active at EL2.
       checkpatch --strict clean. `arm_arch_timer.c` is the same in v7.4-rc2
       apart from unrelated vdso lines, so the diff is the upstream one.
-      Open: the module was only tested with 2^44 ticks; whether Gunyah
-      takes a 2^56 deadline is checked by `el1-sleep-prep.sh cntv
-      far_secs=3752999689` (2 min) or by the built kernel. Test: build
+      **Deadline corrected the same night:** with the full range
+      (`far_secs=3752999689`, 2^56 ticks) a 138 s s2idle gave
+      `apss`/`cxsd` 0: the compare value lies beyond the 56-bit counter
+      and Gunyah behaves as with no deadline. Half the range
+      (`far_secs=1876499844`, 2^55 ticks, ~59 years) collapsed for 157 s.
+      0045 now programs `max_delta_ticks >> 1` (fork c2bcfa2d7 on top of
+      10f75dbda; the patch file is the two folded). A short deadline is
+      not an option: the notifier also runs in `deep`, where reaching it
+      would wake the whole machine. Test: build
       (`build-sleep-kernel.sh`, incremental), boot `el1-sleep`, prep (it
       skips cntv_arm when the boot line is there), 2 min s2idle, `status`:
       `apss`/`cxsd` must count; then one EL2 boot and sleep as usual.
