@@ -29,6 +29,10 @@
 #   bash tools/experiments/el1-sleep-prep.sh          after login, on battery
 #   (close the lid for 1 h or more; the sleep log tags the sleep "el1")
 #   bash tools/experiments/el1-sleep-prep.sh status   after waking
+#   bash tools/experiments/el1-sleep-prep.sh cntv [masked=1] [far_secs=N]
+#       reload cntv_arm with these parameters for the next sleep (status
+#       removes it to read its count); a minute asleep is enough to see
+#       whether qcom_stats apss counts
 set -euo pipefail
 # In pipes, grep reads to the end (no -q): with pipefail, grep -q closing the
 # pipe early kills the writer and the whole test reads as failed.
@@ -62,6 +66,14 @@ fi
     { echo "error: this device tree has no system idle state" >&2; exit 1; }
 sudo -v
 if [ "${1:-}" = status ]; then status after; exit 0; fi
+if [ "${1:-}" = cntv ]; then
+    shift
+    [ ! -d /sys/module/cntv_arm ] || sudo rmmod cntv_arm
+    sudo modprobe cntv_arm "$@"
+    echo "cntv_arm: masked=$(cat /sys/module/cntv_arm/parameters/masked) far_secs=$(cat /sys/module/cntv_arm/parameters/far_secs)"
+    for s in apss cxsd ddr; do printf '   %-5s %s\n' "$s" "$(sudo cat $stats/$s | tr '\n' ' ')"; done
+    exit 0
+fi
 
 [ ! -d /sys/module/qcom_adsp_pwr_lmts ] || { echo "error: qcom_adsp_pwr_lmts is loaded (it crashes the ADSP)" >&2; exit 1; }
 sudo modprobe icc_hold nodes=/soc@0/ufshc@1d84000 tag=3
