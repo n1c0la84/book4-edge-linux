@@ -6,7 +6,16 @@ shape, no CL5, no system state) 6.18 W awake, 1.46 W asleep, cxsd 0 %;
 B (daily: CL5 + SS1/DRIPS) 5.97 W, 0.70 W, cxsd 100 %; C (no CL5,
 SS1/DRIPS kept) 6.05 W, 2.27 W, cxsd 0 %. Posted 13 November
 (omarchy#15860 discussioncomment-19584893; mainline v7.3 `system_pd` has
-DRIPS only, so linux-omarchy is about C). Next: table in power.md, EL1 run, then `el2-dt-test.sh omshape|nocl5
+DRIPS only, so linux-omarchy is about C). **Re-read of the whole sleep
+work, 13 November (TODO.md, CL5/DRIPS item):** C spins: TrustZone refused
+DRIPS 1.63 billion times that night (system states need the clusters in
+CL5 at EL2); that says nothing about EL1, where linux-omarchy reports
+full collapse with the CL5 drop on a Surface Pro 11 and a Slim 7x; our
+"EL1 never collapses" rests on one test made before the last blocker was
+fixed; two B sleeps without collapse were probably a KVM guest left
+running. Next: the EL1 run with `tools/experiments/el1-sleep-prep.sh`
+(the old `el1-book4s` entry and plan were void), the VM check, a Windows
+battery-standby figure for the ~0.7 W, then `el2-dt-test.sh omshape|nocl5
 undo`. Still pending: the Omarchy edge image boot test (live only) when
 birkskyum links it. The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.

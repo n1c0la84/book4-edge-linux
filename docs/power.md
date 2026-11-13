@@ -1,5 +1,19 @@
 # Power: suspend drain
 
+**Where it stands (13 November 2026; evidence in [TODO.md](TODO.md), CL5/DRIPS item).**
+- Daily setup (EL2, CL5 + SS1/DRIPS, AOSD off): `cxsd`/`ddr` ~100 %,
+  **0.70 W** over 3.5-4 h on battery (0.64-1.03 W across October-November;
+  no full night on battery yet). Other X1E laptops: 0.17-0.26 W. The SoC is
+  collapsed, so the rest is the board; no Windows battery figure for this
+  board exists yet, so the real gap is unknown.
+- At EL2 TrustZone needs three things for DRIPS: every Linux vote gone, the
+  wake deadline in the EL1 timer (`el1tmr`), and the clusters in CL5.
+  Without CL5 it refuses SS1 and DRIPS every time and one CPU spins
+  (2.27 W); with no system state at all the SoC just stays up (1.46 W). A
+  KVM guest left running probably blocks it too.
+- At EL1 (stock boot, Gunyah) the Book4 is untested with the full fix set;
+  linux-omarchy reports full collapse there on other X1E machines.
+
 **Status (19 October 2026, 22:39): full deep sleep with the DSPs running and
 audio working.** EL2 (slbounce, `qebspil` starting ADSP and CDSP, attached
 by Linux), sleep test kernel 7.2.7-book4s, `el1tmr`, providers synced,

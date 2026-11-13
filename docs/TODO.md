@@ -119,6 +119,49 @@ the end.
       (Omarchy kernel with the CL5 drop, 99.9 %); EL and DT differences
       there are unknown. One night only. Summary: A 6.18 W awake / 1.46 W
       asleep / 0 %; B 5.97 / 0.70 / 100 %; C 6.05 / 2.27 / 0 %.
+      **Why C draws more than A (13 November, read on the C boot after
+      the night):** `pm_genpd/power-domain-system/idle_states`: DRIPS (S1)
+      usage 0, **rejected 1 631 018 578**; SS1 (S0) usage 0, rejected
+      11 698 198 while awake. CPU 0's `cpu-sleep-0` s2idle usage is
+      1 630 954 791, the other CPUs' 2 to 31 976: one CPU asked TrustZone
+      for DRIPS ~44 700 times a second all night and was refused every
+      time. In OSI mode the topmost domain's parameter replaces the lower
+      ones (`cpuidle-psci.c`), so the last CPU sends `0x0200c354`, which
+      names cluster state 5, while the other two clusters were parked with
+      CL4 (`0x01000044`): TrustZone refuses every system-level state, SS1
+      included, unless the clusters are in CL5. A (no system state) parks
+      in CL4 and stays there: no spin, 1.46 W. So at EL2 "DRIPS without
+      CL5" is worse than no DRIPS, and anyone running linux-omarchy at EL2
+      (slbounce, for KVM) gets this.
+      **What that does not say: EL1.** Under Gunyah the request goes to the
+      hypervisor, not TrustZone. linux-omarchy has had `domain_ss3` plus
+      the CL5 drop since #975/#1315, and its README reports 99.9 %
+      CX/AOSS/DDR on the Surface Pro 11 and all three states on a Yoga
+      Slim 7x (7.3 with `2210`), booted from Omarchy's UKI (no slbounce in
+      that chain, so almost certainly EL1; turbineBMW has not answered).
+      So C-shape seems to collapse at EL1 on other machines.
+      **Our "EL1 never collapses" is not established.** The one EL1 test of
+      the sleep kernel (19 October ~16:00, `tools/experiments/sleep-test.sh`)
+      loaded `qcom_adsp_pwr_lmts`, which crashed the ADSP at both suspends,
+      and ran six hours before the VA/WSA macro votes (0024/0025) were
+      found; at EL1 the ADSP always runs, so CX could not have collapsed
+      then whatever Gunyah did. The 16 October "DSPs stopped" EL1 test
+      predates the PDC, geni, LPASS, syscon and panel-supply fixes.
+      **The EL1 run as planned would have been void:** the `el1-book4s`
+      entry carries `clk_ignore_unused pd_ignore_unused` (live-iso's EL1
+      arguments), and `book4-el2-sleep.service` is skipped at EL1, so no
+      provider is synced and UFS has no hold. Use
+      `tools/experiments/el1-sleep-prep.sh` (header: entry `el1-sleep`
+      without the flags; icc_hold, cntv_arm, aoss_cxsd_only, forced
+      sync_state; `status` after waking). Result decides whether the Book4
+      can sleep deeply on a stock kernel.
+      **Two daily (B) sleeps without collapse** in the log, 29 October
+      11:59 and 3 November 13:34 (1.56 W): the Debian VM was set up on 28
+      October and the Cutefish VM on 3 November (QEMU running that
+      morning). Likely a KVM guest left running: its EL1 timers are what
+      the firmware reads for the wake deadline (x1e-sleep: do not use
+      el1tmr with guests running). To confirm: one sleep with `vm start`,
+      one after `vm stop`. If so, the sleep hook should pause guests.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,
@@ -465,8 +508,9 @@ To test (should work, never verified)
       **Solved at EL2 (19 October):** `el1tmr`, the 7.3 PDC/LPASS/geni
       fixes, the panel supplies and the VA/WSA macro votes; 97.5-99.9 % in
       `aosd`/`cxsd`/`ddr`, 1.55 W without the DSPs. Daily since 20 October
-      (`install/el2/sleep-setup.sh`). At EL1 under Gunyah it still never
-      collapses. The rest of the board's power is under "Now" above;
+      (`install/el2/sleep-setup.sh`). At EL1 under Gunyah it has not
+      collapsed, but never with the full fix set (13 November, see the
+      CL5/DRIPS item: `tools/experiments/el1-sleep-prep.sh`). The rest of the board's power is under "Now" above;
       everything tried on the way: [power.md](power.md).
 - [ ] **UFS `ref_clk` leak fix for 7.3**: fixed upstream by Qualcomm's
       `f07317a8d57f`, queued for 7.4 without `Cc: stable`. After 7.4-rc1:
