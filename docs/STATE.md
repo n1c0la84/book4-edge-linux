@@ -5,8 +5,9 @@ kernel, battery, radios on; details in [TODO.md](TODO.md)): A (Omarchy
 shape, no CL5, no system state) 6.18 W awake, 1.46 W asleep, cxsd 0 %;
 B (daily: CL5 + SS1/DRIPS) 5.97 W, 0.70 W, cxsd 100 %; C (no CL5,
 SS1/DRIPS kept) 6.05 W, 2.27 W, cxsd 0 %. Posted 13 November
-(omarchy#15860 discussioncomment-19584893; mainline v7.3 `system_pd` has
-DRIPS only, so linux-omarchy is about C). **Re-read of the whole sleep
+(omarchy#15860 discussioncomment-19584893, edited the same day: the
+result holds at EL2 only, with the rejection counts; mainline v7.3
+`system_pd` has DRIPS only, so linux-omarchy is about C). **Re-read of the whole sleep
 work, 13 November (TODO.md, CL5/DRIPS item):** C spins: TrustZone refused
 DRIPS 1.63 billion times that night (system states need the clusters in
 CL5 at EL2); that says nothing about EL1, where linux-omarchy reports
