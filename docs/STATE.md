@@ -19,9 +19,10 @@ running. **EL1 deep sleep reached the same day** (entry `el1-sleep`,
 `apss` 0), then, with `cntv_arm` arming CNTV unmasked (Gunyah ignores a
 masked vCPU timer), `apss`/`cxsd`/`ddr` 97.9 % of a 141 s sleep, and
 **0.77 W with `cxsd` 100 % over 127 min on battery** (EL2: 0.70 W),
-reported in omarchy#15860 (discussioncomment-19594936). Next (numbered
-plan in TODO.md): the `masked=1` control and x1e-crash at EL1, CL5
-dropped at EL1, the CNTV arming as a kernel patch, the blog post's EL1
+reported in omarchy#15860 (discussioncomment-19594936). birkskyum: the
+other machines' EL1 collapse was `deep` (SYSTEM_SUSPEND); their s2idle
+fails like ours did. Next EL1 session (plan in TODO.md): x1e-crash, one
+`deep` suspend of B, the `masked=1` control; then CL5 dropped at EL1, the CNTV arming as a kernel patch, the blog post's EL1
 claim, the VM check, a Windows
 battery-standby figure for the ~0.7 W, the Omarchy edge image with one
 suspend, then `el2-dt-test.sh omshape|nocl5 undo` and

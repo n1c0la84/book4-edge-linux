@@ -237,6 +237,26 @@ the end.
          the table in power.md.
       7. Still open from before: the VM check, a Windows battery-standby
          figure, the ~0.7 W of the board.
+      **birkskyum, 13 November 18:15 (discussioncomment-19597088):** the
+      Yoga Slim 7x and the Surface Pro 11 numbers were `deep` (PSCI
+      SYSTEM_SUSPEND, the default there: `s2idle [deep]`), not s2idle. On
+      the Yoga at EL1 (7.3-59): deep 22.8 min, `apss` +22.8 min,
+      `aosd`/`cxsd`/`ddr` 99 %; s2idle 30.5 min, `apss` +0.1 s, the rest 0,
+      one system-domain entry, no rejection: the same as here without the
+      arming. Nothing in 7.3 or their patches arms CNTV. So s2idle under
+      Gunyah fails this way on every X1E machine tried, and
+      SYSTEM_SUSPEND is how the others get down; C-shape at EL1 was never
+      exercised. He asks: does the NP940XMA offer deep under Gunyah, and
+      does B collapse through it without the module; and x1e-crash at EL1
+      matters most (decides whether 2151 goes and CL5 comes back). Here:
+      `mem_sleep` is `[s2idle] deep`; "`deep` never resumes" is from the
+      first import (Fedora, Anatase kernel, EL1), never retried on the
+      sleep kernel. If it still does not resume, a stock Omarchy on this
+      laptop (default deep) would not wake. Next EL1 session, in this
+      order: x1e-crash (built: `~/src/ext/x1e-crash/crash`, bb344c4),
+      then one deep suspend of B with the prep and without cntv_arm
+      (`echo deep | sudo tee /sys/power/mem_sleep`; hold power if it does
+      not come back), then the `masked=1` control.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,
