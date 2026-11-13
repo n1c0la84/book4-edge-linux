@@ -257,6 +257,14 @@ the end.
       then one deep suspend of B with the prep and without cntv_arm
       (`echo deep | sudo tee /sys/power/mem_sleep`; hold power if it does
       not come back), then the `masked=1` control.
+      **x1e-crash at EL1, 13 November 23:07-23:17:** `el1-sleep` boot
+      ("started at EL1", "Broken DC ZVA" detected), prep in force, CL5
+      in real use (cluster0 S1 used 86 319 times in 12 min, 23
+      rejections). `crash` (bb344c4, `gcc -O2`) ran its 600 s under
+      `timeout` with no reset and nothing in the kernel log; the round
+      count was lost with the pipe (about 2.8 rounds/s measured after,
+      so ~1700 rounds). Before 0043 it reset this machine within
+      seconds. So the EL0 trap-and-emulate holds under Gunyah too.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,
