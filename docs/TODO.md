@@ -265,6 +265,16 @@ the end.
       count was lost with the pipe (about 2.8 rounds/s measured after,
       so ~1700 rounds). Before 0043 it reset this machine within
       seconds. So the EL0 trap-and-emulate holds under Gunyah too.
+      **`deep` at EL1, 13 November 23:21:19-23:23:24** (same boot, prep in
+      force, `cntv_arm` removed: armed 0 times, `mem_sleep` deep): "PM:
+      suspend entry (deep)", non-boot CPUs killed, **resumed cleanly**
+      (lid; resume devices 1.3 s, no errors), `apss`/`cxsd`/`ddr` 1 entry
+      each, 121.7 s of 125 s = **97.4 %**. So PSCI SYSTEM_SUSPEND works
+      and collapses under Gunyah on this laptop without any timer help,
+      as on the Yoga and the XPS 13, and "`deep` never resumes"
+      (bootstrap.md, the first import) no longer holds on the sleep
+      kernel. Not measured: wattage (2 min), `deep` at EL2, `deep`
+      without the prep.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,
@@ -720,7 +730,9 @@ To test (should work, never verified)
       signal to the EC, reserved in the DTS. Not needed for the unplug fix,
       but it changes how the EC handles power events in sleep; worth
       revisiting together with the drain. [power.md](power.md).
-- [ ] `deep` suspend never resumes (s2idle works; probably leave it).
+- [x] `deep` suspend never resumes: no longer true on the sleep kernel at
+      EL1 (13 November: resumed, `cxsd` 97.4 %; CL5/DRIPS item). Untested at
+      EL2.
 - [x] EC word at `0xb6` (37 on this unit) is **not** the cycle count: the
       DSDT's `_BIX` reads it from `CYLC`, EC offset **0xD0** (16 bit, high
       byte first); Windows reports 105 cycles (8 Oct). What 0xB6 is stays

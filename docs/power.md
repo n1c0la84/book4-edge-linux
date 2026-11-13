@@ -18,7 +18,8 @@
   holds DRIPS without collapsing APSS (1.42 W, all counters 0). It also
   needs what the EL2 setup does: providers synced, UFS hold. **0.77 W,
   `cxsd` 100 %, over 127 min on battery**: the same as EL2 within the
-  gauge's error.
+  gauge's error. `deep` (PSCI SYSTEM_SUSPEND) at EL1 needs no timer
+  help: it resumed cleanly with `cxsd` 97.4 % (2 min, 13 November).
 
 **Status (19 October 2026, 22:39): full deep sleep with the DSPs running and
 audio working.** EL2 (slbounce, `qebspil` starting ADSP and CDSP, attached

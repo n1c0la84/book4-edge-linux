@@ -28,7 +28,7 @@ live with the workstation copy of this project; this is the distilled version.
   `linux,initrd-start` into `/chosen` and the kernel dies with
   `unknown-block(0,0)`.
 - `cma=256M` on the command line (ath12k).
-- `mem_sleep_default=s2idle`: `deep` suspend never resumes.
+- `mem_sleep_default=s2idle`: `deep` never resumed on the first kernels; on the sleep kernel at EL1 it does (13 November 2026, TODO.md).
 - `/lib` is a symlink to `/usr/lib`. Any `tar` without `--keep-directory-symlink`
   replaces it and nothing executes any more.
 - The static grub.cfg names kernels explicitly. The kernel-install hook
