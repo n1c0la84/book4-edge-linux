@@ -24,7 +24,9 @@ other machines' EL1 collapse was `deep` (SYSTEM_SUSPEND); their s2idle
 fails like ours did. **Late 13 November, EL1:** x1e-crash ran 10 min
 with CL5 in use, no reset; a `deep` suspend resumed cleanly with `cxsd`
 97.4 % and no timer module; both reported in omarchy#15860
-(discussioncomment-19601392), with the UFS-on-resume caveat. The CNTV
+(discussioncomment-19601392), with the UFS-on-resume caveat and, added
+14 November, that linux-omarchy's ADSP standby message (2176) crashes
+this ADSP. The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
 tested; parked, the build would replace the daily kernel). Instead: a
 reply on Burch's linux-arm-msm thread with the finding, drafted in
