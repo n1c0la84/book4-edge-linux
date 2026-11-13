@@ -30,6 +30,8 @@
 #   (close the lid for 1 h or more; the sleep log tags the sleep "el1")
 #   bash tools/experiments/el1-sleep-prep.sh status   after waking
 set -euo pipefail
+# In pipes, grep reads to the end (no -q): with pipefail, grep -q closing the
+# pipe early kills the writer and the whole test reads as failed.
 stats=/sys/kernel/debug/qcom_stats
 pd=/sys/kernel/debug/pm_genpd/power-domain-system/idle_states
 
@@ -50,7 +52,7 @@ status() {
 }
 
 [ "$(uname -r)" = 7.2.7-book4s ] || { echo "error: needs the sleep kernel (running $(uname -r))" >&2; exit 1; }
-if grep -q 'id_aa64mmfr0.ecv=1' /proc/cmdline || ! journalctl -k -b -o cat | grep -q 'started at EL1'; then
+if grep -q 'id_aa64mmfr0.ecv=1' /proc/cmdline || ! journalctl -k -b -o cat | grep 'started at EL1' >/dev/null; then
     echo "error: this boot is not at EL1 (see the header for the boot entry)" >&2; exit 1
 fi
 if grep -qE '(clk|pd)_ignore_unused' /proc/cmdline; then
@@ -63,7 +65,7 @@ if [ "${1:-}" = status ]; then status after; exit 0; fi
 
 [ ! -d /sys/module/qcom_adsp_pwr_lmts ] || { echo "error: qcom_adsp_pwr_lmts is loaded (it crashes the ADSP)" >&2; exit 1; }
 sudo modprobe icc_hold nodes=/soc@0/ufshc@1d84000 tag=3
-sudo dmesg | grep -q 'icc_hold: holding [1-9][0-9]* paths (tag 3)' ||
+sudo dmesg | grep 'icc_hold: holding [1-9][0-9]* paths (tag 3)' >/dev/null ||
     { echo "error: icc_hold holds no UFS path; boot votes NOT released" >&2; exit 1; }
 sudo modprobe cntv_arm
 sudo modprobe aoss_cxsd_only || echo "warning: aoss_cxsd_only did not load: AOSD allowed (hourly reset possible)" >&2
