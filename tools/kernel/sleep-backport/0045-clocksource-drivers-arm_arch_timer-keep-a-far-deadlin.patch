@@ -1,0 +1,139 @@
+From 10f75dbda1f7ed45f5b027bf3a9d086091a916b9 Mon Sep 17 00:00:00 2001
+From: Nicola Nicodemo <nicola084@gmail.com>
+Date: Fri, 13 Nov 2026 23:45:21 +0100
+Subject: [PATCH] clocksource/drivers/arm_arch_timer: keep a far deadline on
+ idle CPUs under Gunyah (book4)
+
+At EL1 under Qualcomm's hypervisor an X1E80100 never powers down in
+suspend-to-idle: the system-level PSCI state is accepted and held, but
+qcom_stats apss/cxsd/ddr stay at 0 (Galaxy Book4 Edge: 1.4 W asleep).
+tick_freeze() shuts every CPU's clock event device down, which disables
+the virtual timer, and Gunyah only lets a CPU power down when the vCPU
+has a timer deadline: its public arm_vm_timer code counts a timer only if
+it is enabled and unmasked, and the next timeout is what it hands to its
+low-power timer at CPU suspend.
+
+At CPU_PM_ENTER, if the virtual timer is disabled or masked, program the
+furthest deadline the clock event device supports, and put the control
+register back at CPU_PM_EXIT. Only at EL1 on the virtual timer, on
+qcom,x1e80100.
+
+Replaces the out-of-tree test module cntv_arm (2^44 ticks, unmasked),
+with which the Book4 reached cxsd/ddr 100 % and 0.77 W over 127 min at
+EL1 on 13 November 2026. Not needed for mem_sleep=deep (PSCI
+SYSTEM_SUSPEND), which collapses without it.
+
+Assisted-by: Claude Fable 5.2
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Eg21zz6xsWYdX7DBM2kAaw
+---
+ drivers/clocksource/arm_arch_timer.c | 78 ++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
+
+diff --git a/drivers/clocksource/arm_arch_timer.c b/drivers/clocksource/arm_arch_timer.c
+index 7b4a98df6..2fdfbf2c7 100644
+--- a/drivers/clocksource/arm_arch_timer.c
++++ b/drivers/clocksource/arm_arch_timer.c
+@@ -970,6 +970,78 @@ static int arch_timer_dying_cpu(unsigned int cpu)
+ 
+ #ifdef CONFIG_CPU_PM
+ static DEFINE_PER_CPU(unsigned long, saved_cntkctl);
++
++/*
++ * On the SoCs listed in arch_timer_idle_deadline_init(), the vendor's
++ * hypervisor only lets a CPU power down, and with it the cluster and the
++ * SoC, if the vCPU has a virtual timer deadline to wake up for. A timer
++ * that is disabled or masked does not count.
++ *
++ * A CPU that goes idle with nothing to wait for has had its clock event
++ * device shut down (NOHZ, the broadcast device, the frozen tick of
++ * suspend-to-idle) and so leaves the timer disabled. In suspend-to-idle
++ * that is every CPU: the system-level PSCI state is accepted and held,
++ * but nothing is ever powered down.
++ *
++ * Give such a CPU the furthest deadline the clock event device supports
++ * for as long as it is in the idle state. Interrupts are disabled from
++ * CPU_PM_ENTER to CPU_PM_EXIT, so should the deadline ever be reached,
++ * the timer is back in its previous state before the interrupt can be
++ * taken.
++ */
++static bool arch_timer_idle_deadline __ro_after_init;
++static DEFINE_PER_CPU(unsigned long, idle_deadline_saved_ctrl);
++static DEFINE_PER_CPU(bool, idle_deadline_armed);
++
++static void arch_timer_idle_deadline_enter(void)
++{
++	struct clock_event_device *clk = this_cpu_ptr(arch_timer_evt);
++	unsigned long ctrl;
++
++	if (!arch_timer_idle_deadline)
++		return;
++
++	ctrl = arch_timer_reg_read_cp15(ARCH_TIMER_VIRT_ACCESS,
++					ARCH_TIMER_REG_CTRL);
++	if ((ctrl & ARCH_TIMER_CTRL_ENABLE) && !(ctrl & ARCH_TIMER_CTRL_IT_MASK))
++		return;
++
++	__this_cpu_write(idle_deadline_saved_ctrl, ctrl);
++	__this_cpu_write(idle_deadline_armed, true);
++	set_next_event(ARCH_TIMER_VIRT_ACCESS, clk->max_delta_ticks, clk);
++}
++
++static void arch_timer_idle_deadline_exit(void)
++{
++	if (!__this_cpu_read(idle_deadline_armed))
++		return;
++
++	arch_timer_reg_write_cp15(ARCH_TIMER_VIRT_ACCESS, ARCH_TIMER_REG_CTRL,
++				  __this_cpu_read(idle_deadline_saved_ctrl));
++	__this_cpu_write(idle_deadline_armed, false);
++}
++
++static void __init arch_timer_idle_deadline_init(void)
++{
++	/*
++	 * Qualcomm SoCs whose hypervisor (Gunyah) has been seen to behave
++	 * this way. It only matters when Linux runs under it, at EL1, on
++	 * the virtual timer.
++	 */
++	static const char * const needs_idle_deadline[] __initconst = {
++		"qcom,x1e80100",
++		NULL
++	};
++
++	if (arch_timer_uses_ppi != ARCH_TIMER_VIRT_PPI)
++		return;
++
++	if (of_machine_compatible_match(needs_idle_deadline)) {
++		arch_timer_idle_deadline = true;
++		pr_info("idle CPUs keep a far timer deadline for the hypervisor\n");
++	}
++}
++
+ static int arch_timer_cpu_pm_notify(struct notifier_block *self,
+ 				    unsigned long action, void *hcpu)
+ {
+@@ -977,7 +1049,11 @@ static int arch_timer_cpu_pm_notify(struct notifier_block *self,
+ 		__this_cpu_write(saved_cntkctl, arch_timer_get_cntkctl());
+ 
+ 		cpumask_clear_cpu(smp_processor_id(), &evtstrm_available);
++
++		arch_timer_idle_deadline_enter();
+ 	} else if (action == CPU_PM_ENTER_FAILED || action == CPU_PM_EXIT) {
++		arch_timer_idle_deadline_exit();
++
+ 		arch_timer_set_cntkctl(__this_cpu_read(saved_cntkctl));
+ 
+ 		if (arch_timer_have_evtstrm_feature())
+@@ -992,6 +1068,8 @@ static struct notifier_block arch_timer_cpu_pm_notifier = {
+ 
+ static int __init arch_timer_cpu_pm_init(void)
+ {
++	arch_timer_idle_deadline_init();
++
+ 	return cpu_pm_register_notifier(&arch_timer_cpu_pm_notifier);
+ }
+ 
+-- 
+2.56.0
+

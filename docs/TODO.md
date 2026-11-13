@@ -276,6 +276,26 @@ the end.
       (bootstrap.md, the first import) no longer holds on the sleep
       kernel. Not measured: wattage (2 min), `deep` at EL2, `deep`
       without the prep.
+      **The arming as a kernel patch (written 13 November, NOT BUILT):**
+      sleep-backport 0045, fork `book4/7.2-sleep` 10f75dbda:
+      `arm_arch_timer.c`, in the existing CPU PM notifier: at
+      CPU_PM_ENTER, if the virtual timer is disabled or masked, program
+      `max_delta_ticks` ahead (2^56 ticks here, ~119 years) and restore
+      CNTV_CTL at CPU_PM_EXIT; only when the driver uses the EL1 virtual
+      timer and the machine is `qcom,x1e80100` (gated like the bcm2712
+      workaround in the same file); boot line "arch_timer: idle CPUs keep
+      a far timer deadline for the hypervisor". Not active at EL2.
+      checkpatch --strict clean. `arm_arch_timer.c` is the same in v7.4-rc2
+      apart from unrelated vdso lines, so the diff is the upstream one.
+      Open: the module was only tested with 2^44 ticks; whether Gunyah
+      takes a 2^56 deadline is checked by `el1-sleep-prep.sh cntv
+      far_secs=3752999689` (2 min) or by the built kernel. Test: build
+      (`build-sleep-kernel.sh`, incremental), boot `el1-sleep`, prep (it
+      skips cntv_arm when the boot line is there), 2 min s2idle, `status`:
+      `apss`/`cxsd` must count; then one EL2 boot and sleep as usual.
+      Upstream: an RFC to linux-arm-msm and the timer maintainers, sent
+      by the owner (the kernel's coding-assistants.rst: the assistant
+      never sends, and adds no Signed-off-by), only after that test.
       **EL1 run (added 11 November):** stock Omarchy runs at EL1 under
       Gunyah (EL2 needs Microsoft's tcblaunch.exe plus DSP start by Linux).
       Here at EL1 (19 October) the system domain was entered once and held,

@@ -11,7 +11,8 @@
 #   - icc_hold on UFS (tag 3): releasing the boot votes otherwise breaks UFS
 #     on resume
 #   - cntv_arm: tick_freeze() disarms CNTV, and under Gunyah APSS did not
-#     collapse without it (Burch, XPS 13)
+#     collapse without it (Burch, XPS 13); skipped when the kernel does it
+#     (sleep-backport 0045)
 #   - aoss_cxsd_only, as in the daily setup (hourly reset in AOSD)
 #   - sync_state forced on every provider
 # qcom_adsp_pwr_lmts stays blacklisted (it crashes this ADSP).
@@ -79,7 +80,12 @@ fi
 sudo modprobe icc_hold nodes=/soc@0/ufshc@1d84000 tag=3
 sudo dmesg | grep 'icc_hold: holding [1-9][0-9]* paths (tag 3)' >/dev/null ||
     { echo "error: icc_hold holds no UFS path; boot votes NOT released" >&2; exit 1; }
-sudo modprobe cntv_arm
+# A kernel with sleep-backport 0045 arms the deadline itself.
+if journalctl -k -b -o cat | grep 'idle CPUs keep a far timer deadline' >/dev/null; then
+    echo "kernel arms the idle deadline itself (0045): cntv_arm not loaded"
+else
+    sudo modprobe cntv_arm
+fi
 sudo modprobe aoss_cxsd_only || echo "warning: aoss_cxsd_only did not load: AOSD allowed (hourly reset possible)" >&2
 i=0
 while [ $i -lt 90 ] && [ ! -e /proc/asound/card0 ]; do sleep 1; i=$((i + 1)); done
@@ -88,7 +94,7 @@ n=0
 for p in $(find /sys/devices -name state_synced); do
     [ "$(cat "$p")" = 1 ] || { printf 1 | sudo tee "$p" >/dev/null; n=$((n + 1)); }
 done
-echo "UFS held, cntv_arm loaded, AOSD $([ -d /sys/module/aoss_cxsd_only ] && echo off || echo allowed), sync_state forced on $n provider(s)"
+echo "UFS held, cntv_arm $([ -d /sys/module/cntv_arm ] && echo loaded || echo "not loaded"), AOSD $([ -d /sys/module/aoss_cxsd_only ] && echo off || echo allowed), sync_state forced on $n provider(s)"
 status
 echo
 echo "Ready: stop any VM, unplug the charger, close the lid for 1 h or more."
