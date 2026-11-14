@@ -276,6 +276,15 @@ the end.
       (bootstrap.md, the first import) no longer holds on the sleep
       kernel. Not measured: wattage (2 min), `deep` at EL2, `deep`
       without the prep.
+      **`deep` at EL1 overnight, 14 November 00:17-10:47** (same boot,
+      prep in force, no cntv_arm, battery, radios on): 631 min, 538 mAh
+      = 8.87 Wh = **0.84 W, `cxsd`/`ddr` 100.0 %**, woke by the lid, no
+      errors on resume. The first full night on battery of any
+      deep-sleeping setup here (gauge error about ±0.05 W over this
+      length; B at EL2 has 0.70 W over 3.5-4 h, ±0.16 W). `apss` +1 entry
+      but `cxsd`/`ddr` +11: CX came up about once an hour while APSS
+      stayed down (something below Linux; same period as the AOSD
+      resets, not looked into).
       **The arming as a kernel patch (written 13 November, NOT BUILT):**
       sleep-backport 0045, fork `book4/7.2-sleep` 10f75dbda:
       `arm_arch_timer.c`, in the existing CPU PM notifier: at
