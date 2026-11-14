@@ -5,7 +5,9 @@
 # Run as yourself: bash ~/spss-check.sh
 set -euo pipefail
 d=$HOME/Projects/book4-edge-linux/tools/power/spss-check
-[ $d/spss_check.ko -nt $d/spss_check.c ] || bash $d/build.sh
+# rebuild when the source is newer or the module is for another kernel
+{ [ $d/spss_check.ko -nt $d/spss_check.c ] &&
+  [ "$(modinfo -F vermagic $d/spss_check.ko | cut -d' ' -f1)" = "$(uname -r)" ]; } || bash $d/build.sh
 sudo -v
 for i in 1 2; do
   sudo rmmod spss_check 2>/dev/null || true

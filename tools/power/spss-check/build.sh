@@ -5,11 +5,17 @@
 # against ~/src/patchwork, which writes only to a scratch directory in
 # Fedora's home. The module lands next to this script (git-ignored).
 #
-#   bash tools/power/spss-check/build.sh [KERNEL_TREE]   (default: ~/src/patchwork, Fedora home)
+#   bash tools/power/spss-check/build.sh [KERNEL_TREE]
+# Default tree: the running kernel's, ~/src/patchwork-sleep (LOCALVERSION=s)
+# on 7.2.7-book4s, ~/src/patchwork otherwise (Fedora home).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(cd "$here/../../.." && pwd)
-tree=${1:-'~/src/patchwork'}
+case "$(uname -r)" in
+    *-book4s) deftree='~/src/patchwork-sleep'; lv=s ;;
+    *)        deftree='~/src/patchwork'; lv= ;;
+esac
+tree=${1:-$deftree}
 if findmnt -rn -O ro /mnt/fedora/home >/dev/null; then
     echo "error: /mnt/fedora/home is mounted read-only; unmount it first (the container needs it read-write)" >&2
     exit 1
@@ -18,7 +24,7 @@ c=$(base64 -w0 "$here/spss_check.c"); mk=$(base64 -w0 "$here/Makefile")
 inner="set -euo pipefail
 d=\$(mktemp -d ~/.spss-check-build.XXXXXX); trap 'rm -rf \$d' EXIT
 echo $c | base64 -d > \$d/spss_check.c; echo $mk | base64 -d > \$d/Makefile
-make -s -C $tree LOCALVERSION= M=\$d modules >&2
+make -s -C $tree LOCALVERSION=$lv M=\$d modules >&2
 modinfo -F vermagic \$d/spss_check.ko >&2
 base64 -w0 \$d/spss_check.ko"
 bash "$repo/install/arch/fedora-shell.sh" bash -lc "$inner" > "$here/spss_check.ko.b64"
