@@ -180,3 +180,10 @@ Then: open an issue on `ciscobugger/book4-edge-linux`. Same machine family,
 complementary gaps: they have the camera and a deeper EC decode, we have the
 backlight command and the 14". That exchange moves both repositories the same
 day, which no mailing list will.
+
+- **14 November 2026, omarchy#15860:** camotim (15" NP750XQB, Omarchy edge
+  image) reported the keyboard tagged as a tablet pad and a touchpad at
+  another I2C address. Replied with our cause and rule for the keyboard
+  (`userspace/keyboard/99-book4-keyboard.rules`, same `0CF2:9050`):
+  https://github.com/omacom/omarchy/discussions/15860#discussioncomment-19614234
+
