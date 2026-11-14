@@ -28,6 +28,13 @@ acc() {   # accumulated 19.2 MHz ticks in aosd cxsd ddr (0 if unreadable)
         printf '%s ' "${v:-0}"
     done
 }
+cxinfo() {  # cxsd entries, apss entries, cxsd "Last Entered At" in ticks (0 if unreadable)
+    local c a l
+    c=$(awk -F: '/^Count/{gsub(/ /,"",$2); print $2}' "$st/cxsd" 2>/dev/null)
+    a=$(awk -F: '/^Count/{gsub(/ /,"",$2); print $2}' "$st/apss" 2>/dev/null)
+    l=$(awk -F: '/Last Entered At/{gsub(/ /,"",$2); print $2}' "$st/cxsd" 2>/dev/null)
+    printf '%s %s %s' "${c:-0}" "${a:-0}" "${l:-0}"
+}
 boot() {  # which entry: el1, el2-sleep (daily) or a tools/power/el2-dt-test.sh variant
     local r
     grep -q 'id_aa64mmfr0.ecv=1' /proc/cmdline || { echo el1; return; }
@@ -56,19 +63,20 @@ notify() {  # HEADLINE BODY: an Omarchy notification in every logged-in user's s
 case "${1:-}/${2:-}" in
 pre/*)
     mkdir -p "$run"
-    echo "$(date +%s) $(batt) $(acc)" > "$run/pre"
+    echo "$(date +%s) $(batt) $(acc)$(cxinfo)" > "$run/pre"
     radios > "$run/radios"
     rm -f "$run/post"
     ;;
 post/*)
     [ -e "$run/pre" ] || exit 0
-    echo "$(date +%s) $(batt) $(acc)" > "$run/post"
+    echo "$(date +%s) $(batt) $(acc)$(cxinfo)" > "$run/post"
     systemd-run --quiet --on-active=60 --unit="book4-sleep-report-$(date +%s)" "$self" report >/dev/null 2>&1 || true
     ;;
 report/*)
     [ -e "$run/pre" ] && [ -e "$run/post" ] || exit 0
-    read -r t0 c0 v0 s0 a0 x0 d0 < "$run/pre"
-    read -r t1 c1x v1x s1 a1 x1 d1 < "$run/post"
+    read -r t0 c0 v0 s0 a0 x0 d0 xc0 ac0 xl0 < "$run/pre"
+    read -r t1 c1x v1x s1 a1 x1 d1 xc1 ac1 xl1 < "$run/post"
+    xc0=${xc0:-0}; ac0=${ac0:-0}; xc1=${xc1:-0}; ac1=${ac1:-0}; xl1=${xl1:-0}
     read -r c1 v1 s2 <<<"$(batt)"
     rad=$(cat "$run/radios" 2>/dev/null || true)
     rm -f "$run/pre" "$run/post" "$run/radios"
@@ -89,6 +97,13 @@ report/*)
         line="[$(boot)] slept $((secs / 60)) min, charger involved ($s0 -> $s1 -> $s2): no wattage; $res"
         w=
     fi
+    # How often CX went down in this sleep (once = never disturbed) against
+    # APSS, and when it last did, in the AOP's time since power-on: the
+    # chip is woken below Linux at each full hour of that clock (14 November).
+    if [ "$xc1" -gt "$xc0" ]; then
+        line="$line$(awk -v n=$((xc1 - xc0)) -v p=$((ac1 - ac0)) -v l="$xl1" 'BEGIN { s = l / 19200000
+            printf "; CX entries %d (APSS %d), last at +%dh %02dm %02ds of the AOP clock", n, p, int(s/3600), int((s%3600)/60), int(s%60) }')"
+    fi
     logger -t book4-sleep "$line"
     # A desktop notification when the figure means something: on battery
     # throughout and at least 30 minutes asleep.
@@ -103,10 +118,12 @@ report/*)
                      else printf "Deep sleep %.0f%% of the time.", cx }')
         notify "${msg%%|*}" "${msg#*|}"
     fi
-    [ -e "$csv" ] || echo "start,minutes,mah,watts,status,aosd_ticks,cxsd_ticks,ddr_ticks,kernel,boot,radios" > "$csv"
+    [ -e "$csv" ] || echo "start,minutes,mah,watts,status,aosd_ticks,cxsd_ticks,ddr_ticks,kernel,boot,radios,cxsd_entries,apss_entries,cxsd_last_entered_ticks" > "$csv"
     # the radios column came on 23 October: extend an older header once
-    head -1 "$csv" | grep -q ',radios$' || sed -i '1s/$/,radios/' "$csv"
-    echo "$(date -d @"$t0" +%FT%T),$((secs / 60)),$(((c0 - c1) / 1000)),$w,$s0/$s1/$s2,$((a1 - a0)),$((x1 - x0)),$((d1 - d0)),$(uname -r),$(boot),$rad" >> "$csv"
+    head -1 "$csv" | grep -q ',radios' || sed -i '1s/$/,radios/' "$csv"
+    # CX/APSS entry counts came on 14 November
+    head -1 "$csv" | grep -q ',cxsd_entries' || sed -i '1s/$/,cxsd_entries,apss_entries,cxsd_last_entered_ticks/' "$csv"
+    echo "$(date -d @"$t0" +%FT%T),$((secs / 60)),$(((c0 - c1) / 1000)),$w,$s0/$s1/$s2,$((a1 - a0)),$((x1 - x0)),$((d1 - d0)),$(uname -r),$(boot),$rad,$((xc1 - xc0)),$((ac1 - ac0)),$xl1" >> "$csv"
     ;;
 esac
 exit 0

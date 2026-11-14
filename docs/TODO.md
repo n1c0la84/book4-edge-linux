@@ -421,6 +421,38 @@ the end.
 - [ ] **Why AOSD resets** (x1e-sleep's open issue too): PS_HOLD hard reset
       at N hours + ~1 min after boot. Not ours to solve alone; follow
       x1e-sleep and #94.
+      **An hourly visitor below Linux (14 November).** In the 631 min
+      `deep` night at EL1 (AOSD off) `apss` gained 1 entry but `cxsd` and
+      `ddr` 11 each: CX came up and DDR left self-refresh ten times while
+      APSS stayed down. The sleep ran from 1.19 h to 11.71 h of the AOP
+      clock (qcom_stats timestamps, 19.2 MHz, zero about a minute before
+      the kernel starts): exactly the ten full hours 2..11 lie inside.
+      The last re-entry is at 39 604.97 s = **11 h + 4.97 s**. Against
+      "every N seconds from suspend start": that would need 3531 s, and
+      landing within 5 s of a full hour by chance is ~0.3 %. Each visit is
+      short: CX was down 37 849.6 s of the 37 853 s, and `ddr_stats`
+      shows ~1 s in total at 200 MHz (nobody votes for more). Not the
+      ADSP or CDSP (their sleep counts did not move) and not APSS. So
+      something with a clock running since power-on wakes the SoC at each
+      full hour: the AOP itself, the Secure Processor (started by UEFI,
+      no Linux driver, PAS 14), or a PMIC function. Most likely the same
+      event as the AOSD reset (hour marks since boot, x1e-sleep: N h +
+      ~38 s after the kernel's boot): with AOSD off the visit is served,
+      with XO off it ends in PS_HOLD. The 48 h reset of 14 October (47 h
+      59 min of uptime) is also a full hour of that clock.
+      **Instrument:** book4-sleep-log now records per sleep the `cxsd`
+      and `apss` entries and when CX last went down ("CX entries 11
+      (APSS 1), last at +11h 00m 04s of the AOP clock"; three new CSV
+      columns); reinstall with `install/arch/sleep-log.sh`. Every sleep
+      then tests the hour-mark law, at EL1 and EL2, s2idle and deep,
+      battery and AC.
+      **To identify it:** (1) a 5 min sleep across the next full hour of
+      the AOP clock: expect 2 CX entries, the second at N h + 5 s; one
+      not across: 1. (2) The same at EL2 (the daily setup): if it is
+      there too, Gunyah is out. (3) Stop the Secure Processor before a
+      sleep (`qcom_scm_pas_shutdown(14)`, returned 0 at EL2 on 19
+      October) and see whether the visits stop. (4) The Windows sleep
+      study: does Windows show an hourly wake in standby?
 - [ ] **Verify sleep-backport 0024/0025** (upstream's VA/WSA macro commits
       in place of our first versions): both LPASS vote counts 0 when idle,
       the collapse as before, sound working.
