@@ -30,8 +30,10 @@ this ADSP. **Night of 13-14 November: `deep` at EL1, 631 min on
 battery, 0.84 W, `cxsd` 100 %, clean resume** (not reported yet). In
 that night CX came up ten times with APSS down throughout, about hourly
 (the last at 11 h + 5 s of the AOP's clock), possibly the event behind
-the hourly AOSD resets; but a 76 s sleep across the 12 h mark showed no
-visit, so the rule is not established (TODO.md, "Why AOSD resets"). The
+the hourly AOSD resets. With the Secure Processor stopped
+(`tools/experiments/spss-stop.sh`, 11:04) a 76 s sleep across the 12 h
+mark showed no visit and still collapsed; no control with it running yet
+(TODO.md, "Why AOSD resets"). The
 sleep log now records CX entries per sleep (installed 14 November). The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
 tested; parked, the build would replace the daily kernel). Instead: a

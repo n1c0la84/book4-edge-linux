@@ -446,20 +446,22 @@ the end.
       columns); reinstall with `install/arch/sleep-log.sh`. Every sleep
       then tests the hour-mark law, at EL1 and EL2, s2idle and deep,
       battery and AC.
-      **First control, 14 November 11:04:47-11:06:07 (deep, EL1): the
-      simple rule is wrong or incomplete.** CX went down at 11 h 59 min
-      26 s of the AOP clock and stayed down 76 s, across 12 h 00 min 05 s,
-      with one entry only: no visit. So either the visits are not tied to
-      the full hours (the night also fits "every 3531 s from the start of
-      the sleep", first after 58.9 min), or they only come once the SoC
-      has been down for a while (39 s here; but the AOSD reset of 19
-      October came at boot + 1 h after 15 min asleep, so not much more
-      than that). Wi-Fi is not it: ath12k is powered down and reloaded
-      around every suspend. Next evidence: ordinary sleeps of an hour or
-      more with the new log (entries and the last entry time fit the
-      period and phase); stopping the Secure Processor waits for a rule
-      that predicts a visit.
-      **To identify it (after that):** (1) a 5 min sleep across the next full hour of
+      **Secure Processor stopped, 14 November 11:04:26** (`spss-stop.sh`:
+      `qcom_scm_pas_shutdown(14) = 0`, EL1, same boot as the night), then
+      a deep sleep 11:04:47-11:06:07: CX went down at 11 h 59 min 26 s of
+      the AOP clock and stayed down 76 s, across 12 h 00 min 05 s, with
+      **one entry: no visit**, and `cxsd` 95.5 % of the 80 s, so stopping
+      SPSS leaves no stuck vote. That is what "SPSS is the visitor"
+      predicts, but there is no control yet: no sleep across a full hour
+      with SPSS running has been logged with entry counts (the night also
+      fits "every 3531 s from the start of the sleep", which this nap
+      cannot test). (I first took this nap for the control; the owner had
+      already run the stop.) Wi-Fi is not it: ath12k is powered down and
+      reloaded around every suspend. Next: (a) on this boot, SPSS still
+      stopped, a sleep of 65 min or more: 1 entry against the night's ~1
+      per hour would settle it; (b) after a reboot (SPSS running), a
+      sleep across a full hour and one of 65 min+: expect visits.
+      **Other checks:** (1) a 5 min sleep across the next full hour of
       the AOP clock: expect 2 CX entries, the second at N h + 5 s; one
       not across: 1. (2) The same at EL2 (the daily setup): if it is
       there too, Gunyah is out. (3) Stop the Secure Processor before a
