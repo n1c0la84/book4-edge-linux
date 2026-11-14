@@ -457,10 +457,27 @@ the end.
       fits "every 3531 s from the start of the sleep", which this nap
       cannot test). (I first took this nap for the control; the owner had
       already run the stop.) Wi-Fi is not it: ath12k is powered down and
-      reloaded around every suspend. Next: (a) on this boot, SPSS still
-      stopped, a sleep of 65 min or more: 1 entry against the night's ~1
-      per hour would settle it; (b) after a reboot (SPSS running), a
-      sleep across a full hour and one of 65 min+: expect visits.
+      reloaded around every suspend.
+      **273 min with SPSS stopped, 14 November 11:12:42-15:45:16** (same
+      boot, deep, EL1, battery): **CX entries 1 (APSS 1)**, entered at
+      12 h 07 min 20 s of the AOP clock and never left until the lid:
+      `cxsd` 100 %, 0.80 W. Four full hours (13..16 h) and four 58.9 min
+      intervals passed without a visit, against ten visits in the 631 min
+      night on the same boot with SPSS running. **The Secure Processor is
+      the hourly visitor** (one A/B on one boot; the control from the
+      other side, visits back after a reboot, comes with the next sleeps
+      of an hour or more: the log counts them). The visits cost nothing
+      measurable (0.84 W with, 0.80 W without). Why SPSS wakes hourly is
+      unknown (Linux has no driver for it; Windows adopts it).
+      **What follows:** (a) the AOSD reset is probably this visit arriving
+      with XO off. Test: SPSS stopped, `rmmod aoss_cxsd_only` (AOSD
+      allowed), a sleep of two hours or more; before, that reset at the
+      first hour mark. No reset and `aosd` counting = the cause, and full
+      AOSD becomes usable. (b) Whether stopping SPSS is safe as a daily
+      step (Windows keeps Pluton/TPM state there; nothing is erased by a
+      stop, UEFI restarts it at boot) and whether it also works at EL2
+      (19 October: the call returned 0; collapse after it not checked).
+      (c) Tell x1e-sleep (their open issue), owner's OK first.
       **Other checks:** (1) a 5 min sleep across the next full hour of
       the AOP clock: expect 2 CX entries, the second at N h + 5 s; one
       not across: 1. (2) The same at EL2 (the daily setup): if it is
