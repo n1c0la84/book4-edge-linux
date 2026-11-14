@@ -469,6 +469,27 @@ the end.
       of an hour or more: the log counts them). The visits cost nothing
       measurable (0.84 W with, 0.80 W without). Why SPSS wakes hourly is
       unknown (Linux has no driver for it; Windows adopts it).
+      **Control from the other side, 14 November 15:57-17:59** (the boot
+      after the reset below: EL2, s2idle, the daily setup, SPSS running
+      again): 122 min, from 56 s to 2 h 02 min 40 s of the AOP clock:
+      **CX entries 3 (APSS 1), last at 2 h 00 min 04.8 s**, 0.72 W,
+      `cxsd` 100 %. Two full hours inside, two visits. So: SPSS running,
+      a visit at every full hour of the AOP clock + ~5 s, at EL1 and EL2,
+      in deep and s2idle; SPSS stopped, none. Established.
+      **AOSD with SPSS stopped: reset after ~55 s, a different one.**
+      Same EL1 boot, SPSS stopped since 11:04, `rmmod aoss_cxsd_only`
+      (AOSD allowed), `PM: suspend entry (deep)` at 15:55:32 and nothing
+      after it. The SoC restarted at about 15:56:27 (AOP zero of the next
+      boot), at 16 h 51 min of the old AOP clock: not a full hour. The RTC
+      kept the time (the hourly resets put it back to 2024-05-29), so it
+      was not a PMIC power cycle. The firmware booted the default entry
+      (EL2) with the lid shut, which suspended at the greeter (15:57:22);
+      the touchpad (2-0040) did not respond after that resume until the
+      owner's reload alias. So this says nothing about the hourly reset:
+      AOSD + deep + EL1 + SPSS stopped dies at once, cause unknown (AOSD
+      worked for 41 min at EL2 in s2idle on 19 October). The clean test
+      is the daily setup: EL2, s2idle, SPSS stopped, AOSD allowed, two
+      hours or more (with SPSS running that reset at boot + 1 h).
       **What follows:** (a) the AOSD reset is probably this visit arriving
       with XO off. Test: SPSS stopped, `rmmod aoss_cxsd_only` (AOSD
       allowed), a sleep of two hours or more; before, that reset at the

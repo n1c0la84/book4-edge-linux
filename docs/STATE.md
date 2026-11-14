@@ -33,9 +33,12 @@ that night CX came up ten times with APSS down throughout, about hourly
 the hourly AOSD resets. With the Secure Processor stopped
 (`tools/experiments/spss-stop.sh`, 11:04) a 273 min sleep on the same
 boot had a single CX entry, no visit at all (0.80 W, `cxsd` 100 %): **the
-Secure Processor is the hourly visitor**; open: the control after a
-reboot, and whether AOSD stops resetting with it stopped (TODO.md, "Why
-AOSD resets"). The
+Secure Processor is the hourly visitor**, confirmed from the other side
+after the reboot (EL2, s2idle: 122 min, visits at 1 h and 2 h + 5 s of the
+AOP clock). A first AOSD test with it stopped (EL1, deep) reset ~55 s
+after going down, not at an hour and with the RTC intact: a different
+failure; the clean test is at EL2 in s2idle (TODO.md, "Why AOSD resets").
+The
 sleep log now records CX entries per sleep (installed 14 November). The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
 tested; parked, the build would replace the daily kernel). Instead: a
