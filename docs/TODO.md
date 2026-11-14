@@ -490,7 +490,25 @@ the end.
       worked for 41 min at EL2 in s2idle on 19 October). The clean test
       is the daily setup: EL2, s2idle, SPSS stopped, AOSD allowed, two
       hours or more (with SPSS running that reset at boot + 1 h).
-      **What follows:** (a) the AOSD reset is probably this visit arriving
+      **The clean test, 14 November: the hourly AOSD reset happens with
+      SPSS stopped too.** EL2, s2idle, the daily setup (boot of 15:56:27
+      by the AOP clock). SPSS stopped at 18:08:32 (`pas_shutdown(14) =
+      0`); check nap 18:08:41-18:10:55 with AOSD still off: `cxsd` 130.7 s
+      of 134 s, one entry, so no stuck vote at EL2 either. Then `rmmod
+      aoss_cxsd_only` at 18:11:56 ("AOSD enabled again") and s2idle from
+      18:12:27; the log ends there. The next boot came up with the RTC at
+      2024-05-29 (PMIC power cycle, the hourly reset's signature); from
+      its clock, PMIC power-on was at about 18:57:36 (±15 s): **3 h +
+      ~70 s of the old AOP clock, 45 min into the sleep.** So the reset
+      comes at the full hour (plus about a minute) whether or not SPSS is
+      running: its visit is not the cause. Both follow the same hourly
+      tick, which must come from the always-on side (AOP or PMIC); SPSS
+      only answers it. The ~1 min between the tick and the power cycle
+      looks like a watchdog expiring after something hangs on the way out
+      of AOSD. Not solvable from Linux as far as we can see: AOSD stays
+      off (`aoss_cxsd_only`), and SPSS stays running (stopping it gains
+      nothing).
+      **Earlier guess, now disproved:** (a) the AOSD reset is probably this visit arriving
       with XO off. Test: SPSS stopped, `rmmod aoss_cxsd_only` (AOSD
       allowed), a sleep of two hours or more; before, that reset at the
       first hour mark. No reset and `aosd` counting = the cause, and full
