@@ -524,6 +524,35 @@ the end.
       filesystem. For linux-omarchy on this laptop: AOSD must be off
       (`{class: aoss_slp, res: sleep, val: disable}` over QMP, as
       aoss_cxsd_only does), or a sleep ends like this.
+      Reported in omarchy#15860 (discussioncomment-19637292).
+      **Who gets AOSD to work, and how (looked up 15 November):**
+      - Windows on this laptop: 5 h sessions at ~98 % hardware low power
+        (sleep study of 8 October). So the firmware can do it.
+      - linux-omarchy at EL1 in deep, DSPs started by Linux through the
+        hypervisor: Surface Pro 11 (AOSS 99.9 %, runs of 10.6 min and
+        about an hour), Yoga Slim 7x (99 % of 22.8 min). Both have NVMe,
+        not UFS.
+      - A Surface Pro 11 at EL2 in s2idle with the DSPs **started by
+        Linux** (justririll/x1e-dsp: `qcom_q6v5_adsp` boots them without
+        qebspil or TZ PAS): CXSD + AOSD + DDR 99.9 % of a 73 min suspend,
+        0.26 W, "no hourly reset" (dwhinham/archiso-aarch64-sp11#38,
+        17 October). 73 min always contains a full hour of the AOP clock.
+      - The hourly reset is reported only where qebspil started the DSPs
+        from UEFI and Linux merely attached: x1e-sleep's Vivobook and
+        this laptop, both EL2 in s2idle.
+      So the best lead for the EL2 reset is how the DSPs were started
+      (what AOSS was told about them, or a handover qebspil never does),
+      not the hourly tick itself. One report on another machine: a lead,
+      not a result. The EL1/deep failure here (UFS lost) is a different
+      thing: nobody else has tried AOSD with UFS, and with deep the
+      firmware may cut what UFS needs to keep its link.
+      **Tests that would tell:** (1) EL1, s2idle with the timer arming,
+      AOSD allowed (DSPs started by Linux, UFS as at EL2 on 19 October):
+      a 3 min stage, then two hours. No reset = the qebspil lead holds
+      and deep is the UFS problem. (2) x1e-dsp on our kernel at EL2 (a
+      12-patch series for 7.3-rc7, ported to 7.2.8 by the SP11 owner;
+      replaces our attach patches 0019-0023): a kernel project, only if
+      full AOSD is worth it (x1e-sleep: 0.25 W with it, 0.17 W without).
       **Earlier guess, now disproved:** (a) the AOSD reset is probably this visit arriving
       with XO off. Test: SPSS stopped, `rmmod aoss_cxsd_only` (AOSD
       allowed), a sleep of two hours or more; before, that reset at the

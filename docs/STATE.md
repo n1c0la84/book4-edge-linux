@@ -44,7 +44,9 @@ deep the same attempt reset after ~55 s with the RTC intact: a different
 failure.) **15 November: the stock-image condition (EL1, deep, AOSD
 allowed, SPSS running) lost the disk on resume** (btrfs errors, power
 held; filesystem clean afterwards): on this laptop AOSD has to stay off
-in every setup tried. The
+in every setup tried (reported in omarchy#15860). Lead for the EL2 hourly
+reset: it is reported only with qebspil-started DSPs; a Surface Pro 11 at
+EL2 with Linux-started DSPs (x1e-dsp) ran AOSD 73 min without it. The
 sleep log now records CX entries per sleep (installed 14 November). The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
 tested; parked, the build would replace the daily kernel). Instead: a
