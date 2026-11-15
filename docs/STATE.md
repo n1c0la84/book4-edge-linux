@@ -49,7 +49,11 @@ reset: it is reported only with qebspil-started DSPs; a Surface Pro 11 at
 EL2 with Linux-started DSPs (x1e-dsp) ran AOSD 73 min without it. At EL1
 in s2idle AOSD worked for the first sleep of a boot (92.8 %, UFS fine)
 and then blocked every collapse (152 min at 2.00 W) until switched off
-again. AOSD stays off everywhere. The
+again. AOSD stays off everywhere. The kernel's own switch
+(`qcom_aoss` debugfs `prevent_aoss_sleep`, Y or N) does not turn it off
+here, only the `val:` form aoss_cxsd_only sends (reported in omarchy#15860,
+discussioncomment-19640176: linux-omarchy needs that message for the 14").
+The
 sleep log now records CX entries per sleep (installed 14 November). The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
 tested; parked, the build would replace the daily kernel). Instead: a
