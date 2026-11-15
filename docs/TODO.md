@@ -553,6 +553,26 @@ the end.
       12-patch series for 7.3-rc7, ported to 7.2.8 by the SP11 owner;
       replaces our attach patches 0019-0023): a kernel project, only if
       full AOSD is worth it (x1e-sleep: 0.25 W with it, 0.17 W without).
+      **Test (1), 15 November, EL1, s2idle, cntv_arm, AOSD allowed
+      (boot of ~18:39):**
+      - 18:42:26-18:45:39 (193 s): **`aosd`, `cxsd`, `ddr`, `apss` 179.0 s
+        each (92.8 %), one entry**, clean resume, UFS fine. The first
+        `aosd` on this laptop since October, and UFS survives it in
+        s2idle at EL1 (so the disk loss was deep + AOSD).
+      - 18:49:39-21:22:06 (152 min), nothing changed in between: **no
+        reset, but nothing collapsed either**: `apss`/`aosd`/`cxsd`/`ddr`
+        did not move (apss last exit still at 354 s of the AOP clock),
+        2.00 W. cntv_arm armed in both sleeps (24 entries, unmasked),
+        DRIPS used twice, 0 rejected, each CPU one s2idle entry: held by
+        Gunyah as when it has no deadline. So the hourly-reset question
+        was not tested (AOSD was never entered again), and there is a new
+        fault: after one sleep that went through AOSD, the next one does
+        not take APSS down. Not seen with AOSD off (many sleeps per boot
+        on 13-14 November). Guess: XO off stops the arch counter and
+        Gunyah's timer bookkeeping no longer matches after the exit.
+        Next: a third short sleep on the same boot (sticky?), then one
+        with `modprobe aoss_cxsd_only` (does turning AOSD off bring the
+        collapse back, or is it gone until reboot?).
       **Earlier guess, now disproved:** (a) the AOSD reset is probably this visit arriving
       with XO off. Test: SPSS stopped, `rmmod aoss_cxsd_only` (AOSD
       allowed), a sleep of two hours or more; before, that reset at the
