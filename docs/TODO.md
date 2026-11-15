@@ -570,9 +570,23 @@ the end.
         not take APSS down. Not seen with AOSD off (many sleeps per boot
         on 13-14 November). Guess: XO off stops the arch counter and
         Gunyah's timer bookkeeping no longer matches after the exit.
-        Next: a third short sleep on the same boot (sticky?), then one
-        with `modprobe aoss_cxsd_only` (does turning AOSD off bring the
-        collapse back, or is it gone until reboot?).
+      - 21:30:37-21:34:56 (260 s), AOSD still allowed, cntv_arm
+        reloaded: again nothing (`apss`/`cxsd` +0).
+      - 21:36:13 `modprobe aoss_cxsd_only` (AOSD off), then
+        21:36:30-21:40:09 (220 s): **`cxsd` 216.8 s (98.5 %), `aosd` 0**,
+        2 CX entries (the 3 h mark of the AOP clock fell inside: SPSS).
+        So nothing is broken until reboot: with AOSD allowed only the
+        first sleep of the boot collapsed, the later ones not at all, and
+        with AOSD off the collapse is back at once. Why is unknown (the
+        counter guess does not explain the recovery). To test the hourly
+        reset at EL1 in s2idle the first sleep of a boot would have to
+        last past a full hour (boot, prep, `rmmod aoss_cxsd_only`, lid
+        shut two hours): possible, not done.
+      **Where AOSD stands on this laptop (15 November):** EL2/s2idle:
+      power cycle at the hour mark. EL1/deep: UFS lost on resume. EL1/
+      s2idle: works for the first sleep of a boot, then blocks every
+      collapse (2.00 W) until it is switched off. It stays off
+      (`aoss_cxsd_only`) in every setup.
       **Earlier guess, now disproved:** (a) the AOSD reset is probably this visit arriving
       with XO off. Test: SPSS stopped, `rmmod aoss_cxsd_only` (AOSD
       allowed), a sleep of two hours or more; before, that reset at the

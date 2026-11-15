@@ -46,7 +46,10 @@ allowed, SPSS running) lost the disk on resume** (btrfs errors, power
 held; filesystem clean afterwards): on this laptop AOSD has to stay off
 in every setup tried (reported in omarchy#15860). Lead for the EL2 hourly
 reset: it is reported only with qebspil-started DSPs; a Surface Pro 11 at
-EL2 with Linux-started DSPs (x1e-dsp) ran AOSD 73 min without it. The
+EL2 with Linux-started DSPs (x1e-dsp) ran AOSD 73 min without it. At EL1
+in s2idle AOSD worked for the first sleep of a boot (92.8 %, UFS fine)
+and then blocked every collapse (152 min at 2.00 W) until switched off
+again. AOSD stays off everywhere. The
 sleep log now records CX entries per sleep (installed 14 November). The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
 tested; parked, the build would replace the daily kernel). Instead: a
