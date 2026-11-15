@@ -508,6 +508,22 @@ the end.
       of AOSD. Not solvable from Linux as far as we can see: AOSD stays
       off (`aoss_cxsd_only`), and SPSS stays running (stopping it gains
       nothing).
+      **The stock-image condition, 15 November: storage lost on resume.**
+      EL1 (`el1-sleep`), prep, `mem_sleep` deep, `rmmod aoss_cxsd_only`
+      (AOSD allowed), SPSS running, nothing else changed: what a stock
+      Omarchy install does. `PM: suspend entry (deep)` at 18:14:38, lid
+      shut about three minutes. It did not reset; on opening the lid the
+      pointer froze, the screen went black, btrfs errors scrolled, then a
+      blinking cursor; power held. Nothing after the suspend entry
+      reached the journal or the text copy: the disk was gone at resume.
+      Next boot (EL2): btrfs mounted clean, no warnings, device stats all
+      0. With AOSD off the same deep suspend resumed every time (2 min,
+      76 s, 273 min, 631 min), so the UFS loss goes with AOSD at EL1 in
+      deep (at EL2 in s2idle AOSD resumed fine for 41 min on 19 October,
+      with the same UFS hold). One run; not repeated, it risks the
+      filesystem. For linux-omarchy on this laptop: AOSD must be off
+      (`{class: aoss_slp, res: sleep, val: disable}` over QMP, as
+      aoss_cxsd_only does), or a sleep ends like this.
       **Earlier guess, now disproved:** (a) the AOSD reset is probably this visit arriving
       with XO off. Test: SPSS stopped, `rmmod aoss_cxsd_only` (AOSD
       allowed), a sleep of two hours or more; before, that reset at the

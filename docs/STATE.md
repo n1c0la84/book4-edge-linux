@@ -1,6 +1,6 @@
 # State
 
-**Updated 14 November 2026**: CL5/DRIPS comparison measured (EL2, book4s
+**Updated 15 November 2026**: CL5/DRIPS comparison measured (EL2, book4s
 kernel, battery, radios on; details in [TODO.md](TODO.md)): A (Omarchy
 shape, no CL5, no system state) 6.18 W awake, 1.46 W asleep, cxsd 0 %;
 B (daily: CL5 + SS1/DRIPS) 5.97 W, 0.70 W, cxsd 100 %; C (no CL5,
@@ -41,7 +41,10 @@ s2idle with it stopped and AOSD allowed, the machine power-cycled at the
 2024-05-29. Both follow the same hourly tick of the always-on side. AOSD
 stays off, SPSS stays running (TODO.md, "Why AOSD resets"). (At EL1 in
 deep the same attempt reset after ~55 s with the RTC intact: a different
-failure.) The
+failure.) **15 November: the stock-image condition (EL1, deep, AOSD
+allowed, SPSS running) lost the disk on resume** (btrfs errors, power
+held; filesystem clean afterwards): on this laptop AOSD has to stay off
+in every setup tried. The
 sleep log now records CX entries per sleep (installed 14 November). The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
 tested; parked, the build would replace the daily kernel). Instead: a
