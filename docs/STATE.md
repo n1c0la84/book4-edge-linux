@@ -61,8 +61,8 @@ reply on Burch's linux-arm-msm thread with the finding, drafted in
 `docs/drafts/` for the owner to send. Next (plan in TODO.md): the blog post's EL1
 claim, the VM check, a Windows
 battery-standby figure for the ~0.7 W, the Omarchy edge image with one
-suspend, then `el2-dt-test.sh omshape|nocl5 undo` and
-`test-entry.sh remove el1-sleep`. Still pending: the Omarchy edge image boot test (live only) when
+suspend. Boot entries tidied 15 November: `el2-sleep` (default),
+`el1-sleep`, `el2-spk`, `el2-nomisc` remain. Still pending: the Omarchy edge image boot test (live only) when
 birkskyum links it. The one page to read at the start of every
 working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in

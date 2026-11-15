@@ -619,8 +619,11 @@ the end.
 - [ ] **Verify sleep-backport 0024/0025** (upstream's VA/WSA macro commits
       in place of our first versions): both LPASS vote counts 0 when idle,
       the collapse as before, sound working.
-- [ ] **Run `install/arch/boot-cleanup.sh`**: drop the October test entries,
-      the PDC test kernel and unused test DTBs.
+- [x] **Run `install/arch/boot-cleanup.sh`** (15 November: `boot-cleanup.sh
+      el2-sleep el1-sleep el2-spk el2-nomisc`): removed the entries
+      `el1-book4s`, `el2-omshape`, `el2-nocl5`, their two DTBs and the old
+      module tree `7.2.7-book4s.old`. Left in GRUB: `el2-sleep` (default),
+      `el1-sleep`, `el2-spk`, `el2-nomisc`.
 - [ ] **Primary USB-C controller fails after sleep** (7 November, 18:38;
       not investigated). A USB stick wasn't detected on that port:
       `a600000.usb` (`dwc3-qcom`) was in runtime PM `error`, `usb2`/`usb3`
