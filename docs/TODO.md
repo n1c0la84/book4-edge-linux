@@ -582,6 +582,19 @@ the end.
         reset at EL1 in s2idle the first sleep of a boot would have to
         last past a full hour (boot, prep, `rmmod aoss_cxsd_only`, lid
         shut two hours): possible, not done.
+      **The kernel's own switch does nothing here (15 November, asked by
+      birkskyum, discussioncomment-19637500).** `qcom_aoss` debugfs
+      `prevent_aoss_sleep` sends `{class: aoss_slp, res: sleep: %s}` with
+      `enable` (Y) / `disable` (N); the same in our 7.2.7 and in 7.3. One
+      EL2 boot (21:46), s2idle, all before the first hour mark:
+      (1) `rmmod aoss_cxsd_only`, 131 s: `aosd` 127.5 s (97.3 %);
+      (2) `echo N`, 111 s: `aosd` 108.0 s (97.3 %);
+      (3) `echo Y`, 125 s: `aosd` 122.8 s (98.2 %);
+      (4) `modprobe aoss_cxsd_only` (`{class: aoss_slp, res: sleep, val:
+      disable}`), 108 s: `aosd` 0, `cxsd` 104.1 s (96.4 %).
+      Both writes returned without error. So only the `val:` form is
+      obeyed; linux-omarchy needs a patch that sends it for the 14", and
+      mainline's format string looks wrong for this AOP.
       **Where AOSD stands on this laptop (15 November):** EL2/s2idle:
       power cycle at the hour mark. EL1/deep: UFS lost on resume. EL1/
       s2idle: works for the first sleep of a boot, then blocks every
