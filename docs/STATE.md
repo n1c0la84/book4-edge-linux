@@ -1,6 +1,6 @@
 # State
 
-**Updated 15 November 2026**: CL5/DRIPS comparison measured (EL2, book4s
+**Updated 16 November 2026**: **Windows standby on battery measured: 0.11 W** over 570 min (sleep study; Linux 0.70-0.84 W), so ~0.6 W of board power is still to find (TODO.md, board power item). Earlier:: CL5/DRIPS comparison measured (EL2, book4s
 kernel, battery, radios on; details in [TODO.md](TODO.md)): A (Omarchy
 shape, no CL5, no system state) 6.18 W awake, 1.46 W asleep, cxsd 0 %;
 B (daily: CL5 + SS1/DRIPS) 5.97 W, 0.70 W, cxsd 100 %; C (no CL5,

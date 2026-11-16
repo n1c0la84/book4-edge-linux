@@ -4,8 +4,9 @@
 - Daily setup (EL2, CL5 + SS1/DRIPS, AOSD off): `cxsd`/`ddr` ~100 %,
   **0.70 W** over 3.5-4 h on battery (0.64-1.03 W across October-November;
   no full night on battery yet). Other X1E laptops: 0.17-0.26 W. The SoC is
-  collapsed, so the rest is the board; no Windows battery figure for this
-  board exists yet, so the real gap is unknown.
+  collapsed, so the rest is the board. **Windows on this board: 0.11 W**
+  (sleep study, 570 min on battery, 16 November; 0.06-0.17 W with the
+  gauge's steps), so about 0.6 W is still to find.
 - At EL2 TrustZone needs three things for DRIPS: every Linux vote gone, the
   wake deadline in the EL1 timer (`el1tmr`), and the clusters in CL5.
   Without CL5 it refuses SS1 and DRIPS every time and one CPU spins

@@ -669,6 +669,20 @@ the end.
       l12b (1.2 V, no consumer on the 14"; speaker-amp vdd-io on the 15", so
       test it last). A Windows battery-standby figure (one hour
       lid closed, `powercfg /sleepstudy`) would give the target.
+      **The Windows figure (night of 15-16 November, sleep study, battery,
+      lid closed, hibernate off): 0.11 W.** Modern Standby 22:58-08:28
+      (570 min): 35 355 -> 34 299 mWh = 1 056 mWh = **111 mW**, hardware
+      low-power time 99.9 %; the gauge moves in 528 mWh steps (two in
+      that session, at 02:54 and 06:43), so 0.06-0.17 W. The first 32 min
+      (22:25-22:58) drew 0.97 W until Windows went to "restricted
+      standby" (network disconnected, `UserConnectivityPolicy 2`); the
+      whole night 22:25-08:28 is 0.16 W. Linux on the same board: 0.70 W
+      (EL2, s2idle), 0.84 W (EL1, deep, 631 min). So **about 0.6-0.7 W
+      of board power that Windows switches off and Linux does not**: the
+      hunt is worth it. The rails are not it by Windows' own recipes (23
+      October), so look at the devices' own sleep states: Wi-Fi/BT chip,
+      touchscreen and touchpad, fingerprint reader, camera, speaker amps,
+      EC, USB-C retimers.
 
 ## Test of 10 October (DT 0005/0006, emuec orientation 0005)
 
