@@ -1,0 +1,23 @@
+For: https://github.com/jglathe/linux_ms_dev_kit/issues/102
+Not posted. Owner's OK first.
+------------------------------------------------------------------------
+
+Two findings from the Galaxy Book4 Edge 14" (X1E80100, EL2 and EL1) that
+this thread does not have yet, in case they save someone time:
+
+- **Turning AOSD off:** only `{class: aoss_slp, res: sleep, val: disable}`
+  works here. The kernel's debugfs `qcom_aoss/prevent_aoss_sleep` sends
+  `{class: aoss_slp, res: sleep: enable|disable}` (no `val`), and with
+  either value `aosd` still reached 97 % in the next suspend. Table:
+  https://github.com/omacom/omarchy/discussions/15860#discussioncomment-19640176
+- **The hourly event:** with AOSD off, `cxsd` gains one entry per full hour
+  of the AOP clock while `apss` gains none: the Secure Processor (PAS 14)
+  wakes CX. After `qcom_scm_pas_shutdown(14)` there were no visits in 273
+  minutes. It is not the cause of the hourly AOSD reset though: with it
+  stopped and AOSD on, the machine still power-cycled at the 3 h mark.
+
+Same CL5 result here as in section 3 of the first post: at EL2 TrustZone
+refused DRIPS 1.63 billion times in one night without CL5 in the cluster
+domains.
+
+Notes: https://github.com/n1c0la84/book4-edge-linux/blob/main/docs/power.md

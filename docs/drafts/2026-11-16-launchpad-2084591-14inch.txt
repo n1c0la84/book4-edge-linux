@@ -1,0 +1,33 @@
+For: https://bugs.launchpad.net/bugs/2084591 (reply to Rafael Meneses, 16 November 2026)
+Not posted. The owner posts it (Launchpad account).
+------------------------------------------------------------------------
+
+Thanks Rafael, and congratulations on the 16". A status from the 14"
+(NP940XMA, X1E80100), in case it helps you and other owners.
+
+I run Arch with our own 7.2-based kernel, not Ubuntu, so this is not a test
+of your ISO yet; I can boot it from USB on the 14" and report if you want.
+
+What may be new for your build is sleep. On the 14" the laptop reaches full
+deep sleep in s2idle (CX collapse and DDR self-refresh for ~100 % of the
+time) at about 0.7 W for the whole board; Windows on the same machine
+measures 0.11 W. What it needed, with patches and measurements:
+https://github.com/n1c0la84/book4-edge-linux (docs/power.md, docs/PLAN.md)
+
+Three things specific to the Book4 Edge that cost me time:
+- AOSD (the state below CX collapse) has to stay off: with it the machine
+  power-cycles at a full hour of uptime in s2idle, and in "deep" it lost the
+  UFS disk on resume. Only the QMP message
+  {class: aoss_slp, res: sleep, val: disable} turns it off; the kernel's
+  debugfs prevent_aoss_sleep has no effect on this firmware.
+- The ADSP "Modern Standby" message (qcom_adsp_pwr_lmts) crashes Samsung's
+  ADSP firmware; Samsung disables that interface on Windows too.
+- At EL1, s2idle only collapses if the virtual timer is left armed and
+  unmasked; "deep" (PSCI SYSTEM_SUSPEND) works without that.
+
+Your fingerprint import solved a problem I had left open (Windows wiping
+the print): I have taken the script into my repo with credit. Thanks also
+for the credit in yours.
+
+(Like you, I work with an AI coding assistant, Claude Code; every figure
+above was measured on the laptop.)
