@@ -1055,6 +1055,44 @@ Not yet reported:
 
 ## Arch and Omarchy
 
+- [ ] **Omarchy 4.5 and Omarchy's own repository** (review started 16
+      November; installed: 4.0.4-3 built locally, 4.5.0 released 5
+      November, 1402 commits and 112 new migrations later). First pass:
+      - **The reason for the local build is gone.** `pkgs.omarchy.org/
+        stable/aarch64` now carries `omarchy 4.5.0-3`, `omarchy-settings`,
+        `omarchy-keyring`, `flea 0.4.3`, `mise-bin`, `google-chrome` (221
+        packages; `folio` in edge), and 4.5 ships an official generic
+        aarch64 pacman.conf (`default/pacman/aarch64/`): `[omarchy]`
+        first, then core/extra/alarm from Omarchy's own Arch Linux ARM
+        mirror (`arm-stable-mirror.omarchy.org`).
+      - **4.5 needs that repository anyway:** `omarchy` now depends on
+        `omarchy-security-functions`, `omarchy-themes-intros`,
+        `omarchy-speedtest`, `ttf-jetbrains-mono-nerd-basic`, and about
+        twenty migrations `omarchy-pkg-add` things only it has (omasnap,
+        owe, hype, monologue, signed, gliff, disktree-bin,
+        omarchy-hyprland-titlebars, omarchy-power-profiles-daemon).
+      - Only 8 names overlap with Arch Linux ARM. With `[omarchy]` first:
+        `quickshell` 0.3.2.r7 (a patched snapshot, ours is 0.3.2-1; the
+        4.5 shell may need it), `yt-dlp` newer, but **`hyprland` 0.56.2-7
+        and `aquamarine` 0.15.1 are older than our 0.57.1 / 0.16.0**
+        (to settle: downgrade to Omarchy's, or keep ours with IgnorePkg).
+      - Migrations: 54 of the 112 touch packages, boot or system files.
+        The Limine / mkinitcpio / kernel-cmdline ones are guarded by
+        `limine-mkinitcpio` being present or by the machine (N1x, ProArt,
+        DGX Spark); to be confirmed one by one. `1791403252` reorders
+        pacman.conf only if `[omarchy]` exists, then runs a full system
+        update.
+      - Our one patch (battery found by type, not by BAT name) still
+        applies to 4.5.0, so it is not upstream: send it, or it is lost
+        with the stock package.
+      - Still to check: files in the 4.5 package against our `NoExtract`
+        list (mkinitcpio hooks, update guard, Limine drop-ins), what
+        `omarchy update` does on aarch64 (kernel, snapshots, restart),
+        the Hyprland config against 0.56, the remaining migration guards.
+      - **How to try it safely:** a writable btrfs snapshot of the `arch`
+        subvolume as a second boot entry (`rootflags=subvol=`), upgrade
+        that copy, keep the daily one untouched until it is right.
+
 - [ ] **Make the Arch/Omarchy setup reproducible end to end**: the whole
       order is in [install.md](install.md) (20 October), every step a script;
       the sequence has never run on an empty disk, and
