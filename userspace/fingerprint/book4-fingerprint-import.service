@@ -1,0 +1,14 @@
+# Book4 (install/arch/fingerprint-import.sh), after SB4-Edge-Linux
+[Unit]
+Description=Book4: use fingerprints enrolled in Windows Hello for Linux login
+# Before the login screen, so a finger enrolled in Windows works at the first login after it.
+Before=display-manager.service
+After=systemd-udev-settle.service dbus.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/book4-fingerprint-import --auto
+TimeoutStartSec=30
+
+[Install]
+WantedBy=multi-user.target

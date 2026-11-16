@@ -1,0 +1,149 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0-only
+# From Rafael Meneses' SB4-Edge-Linux (github.com/rafaelmnz/SB4-Edge-Linux,
+# overlay/fingerprint/book4-fingerprint-import, commit 5a7ac2f, GPL-2.0),
+# written for the 16"; only names changed here (book4- instead of sb4edge-).
+# Same sensor and firmware on the 14" (EgisTec 1c7a:05a1, 9050.1.2.32).
+# It explains what docs/TODO.md recorded on 8 October ("booting Windows wiped
+# the print"): each system deletes on-chip prints it does not know.
+# Installed by install/arch/fingerprint-import.sh.
+"""Use fingerprints enrolled in Windows Hello for Linux login too.
+
+The EgisTec sensor keeps prints on the chip, shared by Windows and Linux. A print enrolled in Linux is unknown to
+Windows (Windows Hello keeps its own database), and enrolling the same finger in Linux makes fprintd delete the
+Windows print (its duplicate check removes on-chip prints it does not know). So: enroll in Windows Hello, and this
+records the chip prints not yet known to fprintd as fingers of a Linux user. Nothing is written to the sensor.
+
+  sudo book4-fingerprint-import [user] [finger]   one new print -> that finger (default: you, right-index)
+  sudo book4-fingerprint-import --list
+  book4-fingerprint-import --auto                 every new print -> the only regular user, next free finger
+                                                    (book4-fingerprint-import.service at boot, and at login)
+  book4-fingerprint-import --pam                  --auto in the background, for pam_exec (does not delay login)
+
+--auto does nothing when there is more than one regular user: a finger someone enrolled in their own Windows
+account must not unlock another person's Linux account. Use the manual form then.
+"""
+import glob, os, pwd, subprocess, sys, time
+import gi
+gi.require_version('FPrint', '2.0')
+from gi.repository import FPrint
+
+FINGERS = {FPrint.Finger(i).value_nick: FPrint.Finger(i) for i in range(1, 11)}
+AUTO_ORDER = ['right-index', 'left-index', 'right-middle', 'left-middle', 'right-thumb', 'left-thumb',
+              'right-ring', 'left-ring', 'right-little', 'left-little']
+STORE = '/var/lib/fprint'
+
+
+def log(msg):
+    print(msg, flush=True)
+
+
+def regular_users():
+    return [u.pw_name for u in pwd.getpwall()
+            if 1000 <= u.pw_uid < 60000 and not u.pw_shell.endswith(('nologin', 'false'))]
+
+
+def stored_prints(dev):
+    """Prints fprintd stores for this device: [(user, finger number, print)]."""
+    out = []
+    for f in glob.glob(f'{STORE}/*/{dev.get_driver()}/{dev.get_device_id()}/*'):
+        try:
+            out.append((f.split('/')[-4], int(os.path.basename(f)), FPrint.Print.deserialize(open(f, 'rb').read())))
+        except Exception:
+            pass
+    return out
+
+
+def save(dev, p, user, nick):
+    p.set_finger(FINGERS[nick])
+    p.set_username(user)
+    d = f'{STORE}/{user}/{dev.get_driver()}/{dev.get_device_id()}'
+    os.makedirs(d, mode=0o700, exist_ok=True)
+    path = f'{d}/{int(FINGERS[nick])}'
+    with open(path, 'wb') as f:
+        f.write(p.serialize())
+    os.chmod(path, 0o600)
+    log(f'{nick}-finger of {user} now uses a print enrolled in Windows Hello')
+
+
+def open_device():
+    """fprintd holds the sensor while it runs; it is D-Bus activated and comes back on its own when needed."""
+    ctx = FPrint.Context()
+    for attempt in range(5):
+        subprocess.run(['systemctl', 'stop', 'fprintd'], check=False)
+        devs = ctx.get_devices()
+        if not devs:   # at boot the USB device may not be there yet
+            time.sleep(2)
+            ctx = FPrint.Context()
+            continue
+        try:
+            devs[0].open_sync()
+            return ctx, devs[0]   # keep ctx alive: the devices die with the context
+        except Exception as e:
+            log(f'sensor busy ({e}), retrying')
+            time.sleep(2)
+    return ctx, None
+
+
+def main():
+    if os.geteuid() != 0:
+        sys.exit('run with sudo')
+    args = sys.argv[1:]
+    mode = args[0] if args[:1] and args[0] in ('--list', '--auto', '--pam') else 'manual'
+
+    if mode == '--pam':
+        # pam_exec waits for us: detach and let the login continue.
+        if os.environ.get('PAM_TYPE') not in (None, 'open_session'):
+            return
+        if os.fork():
+            return
+        os.setsid()
+        if os.fork():
+            os._exit(0)
+        devnull = os.open(os.devnull, os.O_RDWR)
+        for fd in (0, 1, 2):
+            os.dup2(devnull, fd)
+        time.sleep(3)   # let the greeter release the sensor after a fingerprint login
+        os.execv('/usr/bin/systemd-cat', ['systemd-cat', '-t', 'book4-fingerprint-import',
+                                          sys.executable, os.path.abspath(__file__), '--auto'])
+
+    if mode == '--auto':
+        users = regular_users()
+        if len(users) != 1:
+            log(f'{len(users)} regular users: not importing automatically (use: sudo {sys.argv[0]} <user> <finger>)')
+            return
+        user, nick = users[0], None
+    elif mode == 'manual':
+        user = (args[0] if args else os.environ.get('SUDO_USER')) or sys.exit('no user given')
+        nick = (args[1] if len(args) > 1 else 'right-index').removesuffix('-finger')
+        pwd.getpwnam(user)
+        if nick not in FINGERS:
+            sys.exit('finger must be one of: ' + ' '.join(FINGERS))
+
+    ctx, dev = open_device()
+    if not dev:
+        sys.exit('no fingerprint reader available') if mode != '--auto' else log('no fingerprint reader available')
+        return
+    try:
+        on_chip = dev.list_prints_sync()
+        stored = stored_prints(dev)
+        new = [p for p in on_chip if not any(p.equal(s[2]) for s in stored)]
+        log(f'{len(on_chip)} print(s) on the sensor, {len(on_chip) - len(new)} already used by Linux, {len(new)} new')
+        if mode == '--list' or not new:
+            return
+        if mode == 'manual':
+            if len(new) != 1:
+                sys.exit('more than one new print: enroll one finger in Windows Hello at a time and import it')
+            save(dev, new[0], user, nick)
+            return
+        used = {n for u, n, _ in stored if u == user}
+        free = [f for f in AUTO_ORDER if int(FINGERS[f]) not in used]
+        for p, f in zip(new, free):
+            save(dev, p, user, f)
+        if len(new) > len(free):
+            log('no free finger slots left for the remaining prints')
+    finally:
+        dev.close_sync()
+
+
+main()
