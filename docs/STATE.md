@@ -57,6 +57,10 @@ again. AOSD stays off everywhere. The kernel's own switch
 (`qcom_aoss` debugfs `prevent_aoss_sleep`, Y or N) does not turn it off
 here, only the `val:` form aoss_cxsd_only sends (reported in omarchy#15860,
 discussioncomment-19640176: linux-omarchy needs that message for the 14").
+birkskyum will carry a `qcom_aoss` patch (format fix + kernel parameter
+sending the `val:` form) and send the format fix to linux-arm-msm with our
+table; credit agreed 16 November (discussioncomment-19655186, address = the
+commit address, not written in the thread). To do: test his kernel when posted.
 The
 sleep log now records CX entries per sleep (installed 14 November). The CNTV
 arming is now a kernel patch, sleep-backport 0045 (written, not built or
