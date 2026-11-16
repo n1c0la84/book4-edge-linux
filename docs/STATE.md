@@ -1,5 +1,10 @@
 # State
 
+**Start here: [PLAN.md](PLAN.md)** (16 November 2026) lists what is prepared
+and what to do next, with the scripts: Omarchy's edge kernel as a test
+entry (birkskyum is waiting), the Omarchy 4.5 upgrade in a btrfs copy, the
+fingerprint import, the board-power tests.
+
 **Updated 16 November 2026**: Added `install/arch/gparted-hidpi.sh`: GParted
 needs `xorg-xhost` under Wayland to open (`sudo pacman -S xorg-xhost`), and its
 root GTK process loses the user's `GDK_SCALE=2`; running the script installs a

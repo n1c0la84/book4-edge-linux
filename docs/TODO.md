@@ -683,6 +683,23 @@ the end.
       October), so look at the devices' own sleep states: Wi-Fi/BT chip,
       touchscreen and touchpad, fingerprint reader, camera, speaker amps,
       EC, USB-C retimers.
+      **Regulator tree while awake (16 November, `regulator_summary`):**
+      touchpad `2-0040`, keyboard `4-0005`, touchscreen `0-005d` vddl and
+      all seven WCN7850 PMU supplies hang on the dummy regulator (Linux
+      switches none of them); `VREG_WCN_3P3` and `vreg_l12b_1p2` are on
+      with no consumer; `VREG_MISC_3P3` has the touchscreen; the PTN3222
+      eUSB2 repeater `5-004f` holds l4b (1.8 V) and l13b (3.0 V); the
+      codec's mic bias holds `vreg_bob1`; l15b feeds the four amps and
+      the codec; l7b and l10b (camera) are on with their consumers off;
+      UFS holds l17b/l2i (`spm_lvl` is already 5). At every suspend both
+      USB-C controllers log "HS-PHY not in L2" and the Wi-Fi root port
+      "Timeout waiting for L2 entry! LTSSM: 0x11".
+      **Untried step of Windows' standby sequence: GPIO 49 (`HPDC`).**
+      PEP0._DSM sets `\_SB.GIO0.HPDC = 1` at "MS:LPS+" (same GPIO region
+      `POWS` as MODS, pin 0x31) and never clears it; here the pin sits as
+      the firmware left it, output low. `tools/power/hpdc-test.sh` drives
+      it high across every sleep (logged as `+hpdc`). Order of tests:
+      [PLAN.md](PLAN.md) item 4.
 
 ## Test of 10 October (DT 0005/0006, emuec orientation 0005)
 
@@ -958,6 +975,18 @@ To test (should work, never verified)
       `restorecon -R /var/lib/fprint` on Fedora. To check: whether removing
       the Windows Hello fingerprint stops the wipe. Left: drop the local
       builds once !547 is in Fedora's and Arch's libfprint.
+      **Explained, 16 November (Rafael Meneses, SB4-Edge-Linux):** the
+      sensor keeps the prints on the chip, and each system deletes
+      on-chip prints it does not know, so the same finger enrolled in
+      both wipes the other's copy. His way round it, now here as
+      `userspace/fingerprint/book4-fingerprint-import`
+      (`install/arch/fingerprint-import.sh`): enroll in Windows Hello
+      only; the import reads the chip's prints and registers them with
+      fprintd, writing nothing to the sensor. Tried `--list` with our
+      libfprint-sdcp: it works, the sensor holds 0 prints, fprintd none.
+      Next: enroll in Windows, run the installer, test login and lock.
+      His libfprint also carries a certificate fix for this firmware
+      (issuer "Microsoft Cor\x00oration"); ours works without it so far.
 - [ ] **DT cleanup: `eusb5_repeater` (PTN3222 at I2C 5 / 0x43) is enabled
       but probably absent.** Windows' DSDT has only the 0x4F repeater (used
       by usb_2, the fingerprint) and three USB controllers (USB0/USB1 =
