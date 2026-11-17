@@ -104,14 +104,32 @@ Anatase's `anatase` branch, 7.3.4, `00dbccf779`):
   orientation (#6), battery refresh on read and the 14" DT changes are
   with him (kernel-anatase#1).
 
+**Port started 17 November.** Branch `book4/7.3` in our fork
+(n1c0la84/linux-book4-edge), 32 commits on Anatase `00dbccf779`:
+- the 22 clean sleep-backport patches;
+- 0043 DC ZVA (only the cpucaps line needed placing by hand);
+- 0019/0021-0023 replaced by one small patch on 7.3's own attach support
+  (`qcom,broken-reset`: attach to the DSPs qebspil started, never restart);
+- 0035 memlat (MAINTAINERS hunk dropped);
+- our 14" DT: CCI0/CAMSS and the camera apply as they are; tweeters,
+  fingerprint, woofer names and the absent repeater re-applied on the new
+  layout (the 14" DTS now only overrides the shared x1e dtsi);
+- samsung-emuec orientation (#6) on antheas's reworked driver.
+Not ported yet: 0040 Iris at EL2 and 0041 dspsignal (7.3 moved Iris to the
+generic PAS API; video decode and the NPU only), battery refresh on read
+(his rework restructured the driver; wait for his answer). Not built yet:
+no build has been run, so compile errors are still possible (the DT
+overrides especially).
+
 Steps:
-1. Branch `book4/7.3` in our fork: `anatase` + the 22 clean patches + the 8
-   reworked; build with `tools/kernel/build-sleep-kernel.sh` (needs a 7.3
-   base instead of `~/src/patchwork`; the script assumes 7.2.7). New release
-   name, own GRUB entry, daily kernel untouched.
-2. Test on it: EL2 sleep (0.70 W expected), audio, camera, fingerprint,
-   KVM, Iris, his drivers, his SPSS TPM driver (and whether the hourly SPSS
-   visits change).
+1. Build and install next to the daily kernel:
+   `bash tools/kernel/build-73-kernel.sh` (Fedora container, tree in
+   Fedora's home `~/src/linux-73`, config from the 7.2 sleep kernel plus
+   his SPSS TPM options; entry "... - test: el2-73"; `undo` removes it).
+2. Test on it: `bash tools/kernel/check-73.sh` (DSPs, sound, battery and
+   USB-C through his drivers, Wi-Fi, camera, fingerprint, KVM, TPM, EFI
+   variables, sleep modules, errors), then a sleep on battery (0.70 W
+   expected; whether his SPSS TPM driver changes the hourly visits).
 3. Make it daily; the 7.2 kernel stays as fallback.
 4. In parallel, upstream (each is a line on the way to stock):
    - linux-omarchy: `qcom_aoss.prevent_aoss_sleep` on by default for the 14"
