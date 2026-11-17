@@ -53,12 +53,12 @@ if [ "${1:-}" = amp ]; then
     amps=$(amixer -c 0 controls | sed -n "s/.*name='\(\(Spkr\|Tweeter\)[A-Za-z]*\) DAC Switch'.*/\1/p")
     [ -n "$amps" ] || { echo "error: no amplifier DAC Switch controls found" >&2; exit 1; }
     declare -A orig
-    for a in $amps; do orig[$a]=$(amixer -c 0 cget name="$a DAC Switch" | sed -n 's/^  : values=//p'); done
+    for a in $amps; do orig[$a]=$(amixer -D hw:0 cget name="$a DAC Switch" | sed -n 's/^  : values=//p'); done
     setall() { pactl suspend-sink "$sink" 1; sleep 1
-               for a in $amps; do amixer -q -c 0 cset name="$a DAC Switch" "$([ "$a" = "$1" ] && echo on || echo off)"; done
+               for a in $amps; do amixer -q -D hw:0 cset name="$a DAC Switch" "$([ "$a" = "$1" ] && echo on || echo off)"; done
                sleep 0.2; pactl suspend-sink "$sink" 0; sleep 0.5; }
     restore() { pactl suspend-sink "$sink" 1; sleep 1
-                for a in $amps; do amixer -q -c 0 cset name="$a DAC Switch" "${orig[$a]}"; done
+                for a in $amps; do amixer -q -D hw:0 cset name="$a DAC Switch" "${orig[$a]}"; done
                 pactl suspend-sink "$sink" 0; }
     trap 'restore; rm -rf "$dir"' EXIT
     SECS=5
