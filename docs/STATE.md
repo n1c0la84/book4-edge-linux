@@ -14,6 +14,9 @@ Scanning: `sane sane-airscan simple-scan` installed (eSCL over the network);
 probed the camera and printed junk). If a job sits at "printing", check the
 printer panel: it holds jobs until a low-ink alert is acknowledged
 (`curl http://192.168.178.9/DevMgmt/ProductStatusDyn.xml`).
+Scan to PDF: `~/.local/bin/scan [name] [dpi] [color|gray]` (private, A4 area,
+300 dpi default, to ~/Documents/Scans); Document Scanner set to text mode,
+300 dpi, PDF, same folder, HP preselected (gsettings org.gnome.SimpleScan).
 
 **Updated 16 November 2026**: Added `install/arch/gparted-hidpi.sh`: GParted
 needs `xorg-xhost` under Wayland to open (`sudo pacman -S xorg-xhost`), and its
