@@ -5,6 +5,19 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**17 November 2026**: Windows programs: **Hangover 11.16** (Wine for ARM64,
+FEX for x86-64 via ARM64EC, box64 for 32-bit x86) unpacked from the upstream
+Ubuntu 26.04 debs into `~/.local/opt/hangover-11.16`, prefix
+`~/.local/share/wineprefixes/hangover`, launcher `~/.local/bin/hwine`
+(`hwine prog.exe`, `hwine winecfg`, `hwine winetricks ...`); reproducible
+with `install/arch/hangover.sh`, no root. Prefix boots, built-in `cmd` runs;
+no x86 program tested yet. Bottles (AUR) was removed: its runners are
+x86_64-only, and the Flathub build is believed x86_64-only too.
+The Bottles start error was a partial upgrade: the ALARM repos moved to
+OpenSSL 4 (python-pycurl links libssl.so.4) while the system is on 3.6.5
+since the last `-Syu` on 4 November; `sudo pacman -Syu` (215 packages)
+resolves it and is still to be run.
+
 **17 November 2026**: printing set up: HP ENVY Photo 6200 (192.168.178.9) as
 driverless IPP Everywhere queue `HP_ENVY_6200` (`lpadmin -m everywhere`, dnssd
 URI, A4, not shared), system default. Needs only cups + avahi + nss-mdns, all
