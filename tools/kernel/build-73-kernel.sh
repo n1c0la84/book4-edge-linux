@@ -44,7 +44,11 @@ if [ "${1:-}" = undo ]; then
     rm -f "$relfile"; echo "removed $rel"; exit 0
 fi
 
+# keep sudo alive through the long build (one password at the start)
 sudo -v
+( while sleep 50; do sudo -n -v 2>/dev/null || exit; done ) &
+KEEPALIVE=$!
+trap 'kill $KEEPALIVE 2>/dev/null || true' EXIT
 echo "== 0. sleep modules for the container"
 pay=$(mktemp -d)
 tar -cz --exclude='*.ko' --exclude='*.o' --exclude='*.mod*' --exclude='.*' \
@@ -63,6 +67,9 @@ fi
 cd linux-73
 git fetch -q origin book4/7.3
 git checkout -q -B book4/7.3 origin/book4/7.3
+# Anatase's drivers/custom/ are git submodules (evdi, xone, ...); Kconfig
+# sources them, so they must be present even when not built.
+git submodule update -q --init --depth 1 >&2
 echo \"   tree: \$(git log -1 --format='%h %s')\" >&2
 [ -e .config ] || cp ~/src/patchwork-sleep/.config .config
 make -s LOCALVERSION=$lv olddefconfig
@@ -98,7 +105,7 @@ src=$h/$USER/src/out-73
 rel=$(cat "$src/release")
 case $rel in 7.3*) ;; *) sudo umount "$h"; echo "error: unexpected release '$rel'" >&2; exit 1 ;; esac
 [ "$(uname -r)" != "$rel" ] || { sudo umount "$h"; echo "error: $rel is running; boot the daily entry to reinstall it" >&2; exit 1; }
-work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
+work=$(mktemp -d); trap 'rm -rf "$work"; kill $KEEPALIVE 2>/dev/null || true' EXIT
 sudo rm -rf "/usr/lib/modules/$rel"
 sudo cp -a "$src/lib/modules/$rel" "/usr/lib/modules/$rel"
 cp "$src/Image" "$src/$dtbname" "$work/"
