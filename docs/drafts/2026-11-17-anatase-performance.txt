@@ -1,0 +1,24 @@
+Posted 17 November to anatase-org/kernel-anatase#1.
+------------------------------------------------------------------------
+Four more, not about the EC but X1E-wide, which `anatase` 7.3.4 doesn't
+have yet (all on our port, https://github.com/n1c0la84/linux-book4-edge/commits/book4/7.3,
+applied cleanly to your tree):
+
+1. **memlat** (Qualcomm's unmerged "Generic Vendor Extensions" RFC v8, 7
+   patches, plus Sibi Sankar's "hamoa: Enable LLCC/DDR/DDR_QOS DVFS" DT
+   node). Without it nothing raises DDR/LLCC beyond the bwmon votes;
+   llama.cpp generation on the 14" went 10.4 -> 20.9 t/s. linux-omarchy
+   carries the same series (2320-2327) but enables it only on Glymur.
+2. **cpufreq: scmi: create policies with boost enabled.** arch_topology
+   takes the capacity reference from cpuinfo.max_freq at policy creation,
+   which excludes boost OPPs while boost is off, so schedutil never asks for
+   4012.8 MHz even after enabling boost. With it, CPUs 4-11 reach ~4.0 GHz
+   (I turn boost off on battery from udev, as Windows does).
+3. **hamoa: describe the CPUs' capacity** (`capacity-dmips-mhz`, same on
+   all twelve cores): otherwise every CPU is 1024 and single-threaded work
+   lands on the 3.4 GHz cluster as often as on the 4 GHz ones; Geekbench
+   single-core 2200 unpinned vs 2482 pinned to CPUs 4-11.
+4. **hamoa: throttle the CPUs at 95 C**: the CPU/CPUSS zones only have the
+   115 C critical trip; 20 min of all-core load held 108-112 C with
+   throughput down to a seventh. A 95 C passive trip on the cluster cpufreq
+   cooling devices (as the GPU zones) holds 95-97 C.
