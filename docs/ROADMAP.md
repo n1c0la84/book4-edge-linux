@@ -76,7 +76,14 @@ so the daily system is untouched:
    in the stock package: if it fails, send `userspace/omarchy/patches/0001`
    to omacom/omarchy), sleep and resume, Hyprland config errors.
 4. Then `omarchy45-copy.sh adopt` (makes the copy the daily system) or
-   `undo`. Afterwards a full `pacman -Syu` against Omarchy's repository
+   `undo`. Afterwards a full update against Omarchy's repository with
+   `omarchy-update`, not a bare `pacman -Syu` (4.5's
+   `00-omarchy-update-guard.hook` blocks that unless
+   `OMARCHY_ALLOW_DIRECT_PACMAN=1`). It prunes the cache to 2 versions,
+   snapshots (no snapper here: continues without; the btrfs copy is the
+   safety net), updates keyring and packages, runs `omarchy-migrate`, AUR,
+   mise, and asks (default no) before removing orphans: answer no until the
+   list is checked
    (quickshell and yt-dlp move to Omarchy's builds; Hyprland: theirs is
    older, decide then), and folio/flea update through pacman.
 5. Fix or drop the `iamcheyan.launcher` plugin (it shows every "pick one"
