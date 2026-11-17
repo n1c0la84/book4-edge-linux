@@ -116,6 +116,12 @@ wrong sides too. What plays is right (the crossover sends left to channels
 down is wrong in its path/amp columns. Fixed on book4/7.3 (555bdfe16f);
 the daily 7.2 overlays still carry the old names.
 
+**Confirmed without any routing, 17 November** (`speaker-id.sh amp`: one
+amplifier on by its DAC Switch, 1 kHz on all four channels, phone at each
+slit; peak dB, left / right): swr3 address 2 woofer -47 / -30 (right),
+swr0 address 2 woofer -24 / -46 (left), swr3 address 1 tweeter none / -73
+(right), swr0 address 1 tweeter -59 / none (left). swr0 is the left side.
+
 The address-1 amplifiers are the **tweeters**, and Linux used to drive only
 the **woofers** (a tone ladder: woofers heard from 300 Hz, tweeters from
 600 Hz). The device tree
