@@ -16,7 +16,13 @@ x86_64-only, and the Flathub build is believed x86_64-only too.
 The Bottles start error was a partial upgrade: the ALARM repos moved to
 OpenSSL 4 (python-pycurl links libssl.so.4) while the system is on 3.6.5
 since the last `-Syu` on 4 November; `sudo pacman -Syu` (215 packages)
-resolves it and is still to be run.
+resolves it and is still to be run. Checked as boot-safe like the 4 November
+one (no kernel, firmware, GRUB or mkinitcpio package in it). **One catch:**
+our locally built `libfprint-sdcp` links `libssl.so.3` but depends on plain
+`openssl`, so pacman would upgrade without complaint and break the fingerprint
+reader (used by `/etc/pam.d/sudo` and the lock screen). Install the compat
+library first: `sudo pacman -S --asdeps openssl-3`, then `book4-update`
+(or rebuild libfprint-sdcp against OpenSSL 4 later).
 
 **17 November 2026**: printing set up: HP ENVY Photo 6200 (192.168.178.9) as
 driverless IPP Everywhere queue `HP_ENVY_6200` (`lpadmin -m everywhere`, dnssd
