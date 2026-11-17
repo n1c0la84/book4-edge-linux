@@ -187,6 +187,23 @@ container; the EL2 chain chainloads Fedora's GRUB.
 - turbineBMW (omarchy-pkgs#1315): the EL of the SP11 result (no longer
   important).
 
+## 7a. First boot of el2-73 (17 November)
+
+7.3.4 (Anatase + book4/7.3) boots at EL2: ADSP/CDSP attached, sound card,
+Wi-Fi, Bluetooth, camera nodes, KVM, EFI vars, fingerprint reader (1c7a:05a1),
+the Samsung EC battery/AC supplies and both Type-C ports, sleep modules and
+book4-el2-sleep.service active, no failed units. Problems:
+
+- **`qcom_spss_nvm` probe loop**: "cannot locate secure NVM partition"
+  (-EINVAL) for `sec_nvm_sp_nvm` and `sec_nvm_stpm_lite_msft`, ~700 lines/s,
+  journald and udev at 100 % CPU. Blacklisted in
+  `/etc/modprobe.d/book4-spss-nvm.conf` (no effect on 7.2, which has no such
+  module); so no SPSS TPM. To understand, then report to antheas.
+- **Iris**: "firmware download failed -22": 0040 (non-TZ Iris start) not yet
+  ported to 7.3; expected.
+- Release name `7.3.4-book4-book4` (the double suffix, known).
+- Still to do on it: one sleep on battery, speakers, the USB-C ports after sleep.
+
 ## 7b. Found here, not told upstream yet (17 November)
 
 | What | To whom | State |
