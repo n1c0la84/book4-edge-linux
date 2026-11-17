@@ -28,33 +28,32 @@ off. Omarchy's edge kernel now has the AOSD switch we asked for.
 - **mako**: `sudo pacman -R mako` (it can grab the notifications at login
   before the Omarchy shell does; nothing depends on it).
 
-## 2. Omarchy's edge kernel on this laptop (birkskyum is waiting for it)
+## 2. Omarchy's own image on this laptop (the clean test; birkskyum is waiting)
 
-`bash tools/experiments/omarchy-kernel-test.sh` downloads linux-omarchy from
-the edge repository, checks the signature, and installs it as the GRUB
-entry "... - test: omarchy-edge" (own modules, initramfs and Omarchy's 14"
-DTB; stock-like command line with `qcom_aoss.prevent_aoss_sleep=1`). Not run
-yet. Then:
+First try, 17 November: linux-omarchy 7.3-70 with Omarchy's 14" DTB from our
+GRUB with an initramfs we built (`tools/experiments/omarchy-kernel-test.sh`):
+first boot lines, then black for 3 min, power held; nothing reached the
+journal. Not a clean test (our initramfs and boot path). Remove that entry
+with `bash tools/experiments/omarchy-kernel-test.sh undo`.
 
-1. Save work. `sudo efibootmgr -n 0001 && systemctl reboot`, pick the entry
-   (EL1). Black screen for a while is expected; if it hangs, hold power.
-2. On that boot: `bash tools/experiments/omarchy-kernel-test.sh report`.
-   It prints the summary (EL, `prevent_aoss_sleep` should read `Y`,
-   providers synced, DSPs, sound card) and writes a redacted kernel log to
-   `~/omarchy-edge-report/`.
-3. Only if the parameter reads `Y`: close the lid for 3 minutes (the default
-   sleep mode there is deep), open, wait a minute, run `report` again.
-   Wanted: `aosd` 0, `cxsd` counting, no storage errors. **Risk:** on 15
-   November a deep suspend with AOSD on lost UFS until power-off (the
-   filesystem was fine afterwards). If the screen comes back wrong, hold
-   power.
-4. Things to note for the report to birkskyum: whether it reached the
-   desktop, keyboard/touchpad/touchscreen, Wi-Fi, sound, battery reading
-   (no Samsung EC driver in that kernel, so probably none), and that our
-   modprobe.d keeps `qcom_adsp_pwr_lmts` blacklisted (a stock install would
-   load it, and it crashes this ADSP).
-5. Draft the reply for omarchy#15860 with the summary and the log; the owner
-   approves before posting. `omarchy-kernel-test.sh undo` removes everything.
+The clean test is Omarchy's nightly ARM installer image (one image for every
+ARM machine, kernel 7.3.0-66+ with `qcom_aoss.prevent_aoss_sleep`):
+
+1. `bash tools/experiments/omarchy-nightly-stick.sh fetch` (8.2 GB, resumable,
+   checksum checked), then plug in a stick of 16 GB or more and
+   `bash tools/experiments/omarchy-nightly-stick.sh write /dev/sdX`
+   (refuses anything that is not a USB disk; asks you to type the device).
+2. Power off, F10 at power-on, pick the stick. Do NOT install.
+3. Note: how far it gets (boot menu, kernel, screen, installer), keyboard,
+   touchpad, Wi-Fi. If it reaches the installer, switch to a console
+   (Ctrl+Alt+F2, or the installer's shell) and save the log to a second USB
+   drive: `mount /dev/sdb1 /mnt && journalctl -k -b > /mnt/omarchy-14.log &&
+   cat /proc/cmdline >> /mnt/omarchy-14.log && umount /mnt`.
+   `cat /sys/module/qcom_aoss/parameters/prevent_aoss_sleep` (Y or N).
+4. Back on Arch: redact the log (MACs, IPs, SSIDs, serials; the `report`
+   function in `omarchy-kernel-test.sh` has the sed lines), then post.
+   Draft for birkskyum: `docs/drafts/2026-11-17-birkskyum-14inch.txt`
+   (fill in the result first).
 
 ## 3. Omarchy 4.5 from Omarchy's own repository
 

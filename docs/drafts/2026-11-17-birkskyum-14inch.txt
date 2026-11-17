@@ -1,0 +1,37 @@
+For: omarchy#15860, reply under birkskyum's comment of 16 November 13:36.
+Not posted. FILL IN the result of the nightly image test first (PLAN.md item 2).
+------------------------------------------------------------------------
+
+Two things for the 14".
+
+**Nightly image 2026.11.__.___ (kernel 7.3.0-__-omarchy) on the NP940XMA:**
+[RESULT: how far it got; keyboard/touchpad/Wi-Fi; prevent_aoss_sleep Y/N;
+log attached, redacted.]
+(An earlier try with your kernel and DTB from my own GRUB and an initramfs I
+built went black after the first boot lines, nothing in the journal; I don't
+count that one.)
+
+**The Samsung drivers.** On the Book4 Edge, battery, charging, keyboard
+backlight, fan profiles and the USB-C ports depend on two Samsung-specific
+drivers that linux-omarchy doesn't carry, as far as I can see:
+`samsung-galaxybook-ec` (embedded controller: battery, AC, charger input
+limit, keyboard backlight, profiles) and `samsung-emuec` (the S2MM006
+USB-C/PD controllers behind the EC). They're written and maintained by
+antheas in Anatase's tree (`anatase-org/patchwork`, branch `anatase`, now
+7.3.4), and he reworked both this week: PD negotiation and the input limit
+passed to the EC the way Windows' EmuEC driver does it (c618779c07,
+62cdef6019). They bind through device-tree nodes he added on top of Maxim
+Storetvedt's series (the EC and both S2MM006 controllers in
+`x1-samsung-galaxy-book4-edge.dtsi`, with the EC's `power-supplies` pointing
+at them), so taking the drivers means taking those nodes too. Without them a
+stock install has no battery reading and no charger control on this laptop.
+
+For the 14" I carry a few more device-tree additions, all sent to Anatase:
+the front camera (OV02C10) and its privacy LED
+(anatase-org/kernel-anatase#2), the two tweeters, i.e. the second WSA8835 on
+each speaker bus (#4), the fingerprint reader on usb_2 (#5), and the Type-C
+orientation fix in samsung-emuec (#6). Notes and patches:
+https://github.com/n1c0la84/book4-edge-linux
+
+If you want to pick the drivers up, antheas is the person to ask; I'm happy to
+test whatever you build on the 14".
