@@ -1107,6 +1107,20 @@ Not yet reported:
 
 ## Arch and Omarchy
 
+- [ ] **Omarchy's nightly image on the 14" (17 November, 2026.11.16.492,
+      kernel 7.3.0-66, live from USB):** boots to the installer at EL1 and
+      picks the 14" DT by itself; keyboard, UFS, touchpad, touchscreen and
+      keyboard input devices present, all providers synced, no failed
+      units. Missing in the image: WCN7850 firmware (`amss.bin`, so no
+      Wi-Fi, ath12k -110), Bluetooth firmware, GPU `gen70500_sqe.fw`,
+      audio topology, CDSP image. The ADSP booted from
+      `qcom/x1e80100/SAMSUNG/galaxy-book4-edge/qcadsp8380.mbn` and
+      pmic-glink registered qcom-battmgr supplies (values not read; with
+      Samsung's ADSP from Windows battmgr never worked here, so which ADSP
+      image is that?). `prevent_aoss_sleep` N, `mem_sleep` deep default.
+      No suspend tried. Log: `~/omarchy-14-redacted.log` (not in the repo).
+      Draft for birkskyum filled in.
+
 - [ ] **Omarchy 4.5 and Omarchy's own repository** (review started 16
       November; installed: 4.0.4-3 built locally, 4.5.0 released 5
       November, 1402 commits and 112 new migrations later). First pass:

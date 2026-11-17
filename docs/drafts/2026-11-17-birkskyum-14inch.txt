@@ -1,15 +1,37 @@
 For: omarchy#15860, reply under birkskyum's comment of 16 November 13:36.
-Not posted. FILL IN the result of the nightly image test first (PLAN.md item 2).
+Not posted. Result filled in 17 November; needs the log link.
 ------------------------------------------------------------------------
 
 Two things for the 14".
 
-**Nightly image 2026.11.__.___ (kernel 7.3.0-__-omarchy) on the NP940XMA:**
-[RESULT: how far it got; keyboard/touchpad/Wi-Fi; prevent_aoss_sleep Y/N;
-log attached, redacted.]
+**Nightly image 2026.11.16.492 (kernel 7.3.0-66-omarchy) on the NP940XMA,
+live from USB, no install:** it boots and reaches the installer, at EL1, and
+picks the 14" tree by itself (`samsung,galaxy-book4-edge-14`). Keyboard
+works, the installer sees the UFS disk, and the touchpad, touchscreen
+(Goodix 27C6:0123) and keyboard all register as input devices; no provider
+is left waiting for `sync_state`, no failed units. From a console:
+
+- Wi-Fi: none. `ath12k` finds the WCN7850 and then fails at
+  `Direct firmware load for ath12k/WCN7850/hw2.0/amss.bin failed with
+  error -2` -> `failed to start mhi: -110`, so the image lacks the WCN7850
+  firmware. Bluetooth the same (`qca/hmtbtfw20.tlv`, -2).
+- GPU: `failed to load gen70500_sqe.fw`, so no acceleration (probably why I
+  couldn't get a desktop beyond the installer).
+- Audio: no card (`qcom-apm ... ASoC error (-2)`, topology missing); the
+  CDSP image is missing too (`qccdsp8380.mbn`, -2).
+- The ADSP did boot, from
+  `qcom/x1e80100/SAMSUNG/galaxy-book4-edge/qcadsp8380.mbn`, and pmic-glink
+  registered `qcom-battmgr-ac/-bat/-usb/-wls`. I didn't read their values;
+  on my installed system with Samsung's ADSP from Windows, battmgr never
+  worked (the battery is the EC's), so I'd like to know which ADSP image
+  that is.
+- `prevent_aoss_sleep` is `N` (not set by default yet, as you said), and
+  `mem_sleep` is `s2idle [deep]`. I didn't suspend.
+
+The redacted kernel log is here: [LINK]
+
 (An earlier try with your kernel and DTB from my own GRUB and an initramfs I
-built went black after the first boot lines, nothing in the journal; I don't
-count that one.)
+built went black after the first boot lines; I don't count that one.)
 
 **The Samsung drivers.** On the Book4 Edge, battery, charging, keyboard
 backlight, fan profiles and the USB-C ports depend on two Samsung-specific
