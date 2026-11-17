@@ -2,7 +2,7 @@ For: omarchy#15860, reply under birkskyum's comment of 16 November 13:36.
 Not posted. Result filled in 17 November; needs the log link.
 ------------------------------------------------------------------------
 
-Two things for the 14".
+Three things for the 14".
 
 **Nightly image 2026.11.16.492 (kernel 7.3.0-66-omarchy) on the NP940XMA,
 live from USB, no install:** it boots and reaches the installer, at EL1, and
@@ -21,17 +21,21 @@ is left waiting for `sync_state`, no failed units. From a console:
   CDSP image is missing too (`qccdsp8380.mbn`, -2).
 - The ADSP did boot, from
   `qcom/x1e80100/SAMSUNG/galaxy-book4-edge/qcadsp8380.mbn`, and pmic-glink
-  registered `qcom-battmgr-ac/-bat/-usb/-wls`. I didn't read their values;
-  on my installed system with Samsung's ADSP from Windows, battmgr never
-  worked (the battery is the EC's), so I'd like to know which ADSP image
-  that is.
+  registered `qcom-battmgr-ac/-bat/-usb/-wls`. I didn't read their values.
 - `prevent_aoss_sleep` is `N` (not set by default yet, as you said), and
   `mem_sleep` is `s2idle [deep]`. I didn't suspend.
 
 The redacted kernel log is here: [LINK]
 
-(An earlier try with your kernel and DTB from my own GRUB and an initramfs I
-built went black after the first boot lines; I don't count that one.)
+**A question about the battery.** On my installed system I run Samsung's
+ADSP image taken from this laptop's Windows, and battmgr never worked with
+it: the image has no `charger_pd`, and on Windows the battery is an ACPI
+`PNP0C0A` behind the EC, not the ADSP. Here battmgr bound. Where does the
+image's `qcadsp8380.mbn` come from (linux-firmware, another Samsung model,
+your own extraction)? And do you know whether `qcom-battmgr-bat` reports
+real values on a Book4 Edge, or only registers? If it really works with
+that ADSP, it would be an alternative to the EC for the battery on a stock
+install.
 
 **The Samsung drivers.** On the Book4 Edge, battery, charging, keyboard
 backlight, fan profiles and the USB-C ports depend on two Samsung-specific
