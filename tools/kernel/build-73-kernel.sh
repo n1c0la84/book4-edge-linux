@@ -22,7 +22,9 @@
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(cd "$here/../.." && pwd)
-lv=-book4
+# The release suffix comes from CONFIG_LOCALVERSION="-book4" (set below);
+# LOCALVERSION stays empty, or the name doubles (7.3.4-book4-book4).
+lv=
 dtbname=x1e80100-samsung-galaxy-book4-edge-14.dtb
 DEV_ROOT=/dev/disk/by-uuid/4d74e1d5-7bca-48bf-a6e0-1362fd77882e
 name=el2-73
@@ -72,6 +74,7 @@ git checkout -q -B book4/7.3 origin/book4/7.3
 git submodule update -q --init --depth 1 >&2
 echo \"   tree: \$(git log -1 --format='%h %s')\" >&2
 [ -e .config ] || cp ~/src/patchwork-sleep/.config .config
+./scripts/config --set-str LOCALVERSION -book4 --disable LOCALVERSION_AUTO
 make -s LOCALVERSION=$lv olddefconfig
 for o in PM_CLK QCOM_TZMEM_MODE_SHMBRIDGE CPU_IDLE_GOV_TEO; do
     grep -q \"^CONFIG_\$o=y\" .config || { ./scripts/config --enable \$o; make -s LOCALVERSION=$lv olddefconfig; }
@@ -106,6 +109,19 @@ rel=$(cat "$src/release")
 case $rel in 7.3*) ;; *) sudo umount "$h"; echo "error: unexpected release '$rel'" >&2; exit 1 ;; esac
 [ "$(uname -r)" != "$rel" ] || { sudo umount "$h"; echo "error: $rel is running; boot the daily entry to reinstall it" >&2; exit 1; }
 work=$(mktemp -d); trap 'rm -rf "$work"; kill $KEEPALIVE 2>/dev/null || true' EXIT
+# A previous install under another release name (7.3.4-book4-book4): remove it.
+old=$(cat "$relfile" 2>/dev/null || true)
+if [ -n "$old" ] && [ "$old" != "$rel" ]; then
+    case $old in 7.3*) ;; *) old= ;; esac
+    [ "$(uname -r)" != "$old" ] || { sudo umount "$h"; echo "error: $old is running; boot the daily entry first" >&2; exit 1; }
+    if [ -n "$old" ]; then
+        echo "   removing the previous install $old"
+        sudo rm -rf --one-file-system "/usr/lib/modules/$old"
+        ob=$(mktemp -d); sudo mount /dev/sda4 "$ob"
+        sudo rm -f "$ob/vmlinuz-$old" "$ob/initramfs-$old-arch.img"
+        sync; sudo umount "$ob"; rmdir "$ob"
+    fi
+fi
 sudo rm -rf "/usr/lib/modules/$rel"
 sudo cp -a "$src/lib/modules/$rel" "/usr/lib/modules/$rel"
 cp "$src/Image" "$src/$dtbname" "$work/"

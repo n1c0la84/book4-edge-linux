@@ -122,9 +122,12 @@ Anatase's `anatase` branch, 7.3.4, `00dbccf779`):
   fingerprint, woofer names and the absent repeater re-applied on the new
   layout (the 14" DTS now only overrides the shared x1e dtsi);
 - samsung-emuec orientation (#6) on antheas's reworked driver.
-Not ported yet: 0040 Iris at EL2 and 0041 dspsignal (7.3 moved Iris to the
-generic PAS API; video decode and the NPU only), battery refresh on read
-(his rework restructured the driver; wait for his answer). Not built yet:
+Ported 17 November (42dfc63, not built yet): 0040 Iris at EL2 (on 7.3's
+qcom_pas API, fw init before the IOVA reservation), 0041 dspsignal (offsets;
+callback hunk before 7.3's PD-exit check), battery refresh on read (redone
+on antheas's reworked driver). Release name fixed in build-73-kernel.sh:
+`7.3.4-book4` (CONFIG_LOCALVERSION only); a rebuild removes the old
+`7.3.4-book4-book4` install. Not built yet:
 no build has been run, so compile errors are still possible (the DT
 overrides especially).
 
@@ -214,8 +217,12 @@ book4-el2-sleep.service active, no failed units. Problems:
   the system genpd requests DRIPS (S1, s2idle count 5; SS1 at runtime, as
   designed by 0015/0016), so a vote holds CX. Ruled out, one at a time:
   qcom_spss_nvm + qcom_glink_spss unloaded, qcom_iris unloaded, coresight
-  unloaded, charger (a nap on battery). Next: `tools/power/vote-dump.sh` on
-  7.3 and on 7.2, diff (interconnect, clocks, regulators, genpd, modules).
+  unloaded, charger (a nap on battery). `tools/power/vote-dump.sh` on both
+  kernels (awake): 7.3 has interconnect votes on the primary USB-C
+  controller `a600000.usb` (1.0/2.5 GB/s on DDR/LLCC, 40 MB/s cfg) that 7.2
+  lacks (on 7.2 that controller dies after sleep), an enabled `a80000.i2c`
+  SE clock (touchpad bus, likely busy during the dump), small qup1 votes.
+  Next on 7.3: `tools/power/usb0-unbind-test.sh`, nap.
 - **Audio**: PipeWire had the card on profile "off" after boot (only the
   book4_speakers filter sink); `pactl set-card-profile alsa_card.platform-sound
   "HiFi (Headphones, Mic, Speaker)"` brought it back. Boot log: `qcom-apm CMD
