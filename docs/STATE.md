@@ -9,6 +9,11 @@ fingerprint import, the board-power tests.
 driverless IPP Everywhere queue `HP_ENVY_6200` (`lpadmin -m everywhere`, dnssd
 URI, A4, not shared), system default. Needs only cups + avahi + nss-mdns, all
 already installed; no HP driver.
+Scanning: `sane sane-airscan simple-scan` installed (eSCL over the network);
+`escl` and `v4l` commented out in /etc/sane.d/dll.conf (duplicate entry; v4l
+probed the camera and printed junk). If a job sits at "printing", check the
+printer panel: it holds jobs until a low-ink alert is acknowledged
+(`curl http://192.168.178.9/DevMgmt/ProductStatusDyn.xml`).
 
 **Updated 16 November 2026**: Added `install/arch/gparted-hidpi.sh`: GParted
 needs `xorg-xhost` under Wayland to open (`sudo pacman -S xorg-xhost`), and its
