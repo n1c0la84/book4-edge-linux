@@ -68,6 +68,27 @@ side with the microphone nearer one side. By ear the owner placed 1 and 3
 on the left, 2 and 4 on the right, but could not tell levels apart. Open:
 a phone at each end of the base, or the VI-sense impedance per amp.
 
+**Settled with a phone at each slit, 17 November** (Spectroid, phone ~2 cm
+from the slit, `speaker-id.sh phone`, 5 s tones at -24 dBFS; peak in dB):
+
+| Phone at | Hz | ch1 (swr3 a2) | ch3 (swr3 a1) | ch2 (swr0 a2) | ch4 (swr0 a1) |
+|---|---|---|---|---|---|
+| left slit | 1000 | -29 | -31 | -50 | -56 |
+| right slit | 1000 | | | -30 | -34 |
+| left slit | 300 | -48 | -56 | | |
+| right slit | 300 | | | -42 | -49 |
+
+- **Sides:** channels 2 and 4 are 20 dB quieter at the left slit than at
+  the right one: each bus is one side (swr3 left, swr0 right), as in our
+  tree. Both tweeters on one bus (hegjon) is ruled out.
+- **Woofer vs tweeter:** at 1 kHz the two amps of a side are 2-4 dB apart,
+  at 300 Hz 7-8 dB, the address-2 amp louder: address 2 has more bass
+  (woofer), address 1 less (tweeter). The difference is modest, so the
+  "tweeters" still play well down to 300 Hz; a high-pass on them stays
+  prudent, at 2 kHz or lower.
+- The internal-microphone sweep's tilt between the buses was the
+  microphone being nearer the left end.
+
 The address-1 amplifiers are the **tweeters**, and Linux used to drive only
 the **woofers** (a tone ladder: woofers heard from 300 Hz, tweeters from
 600 Hz). The device tree
