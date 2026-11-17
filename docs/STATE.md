@@ -1,9 +1,9 @@
 # State
 
-**Start here: [PLAN.md](PLAN.md)** (16 November 2026) lists what is prepared
-and what to do next, with the scripts: Omarchy's edge kernel as a test
-entry (birkskyum is waiting), the Omarchy 4.5 upgrade in a btrfs copy, the
-fingerprint import, the board-power tests.
+**Start here: [ROADMAP.md](ROADMAP.md)** (17 November 2026): the single list of
+what to do next and where it is heading (stock Omarchy plus a Book4 layer on
+top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
+boot move from GRUB/Fedora to Limine.
 
 **17 November 2026**: printing set up: HP ENVY Photo 6200 (192.168.178.9) as
 driverless IPP Everywhere queue `HP_ENVY_6200` (`lpadmin -m everywhere`, dnssd
@@ -18,7 +18,7 @@ Scan to PDF: `~/.local/bin/scan [name] [dpi] [color|gray]` (private, A4 area,
 300 dpi default, to ~/Documents/Scans); Document Scanner set to text mode,
 300 dpi, PDF, same folder, HP preselected (gsettings org.gnome.SimpleScan).
 
-**Updated 16 November 2026**: Added `install/arch/gparted-hidpi.sh`: GParted
+**Updated 17 November 2026**: Omarchy's nightly image boots on the 14" to the installer (no Wi-Fi/GPU/audio firmware in it; reported). Anatase reworked the Samsung drivers; our remaining changes sent (kernel-anatase#1). Roadmap in ROADMAP.md. Earlier, 16 November: Added `install/arch/gparted-hidpi.sh`: GParted
 needs `xorg-xhost` under Wayland to open (`sudo pacman -S xorg-xhost`), and its
 root GTK process loses the user's `GDK_SCALE=2`; running the script installs a
 root-only GTK3 22-point font setting for readable GParted text. **Windows

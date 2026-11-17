@@ -699,7 +699,7 @@ the end.
       `POWS` as MODS, pin 0x31) and never clears it; here the pin sits as
       the firmware left it, output low. `tools/power/hpdc-test.sh` drives
       it high across every sleep (logged as `+hpdc`). Order of tests:
-      [PLAN.md](PLAN.md) item 4.
+      [ROADMAP.md](ROADMAP.md) item 4.
 
 ## Test of 10 October (DT 0005/0006, emuec orientation 0005)
 

@@ -12,7 +12,7 @@ What may be new for your build is sleep. On the 14" the laptop reaches full
 deep sleep in s2idle (CX collapse and DDR self-refresh for ~100 % of the
 time) at about 0.7 W for the whole board; Windows on the same machine
 measures 0.11 W. What it needed, with patches and measurements:
-https://github.com/n1c0la84/book4-edge-linux (docs/power.md, docs/PLAN.md)
+https://github.com/n1c0la84/book4-edge-linux (docs/power.md, docs/ROADMAP.md)
 
 Three things specific to the Book4 Edge that cost me time:
 - AOSD (the state below CX collapse) has to stay off: with it the machine
