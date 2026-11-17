@@ -44,8 +44,8 @@
 (`dts/patches/0006`), refreshing the battery on read
 (`patches-galaxybook-ec/0001`; his reworked driver still serves the cached
 values), and the panel supply chain without `regulator-always-on`
-(sleep-backport 0018, a sleep-power fix). All four are in the draft
-`drafts/2026-11-17-anatase-ec-rework.txt`.
+(sleep-backport 0018, a sleep-power fix). All four were posted, with the comparison of his rework against our patches,
+on 17 November: https://github.com/anatase-org/kernel-anatase/issues/1#issuecomment-6943264160
 
 ## To the other community driver (Saddytech, recommended in zensanp/linux-book4-edge#4)
 

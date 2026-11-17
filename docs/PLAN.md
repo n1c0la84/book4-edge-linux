@@ -139,8 +139,9 @@ each night with its tag.
 
 He reworked `samsung-emuec` and `samsung-galaxybook-ec` on his 7.3.4 tree
 and will go through our open issues this week. What it covers and what not:
-TODO.md, Upstream. Draft reply: `docs/drafts/2026-11-17-anatase-ec-rework.txt`
-(owner's OK). Testing his drivers means either backporting both files to our
+TODO.md, Upstream. Posted 17 November under issue #1
+(https://github.com/anatase-org/kernel-anatase/issues/1#issuecomment-6943264160),
+including four changes never sent before; watch for his answers this week. Testing his drivers means either backporting both files to our
 7.2 kernel (module-only build, like `update-sleep-emuec.sh`) or moving to his
 7.3.4 tree (the "Move off 7.2" item, which also brings his SPSS TPM driver).
 
