@@ -5,6 +5,11 @@ and what to do next, with the scripts: Omarchy's edge kernel as a test
 entry (birkskyum is waiting), the Omarchy 4.5 upgrade in a btrfs copy, the
 fingerprint import, the board-power tests.
 
+**17 November 2026**: printing set up: HP ENVY Photo 6200 (192.168.178.9) as
+driverless IPP Everywhere queue `HP_ENVY_6200` (`lpadmin -m everywhere`, dnssd
+URI, A4, not shared), system default. Needs only cups + avahi + nss-mdns, all
+already installed; no HP driver.
+
 **Updated 16 November 2026**: Added `install/arch/gparted-hidpi.sh`: GParted
 needs `xorg-xhost` under Wayland to open (`sudo pacman -S xorg-xhost`), and its
 root GTK process loses the user's `GDK_SCALE=2`; running the script installs a
