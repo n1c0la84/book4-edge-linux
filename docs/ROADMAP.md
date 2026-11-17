@@ -1,7 +1,7 @@
 # Roadmap (17 November 2026)
 
 The single list of what to do on this laptop, in order, and where it is
-heading. It replaces `ROADMAP.md`. Evidence and history are in
+heading. It replaces `PLAN.md`. Evidence and history are in
 [STATE.md](STATE.md), [TODO.md](TODO.md) and [power.md](power.md); the hard
 rules in STATE.md apply to everything here (the assistant has no sudo, never
 delete from the ESP, ask before posting anywhere).

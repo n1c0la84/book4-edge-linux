@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-only
-# The clean test of Omarchy's own image on the 14" (docs/PLAN.md, item 2):
+# The clean test of Omarchy's own image on the 14" (docs/ROADMAP.md):
 # download Omarchy's nightly ARM installer image, check its checksum, and
 # write it to a USB stick. Booting it changes nothing on the internal disk
 # unless an install is started.
@@ -62,7 +62,7 @@ write() {
     sudo udevadm settle
     echo "verifying..."
     sudo cmp -n "$bytes" "$iso" "$dev" || { echo "error: the stick differs from the image; write it again" >&2; exit 1; }
-    echo "Done. Boot it: power off, F10 at power-on, pick the USB stick (docs/PLAN.md, item 2)."
+    echo "Done. Boot it: power off, F10 at power-on, pick the USB stick (docs/ROADMAP.md)."
 }
 
 case "${1:-}" in
