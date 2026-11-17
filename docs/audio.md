@@ -91,6 +91,31 @@ from the slit, `speaker-id.sh phone`, 5 s tones at -24 dBFS; peak in dB):
 - Posted with the PA 23 notes for omarchy-pkgs#2968 (birkskyum and
   hegjon): omarchy#15860 discussioncomment-19679162.
 
+**Corrected the same day: swr0 is the LEFT side.** The channel tests above
+only show which *channel* plays where; which amplifier a channel reaches
+is the routing's business. hegjon's `speaker-amp-id.sh` picks each amp by
+bus and address (the other three off with their `DAC Switch`, sink
+suspended while switching) and records the internal mics (run with
+`SINK=alsa_output.platform-sound.HiFi__Speaker__sink` and the raw mic as
+default source; our noise-suppressed source cancels the speakers):
+
+| Amp | 300 Hz | 3 kHz | channel that came through |
+|---|---|---|---|
+| swr0 addr 1 | -0.9 | 59.2 | 3 RL (+5) |
+| swr0 addr 2 | 31.4 | 58.8 | 1 FL (+2) |
+| swr3 addr 1 | -2.1 | 65.9 | 4 RR (+11) |
+| swr3 addr 2 | 29.9 | 64.3 | 4 RR (+1, unclear) |
+
+Address 2 is the woofer beyond doubt (~30 dB at 300 Hz, the tweeters
+nothing). swr0 carries FL and RL, which the phone test placed at the left
+slit: swr0 is left, swr3 right, as hegjon found on the NP944XMA and as the
+shared dtsi names the woofers. So `dts/patches/0005` (woofers "by side")
+swapped correct names into wrong ones, and 0003's tweeter names are on the
+wrong sides too. What plays is right (the crossover sends left to channels
+1 and 3); only the control names were wrong. The PCM channel table further
+down is wrong in its path/amp columns. Fixed on book4/7.3 (555bdfe16f);
+the daily 7.2 overlays still carry the old names.
+
 The address-1 amplifiers are the **tweeters**, and Linux used to drive only
 the **woofers** (a tone ladder: woofers heard from 300 Hz, tweeters from
 600 Hz). The device tree

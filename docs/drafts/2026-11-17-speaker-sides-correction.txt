@@ -1,0 +1,34 @@
+Two corrections, not posted.
+
+=== 1. omarchy#15860, reply under birkskyum's comment of 13:06 ===
+
+@birkskyum @hegjon I ran hegjon's `speaker-amp-id.sh` on the NP940XMA (amp
+by amp, the other three off with the sink suspended), and hegjon is right
+about the sides; my renaming was wrong. Internal mics, dB above silence:
+
+| Amp | 300 Hz | 3 kHz | channel through |
+|---|---|---|---|
+| swr0 addr 1 | -0.9 | 59.2 | RL |
+| swr0 addr 2 | 31.4 | 58.8 | FL |
+| swr3 addr 1 | -2.1 | 65.9 | RR |
+| swr3 addr 2 | 29.9 | 64.3 | (unclear) |
+
+Address 2 is the woofer, clearly (the tweeters give nothing at 300 Hz). swr0
+carries FL and RL, which my phone test placed at the left slit, so swr0 is
+left and swr3 right: the same as the NP944XMA, and antheas's woofer names
+are right as they are. Please leave my woofer renaming out; the tweeters
+then go TweeterLeft on swr0 address 1 and TweeterRight on swr3 address 1. My
+phone test was right about which channels play where; I read the channel
+order from my own routing, which is where it went wrong. Sorry for the
+detour, and thanks hegjon for the script (two notes for anyone running it
+on a setup like mine: point `SINK=` at the raw 4-channel sink if a
+filter-chain sink exists, and record from the raw mic, not an
+echo-cancelled one).
+
+=== 2. anatase-org/kernel-anatase#1, short follow-up ===
+
+Correction to my list above: drop the "woofers named by side" change. The
+dtsi's names are right (swr0 is the left side on the 14"; measured amp by
+amp today, and the same on the NP944XMA). For the tweeters, if you add
+them: TweeterLeft on swr0 address 1, TweeterRight on swr3 address 1, each
+from its macro's SPK2.
