@@ -1,5 +1,5 @@
 For: omarchy#15860, reply under birkskyum's comment of 16 November 13:36.
-Not posted. Result filled in 17 November; needs the log link.
+Posted 17 November: https://github.com/omacom/omarchy/discussions/15860#discussioncomment-19676697
 ------------------------------------------------------------------------
 
 Three things for the 14".
@@ -25,7 +25,7 @@ is left waiting for `sync_state`, no failed units. From a console:
 - `prevent_aoss_sleep` is `N` (not set by default yet, as you said), and
   `mem_sleep` is `s2idle [deep]`. I didn't suspend.
 
-The redacted kernel log is here: [LINK]
+The redacted kernel log: https://gist.github.com/n1c0la84/2c29f5248a541f854fbe0b6e3d088fca
 
 **A question about the battery.** On my installed system I run Samsung's
 ADSP image taken from this laptop's Windows, and battmgr never worked with

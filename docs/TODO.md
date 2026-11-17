@@ -1119,7 +1119,9 @@ Not yet reported:
       Samsung's ADSP from Windows battmgr never worked here, so which ADSP
       image is that?). `prevent_aoss_sleep` N, `mem_sleep` deep default.
       No suspend tried. Log: `~/omarchy-14-redacted.log` (not in the repo).
-      Draft for birkskyum filled in.
+      Reported with the log (gist n1c0la84/2c29f5248a541f854fbe0b6e3d088fca),
+      the battery question and the Samsung driver note on 17 November:
+      omarchy#15860 discussioncomment-19676697.
 
 - [ ] **Omarchy 4.5 and Omarchy's own repository** (review started 16
       November; installed: 4.0.4-3 built locally, 4.5.0 released 5
