@@ -44,6 +44,30 @@ at each end of the base.
 
 ## Four speakers (5 October)
 
+**Measured again, 17 November (omarchy#15860: hegjon's tree has both
+tweeters on one bus):** `tools/experiments/speaker-id-sweep.py` plays a
+-20 dBFS tone into one channel of the raw 4-channel sink and measures it with
+the internal microphones (Goertzel at the tone; floor ~10 dB at 200 Hz, so
+the 150 Hz row is noise). Levels in dB:
+
+| Hz | ch1 FL | ch3 RL | 1-3 | ch2 FR | ch4 RR | 2-4 |
+|---|---|---|---|---|---|---|
+| 300 | 46.4 | 43.6 | +2.9 | 48.2 | 44.9 | +3.3 |
+| 600 | 54.8 | 53.0 | +1.8 | 62.9 | 59.8 | +3.0 |
+| 1000 | 60.1 | 57.0 | +3.1 | 65.6 | 62.9 | +2.7 |
+| 2000 | 60.3 | 57.3 | +3.0 | 57.4 | 54.4 | +3.0 |
+| 4000 | 63.1 | 60.5 | +2.6 | 56.5 | 53.8 | +2.7 |
+| 8000 | 61.0 | 57.6 | +3.4 | 48.7 | 47.9 | +0.8 |
+
+The two amplifiers on one bus (1 and 3 = WSA2/swr3, 2 and 4 = WSA/swr0)
+give the same spectrum, 3 dB apart, from 300 Hz to 8 kHz; the two buses
+differ by a ~20 dB tilt (swr3 brighter). That contradicts "a woofer and a
+tweeter on each bus" (the 5 October tone ladder was by ear), and fits either
+"one bus woofers, the other tweeters" (hegjon) or two identical drivers per
+side with the microphone nearer one side. By ear the owner placed 1 and 3
+on the left, 2 and 4 on the right, but could not tell levels apart. Open:
+a phone at each end of the base, or the VI-sense impedance per amp.
+
 The address-1 amplifiers are the **tweeters**, and Linux used to drive only
 the **woofers** (a tone ladder: woofers heard from 300 Hz, tweeters from
 600 Hz). The device tree
