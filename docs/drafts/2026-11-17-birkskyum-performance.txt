@@ -1,5 +1,8 @@
 For: omarchy#15860 (birkskyum), and as a list for Anatase (his tree lacks the
 same four: they applied cleanly to `anatase` 7.3.4). Not posted.
+Claims checked 17 Nov against linux-omarchy 7.3-43 (DTB: no capacity-dmips-mhz,
+no protocol@80, CPU zones critical 115 C only; patches 2320-2327) and v7.3
+freq_table.c:41 / arch_topology.c:407.
 ------------------------------------------------------------------------
 
 A few things I run on the 14" that linux-omarchy doesn't carry for the X1E,
@@ -8,15 +11,18 @@ as far as I can see, in case they're useful for the X1 laptops in general:
 1. **Memory bandwidth (memlat).** You carry the SCMI vendor protocol and the
    memlat devfreq driver (2320-2326) but enable them only on Glymur (2327).
    The Hamoa node is one DT patch (Sibi Sankar's "arm64: dts: qcom: hamoa:
-   Enable LLCC/DDR/DDR_QOS DVFS"); without it DDR and LLCC stay at their
-   lowest vote. On a Surface Pro 11 this was measured at 38 GB/s STREAM
-   triad without memlat and 67 with (dwhinham/archiso-aarch64-sp11#38).
+   Enable LLCC/DDR/DDR_QOS DVFS", same `protocol@80` node as your Glymur
+   one); without it nothing raises DDR and LLCC beyond the bwmon votes. On
+   the 14": Geekbench 7 multi-core 13226 -> 16352 (+24 %), llama.cpp
+   Qwen3-8B generation 10.4 -> 20.9 t/s; DDR goes from 547 MHz idle to
+   ~2.1 GHz under load. A Surface Pro 11 owner measured STREAM triad 38 ->
+   67 GB/s (dwhinham/archiso-aarch64-sp11#38).
 2. **The 4 GHz boost is never used.** The second and third clusters list
    4012.8 MHz as a boost OPP; enabling boost raises the limit, but schedutil
    never asks for it, because arch_topology records the capacity reference
    once at policy creation, when boost is still off (3417.6 MHz). Forcing
    it with scaling_min_freq measured 3996 MHz on one core, as Windows does
-   on AC in "best performance". Fix: create the scmi-cpufreq policies with
+   on AC in "best performance" (CPUs 4-11; cluster 0 has no boost step). Fix: create the scmi-cpufreq policies with
    boost enabled (one small patch); I turn boost off on battery with a udev
    rule, as Windows does.
 3. **No CPU capacities.** hamoa.dtsi has no `capacity-dmips-mhz`, so every
@@ -29,7 +35,8 @@ as far as I can see, in case they're useful for the X1 laptops in general:
    charger held 108-112 C with throughput down to a seventh while cpufreq
    still reported the boost frequency. A 95 C passive trip bound to each
    cluster's cpufreq cooling device (the values the GPU zones already use)
-   keeps it in check.
+   held the hottest sensor at 95-97 C under 5 min of `openssl speed -multi
+   12`.
 
 Patches: tools/kernel/sleep-backport/0036-0039 in
 https://github.com/n1c0la84/book4-edge-linux (0036 is Qualcomm's; 0037-0039
