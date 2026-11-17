@@ -187,6 +187,19 @@ container; the EL2 chain chainloads Fedora's GRUB.
 - turbineBMW (omarchy-pkgs#1315): the EL of the SP11 result (no longer
   important).
 
+## 7b. Found here, not told upstream yet (17 November)
+
+| What | To whom | State |
+|---|---|---|
+| memlat on Hamoa (0036), 4 GHz boost (0037), CPU capacities (0038), 95 C passive trip (0039) | birkskyum, Anatase | draft `docs/drafts/2026-11-17-birkskyum-performance.txt` |
+| Iris video decoding at EL2 without TZ (0040) | jglathe#102 / x1e-sleep (EL2 users only) | not drafted |
+| SPSS hourly visits; AOSD failure modes; only the `val:` QMP form works | x1e-sleep, jglathe#102 | draft `docs/drafts/2026-11-16-jglathe-102-note.txt` |
+| s2idle at EL1 needs CNTV armed unmasked | linux-arm-msm | draft `docs/drafts/2026-11-14-linux-arm-msm-el1-s2idle-cntv.txt` |
+| keyboard tagged as tablet pad (`0CF2:9050`) | systemd hwdb | not drafted |
+| WCN7850 firmware c7-00108 regression on this card | ath12k / linux-firmware | not drafted (docs/firmware.md) |
+| EC battery reading collapsing from ~8 % to 0 under load | antheas | not drafted |
+| primary USB-C controller failing after sleep | antheas / linux-arm-msm | needs investigation first |
+
 ## 8. Drafts not posted (owner's decision)
 
 - `docs/drafts/2026-11-14-linux-arm-msm-el1-s2idle-cntv.txt` (kernel list).
