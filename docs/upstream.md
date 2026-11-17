@@ -33,13 +33,19 @@
    https://github.com/anatase-org/kernel-anatase/issues/6 (standalone on
    `anatase-7.2`; ours is `drivers/anatase/patches/0004`). Asks how port 0
    maps to the DP controllers (monitor still fails on AUX).
-2. **Cycle count reads the wrong register.** `KB9058_CYCLES` is `0xd0`, but on
-   this 14" unit EC space `0xd0..0xd1` holds the state of charge (`00 62` = 98
-   while the gauge at `0xa0` read 98 %). The BIX-style block at `0xb0..0xb7` is
-   design capacity, last full, design voltage and an unidentified word at
-   `0xb6` (`00 25` = 37): a cycle-count candidate, unproven.
+2. ~~Cycle count reads the wrong register~~: wrong, do not send. The DSDT's
+   `_BIX` reads `CYLC` at EC 0xD0 (TODO.md, 8 October), which is what the
+   driver reads; Windows' sleep study reported 137 cycles on 16 November.
 3. `CAPACITY` is computed from charge_now / charge_full; the EC also reports the
    gauge's own percentage at `0xa0` (big-endian u16).
+
+**Not reported yet (checked 17 November):** woofer prefixes named by side
+(`dts/patches/0005`; only offered in #4), the absent `eusb5_repeater` at 0x43
+(`dts/patches/0006`), refreshing the battery on read
+(`patches-galaxybook-ec/0001`; his reworked driver still serves the cached
+values), and the panel supply chain without `regulator-always-on`
+(sleep-backport 0018, a sleep-power fix). All four are in the draft
+`drafts/2026-11-17-anatase-ec-rework.txt`.
 
 ## To the other community driver (Saddytech, recommended in zensanp/linux-book4-edge#4)
 

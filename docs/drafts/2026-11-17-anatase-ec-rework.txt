@@ -22,15 +22,37 @@ Not in it yet:
 - #3: with the port's driver bound, unplugging the charger during sleep
   reset the machine on resume here; whether your suspend/resume handlers fix
   it I can only say after a test.
-- Battery readings: the battery properties come from the cache the EC's
-  interrupt refreshes; on my unit at low charge the readings froze for 16+
-  minutes (status "Charging", 374 mA) because no event came. I refresh on
-  read, rate-limited.
 - Waking for a charger plugged into an empty port during sleep (my
   experiment 0003): not in it; low priority.
 - Device tree for the 14": camera + privacy LED (#2), fingerprint reader on
   usb_2 (#5), tweeters (#4) are not in `x1-samsung-galaxy-book4-edge.dtsi`
   yet.
+
+Three more 14" device-tree changes I never sent (patches attached / linked):
+- Woofers named by side: the dtsi calls the WSA-macro woofer "SpkrLeft" and
+  the WSA2 one "SpkrRight"; on the 14" it is the other way round (each
+  SoundWire bus drives the woofer and tweeter of one side). The patch
+  overrides the two prefixes and the matching audio-routing sinks; only the
+  ALSA control names change.
+  https://github.com/n1c0la84/book4-edge-linux/blob/main/dts/patches/0005-arm64-dts-qcom-x1e80100-samsung-galaxy-book4-edge-14.patch
+- `eusb5_repeater` (PTN3222 at 0x43 on I2C 5) does not exist on the 14": the
+  ACPI tables describe nothing there, no PHY references it, only the 0x4f one
+  (usb_2, the fingerprint reader) is present.
+  https://github.com/n1c0la84/book4-edge-linux/blob/main/dts/patches/0006-arm64-dts-qcom-x1e80100-samsung-galaxy-book4-edge-14.patch
+- Sleep power: `VREG_OCTA_VDD` -> `VREG_DISPLAY_VDD` -> `VREG_EDP_3P3` are
+  `regulator-always-on`, so the panel chain stays powered in suspend; the
+  panel driver already switches `VREG_EDP_3P3` through runtime PM. Dropping
+  `regulator-always-on` (keeping `regulator-boot-on`) is one of the changes
+  that took s2idle here from ~1.5 W to ~0.7 W (the same fix took a Vivobook
+  S15 from 1.43 W to 0.25 W in justririll/x1e-sleep).
+  https://github.com/n1c0la84/book4-edge-linux/blob/main/tools/kernel/sleep-backport/0018-arm64-dts-qcom-galaxy-book4-edge-let-the-panel-suppl.patch
+
+And one driver change: refreshing the battery on read (rate-limited),
+because at low charge the EC sent no event for 16+ minutes and the cached
+status stayed "Charging", 374 mA:
+https://github.com/n1c0la84/book4-edge-linux/blob/main/drivers/anatase/patches-galaxybook-ec/0001-samsung-galaxybook-ec-refresh-battery-on-read.patch
+(written against your earlier driver; I'll redo it on the rework if you want
+it.)
 
 Also interesting: the SPSS TPM work. On this laptop the Secure Processor
 (PAS 14) wakes CX once per full hour of the AOP clock while the SoC is in
