@@ -26,12 +26,14 @@ Storetvedt's series (the EC and both S2MM006 controllers in
 at them), so taking the drivers means taking those nodes too. Without them a
 stock install has no battery reading and no charger control on this laptop.
 
-For the 14" I carry a few more device-tree additions, all sent to Anatase:
+For the 14" I carry a few more device-tree changes, all sent to Anatase:
 the front camera (OV02C10) and its privacy LED
 (anatase-org/kernel-anatase#2), the two tweeters, i.e. the second WSA8835 on
-each speaker bus (#4), the fingerprint reader on usb_2 (#5), and the Type-C
-orientation fix in samsung-emuec (#6). Notes and patches:
-https://github.com/n1c0la84/book4-edge-linux
+each speaker bus (#4), the fingerprint reader on usb_2 (#5), the Type-C
+orientation fix in samsung-emuec (#6), and, listed in #1: woofers named by
+side, the absent eUSB2 repeater at 0x43 disabled, and the panel supply chain
+without `regulator-always-on` (it stays powered through suspend otherwise).
+Notes and patches: https://github.com/n1c0la84/book4-edge-linux
 
 If you want to pick the drivers up, antheas is the person to ask; I'm happy to
 test whatever you build on the 14".
