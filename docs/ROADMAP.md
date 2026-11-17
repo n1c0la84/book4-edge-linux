@@ -209,7 +209,18 @@ book4-el2-sleep.service active, no failed units. Problems:
 - **Iris**: "firmware download failed -22": 0040 (non-TZ Iris start) not yet
   ported to 7.3; expected.
 - Release name `7.3.4-book4-book4` (the double suffix, known).
-- Still to do on it: one sleep on battery, speakers, the USB-C ports after sleep.
+- **No CX collapse in s2idle** (5 naps, 17 November: cxsd/ddr 0.0 %, against
+  96-100 % on every 7.2 nap). APSS enters (1 entry per nap), ADSP/CDSP sleep,
+  the system genpd requests DRIPS (S1, s2idle count 5; SS1 at runtime, as
+  designed by 0015/0016), so a vote holds CX. Ruled out, one at a time:
+  qcom_spss_nvm + qcom_glink_spss unloaded, qcom_iris unloaded, coresight
+  unloaded, charger (a nap on battery). Next: `tools/power/vote-dump.sh` on
+  7.3 and on 7.2, diff (interconnect, clocks, regulators, genpd, modules).
+- **Audio**: PipeWire had the card on profile "off" after boot (only the
+  book4_speakers filter sink); `pactl set-card-profile alsa_card.platform-sound
+  "HiFi (Headphones, Mic, Speaker)"` brought it back. Boot log: `qcom-apm CMD
+  timeout`, "Parent card not yet available". Watch on the next boot.
+- Still to do on it: speakers by ear, the USB-C ports after sleep.
 
 ## 7b. Found here, not told upstream yet (17 November)
 
