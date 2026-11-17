@@ -13,9 +13,11 @@ about the sides; my renaming was wrong. Internal mics, dB above silence:
 | swr3 addr 1 | -2.1 | 65.9 | RR |
 | swr3 addr 2 | 29.9 | 64.3 | (unclear) |
 
-Address 2 is the woofer, clearly (the tweeters give nothing at 300 Hz). swr0
-carries FL and RL, which my phone test placed at the left slit, so swr0 is
-left and swr3 right: the same as the NP944XMA, and antheas's woofer names
+Address 2 is the woofer, clearly (the tweeters give nothing at 300 Hz). And
+with only one amp on at a time (DAC Switch, sink suspended), 1 kHz on all
+four channels and a phone at each slit, peak dB left / right: swr0 address 2
+-24 / -46, swr3 address 2 -47 / -30, swr0 address 1 -59 / none, swr3
+address 1 none / -73. So swr0 is left and swr3 right: the same as the NP944XMA, and antheas's woofer names
 are right as they are. Please leave my woofer renaming out; the tweeters
 then go TweeterLeft on swr0 address 1 and TweeterRight on swr3 address 1. My
 phone test was right about which channels play where; I read the channel
