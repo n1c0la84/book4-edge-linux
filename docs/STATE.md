@@ -20,9 +20,12 @@ resolves it and is still to be run. Checked as boot-safe like the 4 November
 one (no kernel, firmware, GRUB or mkinitcpio package in it). **One catch:**
 our locally built `libfprint-sdcp` links `libssl.so.3` but depends on plain
 `openssl`, so pacman would upgrade without complaint and break the fingerprint
-reader (used by `/etc/pam.d/sudo` and the lock screen). Install the compat
-library first: `sudo pacman -S --asdeps openssl-3`, then `book4-update`
-(or rebuild libfprint-sdcp against OpenSSL 4 later).
+reader (used by `/etc/pam.d/sudo` and the lock screen). `openssl-3` cannot
+go in first (openssl 3.x owns the .so.3 files: conflict), and `book4-update`
+takes no extra packages, so: `book4-update`, then
+`sudo pacman -S --asdeps openssl-3` (openssl 4.1.0 ships only .so.4, checked;
+pam_fprintd is `sufficient`, so sudo falls back to the password meanwhile).
+Or rebuild libfprint-sdcp against OpenSSL 4 later.
 
 **17 November 2026**: printing set up: HP ENVY Photo 6200 (192.168.178.9) as
 driverless IPP Everywhere queue `HP_ENVY_6200` (`lpadmin -m everywhere`, dnssd
