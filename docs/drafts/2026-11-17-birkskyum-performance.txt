@@ -1,3 +1,4 @@
+Posted 17 November: omarchy#15860 discussioncomment-19681553.
 For: omarchy#15860 (birkskyum), and as a list for Anatase (his tree lacks the
 same four: they applied cleanly to `anatase` 7.3.4). Not posted.
 Claims checked 17 Nov against linux-omarchy 7.3-43 (DTB: no capacity-dmips-mhz,
@@ -13,9 +14,7 @@ as far as I can see, in case they're useful for the X1 laptops in general:
    The Hamoa node is one DT patch (Sibi Sankar's "arm64: dts: qcom: hamoa:
    Enable LLCC/DDR/DDR_QOS DVFS", same `protocol@80` node as your Glymur
    one); without it nothing raises DDR and LLCC beyond the bwmon votes. On
-   the 14": Geekbench 7 multi-core 13226 -> 16352 (+24 %; the first run
-   on battery, the second on the charger), llama.cpp
-   Qwen3-8B generation 10.4 -> 20.9 t/s; DDR goes from 547 MHz idle to
+   the 14": llama.cpp Qwen3-8B generation 10.4 -> 20.9 t/s; DDR goes from 547 MHz idle to
    ~2.1 GHz under load. A Surface Pro 11 owner measured STREAM triad 38 ->
    67 GB/s (dwhinham/archiso-aarch64-sp11#38).
 2. **The 4 GHz boost is never used.** The second and third clusters list

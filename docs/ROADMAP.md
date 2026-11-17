@@ -191,7 +191,7 @@ container; the EL2 chain chainloads Fedora's GRUB.
 
 | What | To whom | State |
 |---|---|---|
-| memlat on Hamoa (0036), 4 GHz boost (0037), CPU capacities (0038), 95 C passive trip (0039) | birkskyum, Anatase | draft `docs/drafts/2026-11-17-birkskyum-performance.txt` |
+| memlat on Hamoa (0036), 4 GHz boost (0037), CPU capacities (0038), 95 C passive trip (0039) | birkskyum, Anatase | posted to birkskyum 17 Nov (discussioncomment-19681553); Anatase not yet |
 | Iris video decoding at EL2 without TZ (0040) | jglathe#102 / x1e-sleep (EL2 users only) | not drafted |
 | SPSS hourly visits; AOSD failure modes; only the `val:` QMP form works | x1e-sleep, jglathe#102 | draft `docs/drafts/2026-11-16-jglathe-102-note.txt` |
 | s2idle at EL1 needs CNTV armed unmasked | linux-arm-msm | draft `docs/drafts/2026-11-14-linux-arm-msm-el1-s2idle-cntv.txt` |
