@@ -88,6 +88,8 @@ from the slit, `speaker-id.sh phone`, 5 s tones at -24 dBFS; peak in dB):
   prudent, at 2 kHz or lower.
 - The internal-microphone sweep's tilt between the buses was the
   microphone being nearer the left end.
+- Posted with the PA 23 notes for omarchy-pkgs#2968 (birkskyum and
+  hegjon): omarchy#15860 discussioncomment-19679162.
 
 The address-1 amplifiers are the **tweeters**, and Linux used to drive only
 the **woofers** (a tone ladder: woofers heard from 300 Hz, tweeters from
