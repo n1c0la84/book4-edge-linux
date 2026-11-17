@@ -1041,6 +1041,29 @@ To test (should work, never verified)
 
 ## Upstream
 
+- [ ] **Anatase reworked the Samsung drivers (16 November, `anatase-org/
+      patchwork` branch `anatase`, 7.3.4-an06).** `samsung-emuec`:
+      c618779c07 (PD request tracked by requested RDO/PDO, completion from
+      the interrupts, Windows' per-voltage input limits, suspend/resume
+      that disables the IRQ and resyncs), 62cdef6019 (port state to the EC),
+      5efe18b1c0, 3f90ece616. `samsung-galaxybook-ec`: 62cdef6019 sends the
+      contract to the EC (0x90 input current at 95 %, 0x91 W and 100 mV)
+      through a `power-supplies` link from the EC to both PD controllers.
+      Against ours (drivers/anatase/): covers patches/0001 (PD retry) and
+      patches-galaxybook-ec/0002 (contract to EC), and roughly 0002
+      (quiesce across sleep); does NOT cover patches/0004 (orientation from
+      CC_STATUS bits 1:0, issue #6), 0003 (wake for a charger into an empty
+      port), patches-galaxybook-ec/0001 (refresh battery on read; his
+      readings still come from the interrupt-refreshed cache), nor the 14"
+      DT parts (#2 camera, #4 tweeters, #5 fingerprint). He closed #1 and
+      will go through the others this week. Draft reply:
+      `docs/drafts/2026-11-17-anatase-ec-rework.txt`. Also new on that
+      branch: an SPSS GLINK transport and **SPSS TPM driver** (the Secure
+      Processor hosts Microsoft's TPM; `sec_nvm_stpm_lite_msft`) enabled on
+      the Book4 Edge DT: relevant to the hourly SPSS visits (see "Why AOSD
+      resets"). Testing it means moving to his 7.3.4 tree, which is the
+      "Move off 7.2" item.
+
 Details in [upstream.md](upstream.md).
 
 Waiting for a reply (Anatase, `anatase-org/kernel-anatase`):

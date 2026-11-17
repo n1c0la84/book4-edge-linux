@@ -136,6 +136,15 @@ each night with its tag.
   the 16" and asked for 14" testers; a short 14" status with a pointer to
   the sleep work would fit there (owner's OK first).
 
+## 5b. Anatase's reworked Samsung drivers (17 November)
+
+He reworked `samsung-emuec` and `samsung-galaxybook-ec` on his 7.3.4 tree
+and will go through our open issues this week. What it covers and what not:
+TODO.md, Upstream. Draft reply: `docs/drafts/2026-11-17-anatase-ec-rework.txt`
+(owner's OK). Testing his drivers means either backporting both files to our
+7.2 kernel (module-only build, like `update-sleep-emuec.sh`) or moving to his
+7.3.4 tree (the "Move off 7.2" item, which also brings his SPSS TPM driver).
+
 ## 6. Not worth doing now
 
 - AOSD (the deepest state): fails in three different ways here and saves

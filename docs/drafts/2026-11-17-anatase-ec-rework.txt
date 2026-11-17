@@ -1,0 +1,42 @@
+For: https://github.com/anatase-org/kernel-anatase/issues/1 (antheas closed it on
+16 November: "I reworked the driver ... I will go through these over the next week")
+Not posted. Owner's OK first.
+------------------------------------------------------------------------
+
+Thanks! I read the rework on `anatase` (c618779c07, 62cdef6019) against what
+I carry on the 14" (NP940XMA), so you can skip what it already covers:
+
+Covered by the rework, I'll drop mine once I've run it:
+- PD request after a hot plug (this issue): replaced by requested_rdo /
+  requested_pdo tracking and completion through the interrupts.
+- Passing the contract to the EC (0x90 input current at 95 %, 0x91 watts and
+  100 mV): my `samsung-galaxybook-ec` patch did the same; yours via
+  `power-supplies` is cleaner.
+- Quiescing the controller across suspend (IRQ off, work cancelled, resync
+  on resume): close to my experiment for #3.
+
+Not in it yet:
+- #6 orientation: `samsung_emuec` still takes it from CC_STATUS bits 7:4,
+  which on this unit is the attach type; the orientation is in bits 1:0
+  (1 = CC1, 2 = CC2). Patch in #6.
+- #3: with the port's driver bound, unplugging the charger during sleep
+  reset the machine on resume here; whether your suspend/resume handlers fix
+  it I can only say after a test.
+- Battery readings: the battery properties come from the cache the EC's
+  interrupt refreshes; on my unit at low charge the readings froze for 16+
+  minutes (status "Charging", 374 mA) because no event came. I refresh on
+  read, rate-limited.
+- Waking for a charger plugged into an empty port during sleep (my
+  experiment 0003): not in it; low priority.
+- Device tree for the 14": camera + privacy LED (#2), fingerprint reader on
+  usb_2 (#5), tweeters (#4) are not in `x1-samsung-galaxy-book4-edge.dtsi`
+  yet.
+
+Also interesting: the SPSS TPM work. On this laptop the Secure Processor
+(PAS 14) wakes CX once per full hour of the AOP clock while the SoC is in
+CX collapse; a PAS shutdown stops those visits (notes in
+https://github.com/n1c0la84/book4-edge-linux/blob/main/docs/TODO.md, "Why AOSD
+resets"). Once Linux talks to it over GLINK that may change, so I'd be glad
+to measure sleep on a kernel with your SPSS series.
+
+I'll test the new drivers on 7.3.4-an06 and report here.
