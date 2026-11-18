@@ -18,6 +18,18 @@ Scan to PDF: `~/.local/bin/scan [name] [dpi] [color|gray]` (private, A4 area,
 300 dpi default, to ~/Documents/Scans); Document Scanner set to text mode,
 300 dpi, PDF, same folder, HP preselected (gsettings org.gnome.SimpleScan).
 
+**18 November 2026, later: videos would not open (mpv, no window).** Omarchy
+4.5's migration ran `omarchy-install-video-decode` (11:17), which put
+`hwdec=auto-safe,v4l2m2m-copy` in `~/.config/mpv/mpv.conf`. On el2-73 the
+Iris decoder then faults on the first stream (SMMU SID 0x1940 at iova 0,
+`qcom-iris: system error 0x5000003`, vb2_start_streaming WARN); mpv creates
+its window but never presents a frame and ignores SIGTERM, so nothing shows.
+First fault 12:39 (a 2832x1700 screen recording); after it Iris fails at every
+size, 1080p included, until reboot. mpv.conf now has plain `hwdec=auto-safe`
+(the Omarchy script keeps a global hwdec the user set); software decode plays
+fine. Still to find: whether Iris fails from a fresh boot or only after the
+first fault (`tools/video/iris-test.sh` after a reboot, then a 2832x1700 file).
+
 **Updated 18 November 2026**: Disk: deleted the snapshots arch-pre-omarchy-20261003-1109 and arch-pre-update-20261104-0934 and Fedora-home kernel trees patchwork-pdc, patchwork-ufs-qcom-lane-clks-guard, tweeters: 8.5 -> 22 GiB free (82 %). **el2-73 (7.3.4-book4) is now the daily kernel** (owner switched, 18 Nov; 7.2.7-book4s stays as the fallback entry). el2-73 rebuilt with both fixes: check clean, nap 96.6 %; daily switch after a long battery sleep and a few days of use. 7.3 audio fixed: reverting c663014e45 (audioreach channel maps) makes the mic record and the speakers play (book4/7.3 767f896; running as updates/ modules until rebuilt). 7.3 sleep blocker found: the CoreSight CTCU (new in 7.3's hamoa.dtsi) keeps the QDSS clock on; with it disabled 7.3 collapses (97 %). Fixed on book4/7.3 (f79c9d4); boot "test: 73-noctcu" until rebuilt. Mic broken on 7.3 (APM port 110). Earlier, 17 November: 7.3: no CX collapse in s2idle (ROADMAP 7a, suspect a600000.usb votes); 0040/0041/battery refresh ported, release name fixed, rebuild pending. el2-73 (7.3.4) first boot: works broadly; qcom_spss_nvm probe loop blacklisted (/etc/modprobe.d/book4-spss-nvm.conf), Iris needs 0040 ported (ROADMAP 7a). Speakers: swr0 is the LEFT side (one amp at a time, phone at each slit); our woofer renaming was wrong, fixed on book4/7.3 (555bdfe16f), corrections posted to omarchy#15860 and kernel-anatase#1; the daily 7.2 overlays still carry the old names. Performance note (memlat, boost, capacities, 95 C trip) posted to birkskyum. Omarchy's nightly image boots on the 14" to the installer (no Wi-Fi/GPU/audio firmware in it; reported). Anatase reworked the Samsung drivers; our remaining changes sent (kernel-anatase#1). Roadmap in ROADMAP.md. Earlier, 16 November: Added `install/arch/gparted-hidpi.sh`: GParted
 needs `xorg-xhost` under Wayland to open (`sudo pacman -S xorg-xhost`), and its
 root GTK process loses the user's `GDK_SCALE=2`; running the script installs a
