@@ -9,7 +9,7 @@ delete from the ESP, ask before posting anywhere).
 ## Where it is heading
 
 **Stock Omarchy, plus a Book4 layer on top.** Stock means Omarchy's
-repositories, Omarchy's kernel (`linux-omarchy`), Limine as boot loader,
+repositories, Omarchy's kernel (`linux-omarchy`), Arch's own GRUB (Limine optional, later),
 Omarchy's updates and migrations. The layer is everything specific to this
 laptop that stock does not have, packaged so it installs on a stock system
 and survives its updates:
@@ -19,7 +19,7 @@ and survives its updates:
 | `book4-edge` package | UCM and PipeWire audio (speakers, mic noise suppression), udev rules (keyboard, fingerprint, battery boost), modprobe (`qcom_adsp_pwr_lmts` and battmgr blacklists), sleep log, battery warnings, crash log, Bluetooth address, fingerprint import, kbd backlight, the hooks we keep | `userspace/` |
 | `book4-edge-firmware` (local only, never published) | ADSP/CDSP/GPU/Wi-Fi board/camera/sensor files from this laptop's own Windows partition | `install/arch/sync-*`, `firmware/` |
 | `book4-edge-dkms` (shrinks to nothing) | drivers until they are in `linux-omarchy`: `samsung-galaxybook-ec`, `samsung-emuec`, `aoss_cxsd_only` (until `prevent_aoss_sleep` is set by default) | `drivers/anatase/`, `tools/power/sleep-modules/` |
-| `book4-edge-el2` (optional) | the EL2 boot chain (UEFI Shell, qebspil, slbounce, `tcblaunch.exe` from Windows) as a Limine entry: KVM and the 0.70 W sleep | `install/el2/` |
+| `book4-edge-el2` (optional) | the EL2 boot chain (UEFI Shell, qebspil, slbounce, `tcblaunch.exe` from Windows) as a boot entry: KVM and the 0.70 W sleep | `install/el2/` |
 
 A stock install on the 14" today: boots to the installer at EL1 and picks
 our tree by itself (17 November), but has no Wi-Fi, GPU, sound or CDSP
@@ -180,26 +180,37 @@ Steps:
      our CL5 / DRIPS / CNTV findings (draft in `docs/drafts/`, owner
      undecided).
 5. When linux-omarchy carries the drivers and the sleep pieces: boot it
-   with the layer (Limine entry), compare, and drop our kernel.
+   with the layer (its own boot entry), compare, and drop our kernel.
 
-## 5. Boot: GRUB and Fedora out, Limine in
+## 5. Boot: Fedora out, Arch's own GRUB in (Limine later, optional)
 
 Today Fedora owns `/boot` (sda4) and GRUB, and is the kernel build
 container; the EL2 chain chainloads Fedora's GRUB.
 
-1. Kernel builds without Fedora: an Arch container or plain makepkg for the
-   fork (a `linux-book4` PKGBUILD, long on the list); move
-   `~/src/patchwork` out of Fedora's home first.
-2. Limine on the ESP as Omarchy installs it (UKI per kernel, snapper
-   entries), with our kernel(s) as entries; the EL2 chain's
-   `startup-esp.nsh` then chainloads Limine instead of GRUB. Test from a
+Decided 18 November: two moves instead of one. Limine is not required by
+Omarchy (only in the installer's `omarchy-other.packages`; every Limine
+migration skips itself without it, 4.5 runs here on GRUB). Its benefit is
+bootable snapper snapshots (`limine-snapper-sync`); the btrfs-copy method
+used for the 4.5 upgrade covers that need for now.
+
+1. Kernel builds without Fedora: a `linux-book4` PKGBUILD (makepkg on Arch,
+   native aarch64), installable and removable with pacman; move
+   `~/src/linux-73` and `~/src/patchwork-sleep` (7.2 fallback config) out
+   of Fedora's home first.
+2. **Arch's GRUB** (the `grub` package) on the ESP, as its own directory
+   next to Fedora's, with a grub.cfg generated on Arch: the daily 7.3 entry,
+   the 7.2 fallback, and `test-entry.sh` adapted to it. The EL2 chain's
+   `startup-esp.nsh` chainloads it instead of Fedora's GRUB. Test from a
    second firmware boot entry before changing the default. Never delete
-   from the ESP (hard rule): GRUB's files stay until everything is proven.
-3. Retire Fedora: back up its home (22 GB, mostly the kernel tree), delete
-   the `root` and `home` subvolumes, give sda4 to the ESP or Arch.
-   Frees about 25 GB.
+   from the ESP (hard rule): Fedora's GRUB files stay until everything is
+   proven.
+3. Retire Fedora: back up its home, delete the `root` and `home`
+   subvolumes, give sda4 to the ESP or Arch. Frees about 25 GB.
 4. Disk space: shrink Windows from Windows (354 GB) and add the space to
    btrfs as a second device, or as a data partition. Back up home first.
+5. **Optional, later: Limine** as Omarchy installs it (UKI per kernel,
+   snapper entries), if boot-menu snapshots become worth the change; same
+   rules (second firmware entry first, GRUB kept as fallback).
 
 ## 6. Features still to do
 
