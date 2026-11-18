@@ -244,8 +244,13 @@ book4-el2-sleep.service active, no failed units. Problems:
   CTCU, ETRs and replicators (8017f8fa34), all clocked by `aoss_qmp`
   (the QDSS clock, voted through AOSS QMP). The CTCU driver enables its
   clock with devm_clk_get_optional_enabled() and also toggles it from
-  runtime PM (unbalanced on remove: the warnings). Next: `noctcu`, then
-  `noetr`.
+  runtime PM (unbalanced on remove: the warnings).
+  **`73-noctcu`: 97.0 % (18 Nov 10:18). The CTCU alone is the blocker**
+  (with it off, `qdss` shows enable count 0 awake, the other coresight
+  drivers loaded). Fixed on book4/7.3 (f79c9d4, the 14" DTS disables
+  `ctcu@10001000`); until the next build, boot "test: 73-noctcu" for 7.3.
+  Not yet known: which reference keeps the QDSS clock voted with the CTCU
+  probed (read `qdss` in clk_summary on a plain 7.3 boot to confirm).
 - **Microphone broken on 7.3** (both DTBs): `Failed to start APM port 110`
   (VA_CODEC_DMA_TX_0, APM error on 0x01001002), retried hundreds of times;
   the speaker PCM then stays PREPARED in PipeWire (echo-cancel ties them).
