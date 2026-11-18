@@ -1,0 +1,21 @@
+Posted 18 November: kernel-anatase/issues/1#issuecomment-6975131717
+------------------------------------------------------------------------
+One more 7.3 regression, in case you see it too: on the 14" the internal
+microphones don't record on 7.3. The ADSP rejects the graph start on the
+DMIC port:
+
+```
+qcom-apm gprsvc:service:2:1: DSP returned error[1001002] 1
+q6apm-lpass-dais ...: Failed to start APM port 110
+q6apm-lpass-dais ...: ASoC error (-22): at soc_dai_trigger() on VA_CODEC_DMA_TX_0
+```
+
+PipeWire retries it hundreds of times, and with echo cancellation linking
+mic and speakers, playback stalls with it. Same with the 7.2 device tree,
+fine on 7.2. Reverting the twelve 7.3-only `sound/soc/qcom/qdsp6` commits as
+a module build fixed it; reverting only c663014e45 ("ASoC: qcom: audioreach:
+compute active channel maps from channel_map", upstream) fixes it too: mic
+records, speakers play. I haven't worked out why yet (for the default
+channel map it should give the same mask), so for now it's a plain revert
+on our branch (n1c0la84/linux-book4-edge book4/7.3, 767f896). With that and
+the CTCU off, 7.3 is now my daily kernel: s2idle 96.6 %, sound, Iris.
