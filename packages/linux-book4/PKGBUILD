@@ -49,6 +49,7 @@ prepare() {
   for o in PM_CLK QCOM_TZMEM_MODE_SHMBRIDGE CPU_IDLE_GOV_TEO; do
     grep -q "^CONFIG_$o=y" .config || { echo "CONFIG_$o not set" >&2; return 1; }
   done
+  _make -s syncconfig   # refresh include/config/auto.conf, which kernelrelease reads
   local rel; rel=$(_make -s kernelrelease)
   [[ $rel == "$pkgver$_suffix" ]] || { echo "release $rel, expected $pkgver$_suffix" >&2; return 1; }
   # the out-of-tree sleep modules, from this repo
