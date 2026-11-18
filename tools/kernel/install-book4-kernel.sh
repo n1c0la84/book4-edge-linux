@@ -35,7 +35,7 @@ files=$(ls -t "$pkgdir"/$pkg-[0-9]*.pkg.tar.* "$pkgdir"/$pkg-headers-[0-9]*.pkg.
 [ -n "$files" ] || { echo "error: no $pkg package in $pkgdir; build it first (makepkg)" >&2; exit 1; }
 echo "== 1. pacman -U"; echo "$files" | sed 's/^/   /'
 sudo -v
-want=$(bsdtar -tf $(echo "$files" | grep -v headers | head -1) | awk -F/ '$4=="modules" && $5!="" {print $5; exit}')
+want=$(bsdtar -tf $(echo "$files" | grep -v headers | head -1) | awk -F/ '$3=="modules" && $4!="" {print $4; exit}')
 if [ -d "/usr/lib/modules/$want" ] && ! pacman -Qqo "/usr/lib/modules/$want" >/dev/null 2>&1; then
     [ "$(uname -r)" != "$want" ] || { echo "error: $want is running; boot another kernel first" >&2; exit 1; }
     echo "   removing the unpackaged /usr/lib/modules/$want (build-73-kernel.sh)"
