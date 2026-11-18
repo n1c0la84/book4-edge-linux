@@ -5,7 +5,9 @@
 # This makes a copy of /boot/dtb-test/book4-73-el2.dtb with one group of nodes
 # disabled, installs it next to it and adds the GRUB test entry "73-<group>".
 #
-#   bash tools/power/dt73-variant.sh nocs      coresight/QDSS nodes off
+#   bash tools/power/dt73-variant.sh nocs      coresight/QDSS nodes off (98.4 %, 18 Nov)
+#   bash tools/power/dt73-variant.sh noctcu    only the CTCU (new in 7.3) off
+#   bash tools/power/dt73-variant.sh noetr     CTCU, both ETRs and their replicators (all new in 7.3) off
 #   bash tools/power/dt73-variant.sh noadc     PMIC ADC5 gen3 (sys-therm) off
 #   bash tools/power/dt73-variant.sh nospss    SPSS GLINK transport off
 #   bash tools/power/dt73-variant.sh remove GROUP   entry and file gone
@@ -25,6 +27,9 @@ fdt = libfdt.Fdt(open(src, 'rb').read())
 fdt.resize(fdt.totalsize() + 65536)
 match = {
     'nocs':   lambda c, p: 'coresight' in c or 'qcom,coresight' in c or '/ctcu@' in p or '/tmc@' in p,
+    'noctcu': lambda c, p: p == '/soc@0/ctcu@10001000',
+    'noetr':  lambda c, p: p in ('/soc@0/ctcu@10001000', '/soc@0/tmc@10048000', '/soc@0/tmc@1004f000',
+                                 '/soc@0/replicator@10046000', '/soc@0/replicator@1004e000'),
     'noadc':  lambda c, p: 'spmi-adc5-gen3' in c,
     'nospss': lambda c, p: not p.startswith('/reserved-memory') and ('spss' in c or 'spss' in p.split('/')[-1]),
 }[group]

@@ -239,6 +239,13 @@ book4-el2-sleep.service active, no failed units. Problems:
   `tools/power/dt73-variant.sh nocs|noadc|nospss` (7.3 EL2 DTB with that
   group disabled, own test entry). First: coresight (7.3 adds ETR/CTCU,
   8017f8fa34; unloading the modules threw clk disable warnings).
+  **`73-nocs`: 98.4 % (18 Nov 10:11): coresight is the blocker.** 7.2 has
+  coresight too (TPDM/funnels) and collapses, so the suspects are 7.3's new
+  CTCU, ETRs and replicators (8017f8fa34), all clocked by `aoss_qmp`
+  (the QDSS clock, voted through AOSS QMP). The CTCU driver enables its
+  clock with devm_clk_get_optional_enabled() and also toggles it from
+  runtime PM (unbalanced on remove: the warnings). Next: `noctcu`, then
+  `noetr`.
 - **Microphone broken on 7.3** (both DTBs): `Failed to start APM port 110`
   (VA_CODEC_DMA_TX_0, APM error on 0x01001002), retried hundreds of times;
   the speaker PCM then stays PREPARED in PipeWire (echo-cancel ties them).
