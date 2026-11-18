@@ -104,7 +104,17 @@ block=$(awk -v sv="rootflags=subvol=$subvol" '
   /^menuentry / { buf = $0 "\n"; inside = 1; next }
   inside { buf = buf $0 "\n" }
   inside && /^}/ { inside = 0; if (index(buf, sv) && !found) { printf "%s", buf; found = 1 } }' < <($SUDO cat "$esp/$ESPCFG"))
+# A btrfs copy of the system (omarchy45-copy.sh: arch-45) has no generated
+# entry of its own: copy the original system's and point it at the copy.
+if [ -z "$block" ] && [ "$subvol" != arch ]; then
+  block=$(awk -v sv="rootflags=subvol=arch" '
+    /^menuentry / { buf = $0 "\n"; inside = 1; next }
+    inside { buf = buf $0 "\n" }
+    inside && /^}/ { inside = 0; if (index(buf, sv) && !found) { printf "%s", buf; found = 1 } }' < <($SUDO cat "$esp/$ESPCFG"))
+  [ -z "$block" ] || { block=${block//rootflags=subvol=arch /rootflags=subvol=$subvol }; block=${block//rootflags=subvol=arch$'\n'/rootflags=subvol=$subvol$'\n'}; echo "   (no generated entry for $subvol: using the arch entry with rootflags=subvol=$subvol)"; }
+fi
 [ -n "$block" ] || { echo "error: no entry with rootflags=subvol=$subvol in $ESPCFG" >&2; exit 1; }
+grep -q "rootflags=subvol=$subvol\b" <<<"$block" || { echo "error: the copied entry does not boot $subvol" >&2; exit 1; }
 
 title=$(sed -n '1s/^menuentry "\(.*\)" {$/\1/p' <<<"$block")
 dt=$(sed -n 's/^[[:space:]]*devicetree[[:space:]]\+//p' <<<"$block")
