@@ -33,6 +33,21 @@ fingerprint, errors as usual; nap 97.2 %. Next: the same as
 `linux-book4` (7.3.4-book4) replacing the unpackaged install from
 build-73-kernel.sh, then remove book4p.
 
+**Done, 18 November 17:20:** `linux-book4` 7.3.4-1 built (6 minutes after
+the book4p build; PKGBUILD now runs syncconfig before kernelrelease),
+installed with `install-book4-kernel.sh book4` (removed the unpackaged
+`/usr/lib/modules/7.3.4-book4`, same /boot files, entries unchanged).
+The default boot (omarchy45 entry, arch-45) runs the pacman-owned kernel:
+DTB with CTCU off, sleep service, DSPs, sound, no APM errors.
+`build-73-kernel.sh` is retired for 7.3 (kept for reference). Caveat: the
+original `arch` subvolume (entry el2-73) still has the Fedora-built
+modules under the same release name, while /boot now has the Arch-built
+kernel and an initramfs from arch-45; do not rely on el2-73 until the
+copy is adopted (the 7.2 entry stays the fallback). Updating the kernel
+from now on: pull book4/7.3 in `~/src/linux-book4`, `makepkg -f` in
+`packages/linux-book4`, `install-book4-kernel.sh book4` (from another
+kernel, or reboot after).
+
 1. `pacman -S --needed base-devel bc pahole` (+ `xmlto`/`python` if the
    build asks).
 2. Clone `book4/7.3` into `~/src/linux-book4` (blobless, ~2 GB +
