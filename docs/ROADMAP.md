@@ -99,6 +99,15 @@ so the daily system is untouched:
    `yay -Sua --noconfirm` and would replace it, so `folio` is in IgnorePkg
    in the copy. checkupdates: nothing pending; AUR: artcraft-launcher
    0.14 -> 0.19.2. Orphans offered: build tools (meson, sassc, ...).
+   `omarchy-update` ran (11:27): its 10 GiB free check fails (8.5 GiB, the
+   copy diverged by ~7 GB), passed with `OMARCHY_UPDATE_FORCE=1`; orphans
+   removed, artcraft updated. Folio: only in Omarchy's **edge** channel
+   (0.6.1; stable has Flea; Nautilus stays the 4.5 default), installed with
+   `pacman -U https://pkgs.omarchy.org/edge/aarch64/folio-0.6.1-1-aarch64.pkg.tar.zst`;
+   keep `folio` in IgnorePkg until it reaches stable, then drop the hold.
+   `omarchy-update-restart` always asks to reboot here: it looks for a
+   pacman-owned modules.builtin and ours are not packaged; a false alarm.
+   Next: a day or two in the copy, then `omarchy45-copy.sh adopt` or `undo`.
 5. Fix or drop the `iamcheyan.launcher` plugin (it shows every "pick one"
    menu as the apps grid; Super+K is worked around).
 
