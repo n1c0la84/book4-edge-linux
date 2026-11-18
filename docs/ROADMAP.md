@@ -273,6 +273,14 @@ book4-el2-sleep.service active, no failed units. Problems:
   timeout`, "Parent card not yet available". Watch on the next boot.
 - Still to do on it: speakers by ear, the USB-C ports after sleep.
 
+**Rebuilt 18 November (book4/7.3 767f896, "el2-73"):** CTCU off from the
+kernel's own DTB, audio revert in the build, no updates/ modules. Check
+clean (DSPs, Iris decoder/encoder, sound card on, mic RMS 2864, music by
+ear, errors as on 7.2); 2-minute nap on the charger **cxsd/ddr 96.6 %**.
+Next: one long sleep on battery (target ~0.70 W like 7.2), then 2-3 days of
+use (charger unplugged during sleep, USB-C hub/monitor, camera, a VM), then
+`test-entry.sh default el2-73` with 7.2 kept as the fallback entry.
+
 ## 7b. Found here, not told upstream yet (17 November)
 
 | What | To whom | State |
