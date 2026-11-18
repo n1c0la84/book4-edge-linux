@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Book4 Edge kernel as an Arch package, built on Arch (no Fedora container;
+# docs/plan-arch-boot.md, part A). Builds in place from the kernel tree at
+# $BOOK4_TREE (default ~/src/linux-book4, branch book4/7.3 of
+# n1c0la84/linux-book4-edge) rather than copying 1.5 GB into $srcdir.
+#
+#   cd packages/linux-book4 && makepkg -f          linux-book4 + headers
+#   BOOK4_SUFFIX=-book4p makepkg -f                a test build under another
+#                                                   release and package name
+#
+# The package installs everything under /usr/lib/modules/<rel>/ (vmlinuz,
+# modules, the 14" DTB, the out-of-tree sleep modules in extra/). It ships no
+# `pkgbase` file on purpose, so mkinitcpio's pacman hook leaves it alone:
+# tools/kernel/install-book4-kernel.sh puts kernel, initramfs and DTB on
+# /boot (sda4) and makes the GRUB entry, as build-73-kernel.sh does today.
+_suffix=${BOOK4_SUFFIX:--book4}
+_tree=${BOOK4_TREE:-$HOME/src/linux-book4}
+_repo() { cd "$startdir/../.." && pwd; }
+_dtb=x1e80100-samsung-galaxy-book4-edge-14.dtb
+
+pkgbase=linux${_suffix}
+pkgname=("linux${_suffix}" "linux${_suffix}-headers")
+pkgver=7.3.4
+pkgrel=1
+pkgdesc="Samsung Galaxy Book4 Edge kernel (Anatase 7.3 + book4 patches)"
+arch=(aarch64)
+url="https://github.com/n1c0la84/linux-book4-edge"
+license=(GPL-2.0-only)
+makedepends=(bc cpio pahole python dtc kmod)
+options=(!strip !debug !lto)
+
+_make() { make -C "$_tree" LOCALVERSION= "$@"; }
+
+prepare() {
+  cd "$_tree"
+  git submodule update -q --init --depth 1
+  [[ -f .config ]] || { echo "no .config in $_tree" >&2; return 1; }
+  ./scripts/config --set-str LOCALVERSION "$_suffix" --disable LOCALVERSION_AUTO
+  for o in PM_CLK QCOM_TZMEM_MODE_SHMBRIDGE CPU_IDLE_GOV_TEO; do
+    ./scripts/config --enable $o
+  done
+  ./scripts/config --disable QCOM_TZMEM_MODE_GENERIC
+  for o in QCOM_SCMI_GENERIC_EXT DEVFREQ_GOV_REMOTE SCMI_QCOM_MEMLAT_DEVFREQ SM_VIDEOCC_8550 \
+           VIDEO_QCOM_IRIS TYPEC_SAMSUNG_EMUEC EC_SAMSUNG_GALAXYBOOK RPMSG_QCOM_GLINK_SPSS \
+           QCOM_SPSS_NVM TCG_QCOM_SPSS; do
+    grep -q "^CONFIG_$o=[ym]" .config || ./scripts/config --module $o
+  done
+  _make -s olddefconfig
+  for o in PM_CLK QCOM_TZMEM_MODE_SHMBRIDGE CPU_IDLE_GOV_TEO; do
+    grep -q "^CONFIG_$o=y" .config || { echo "CONFIG_$o not set" >&2; return 1; }
+  done
+  local rel; rel=$(_make -s kernelrelease)
+  [[ $rel == "$pkgver$_suffix" ]] || { echo "release $rel, expected $pkgver$_suffix" >&2; return 1; }
+  # the out-of-tree sleep modules, from this repo
+  rm -rf "$srcdir/sleep-modules"
+  local repo; repo=$(_repo)
+  cp -r "$repo/tools/power/sleep-modules" "$srcdir/"
+  cp "$repo/tools/power/icc-hold/icc_hold.c" "$srcdir/sleep-modules/"
+  echo 'obj-m += icc_hold.o' >> "$srcdir/sleep-modules/Makefile"
+}
+
+build() {
+  _make -s -j"$(nproc)" Image modules qcom/$_dtb
+  _make -s M="$srcdir/sleep-modules" modules
+}
+
+package_linux-book4() { _package; }
+package_linux-book4-headers() { _package_headers; }
+package_linux-book4p() { _package; }
+package_linux-book4p-headers() { _package_headers; }
+
+_package() {
+  pkgdesc="$pkgdesc"
+  depends=(coreutils kmod)
+  optdepends=("linux${_suffix}-headers: build out-of-tree modules")
+  local rel; rel=$(_make -s kernelrelease)
+  local modulesdir="$pkgdir/usr/lib/modules/$rel"
+  _make -s INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 DEPMOD=/doesnt/exist modules_install
+  install -Dm644 "$_tree/arch/arm64/boot/Image" "$modulesdir/vmlinuz"
+  install -Dm644 "$_tree/arch/arm64/boot/dts/qcom/$_dtb" "$modulesdir/dtb/qcom/$_dtb"
+  install -Dm644 -t "$modulesdir/extra" "$srcdir"/sleep-modules/*.ko
+  rm -f "$modulesdir"/{build,source}
+}
+
+_package_headers() {
+  pkgdesc="Headers and scripts for building modules for the $pkgbase kernel"
+  local rel; rel=$(_make -s kernelrelease)
+  local builddir="$pkgdir/usr/lib/modules/$rel/build"
+  cd "$_tree"
+  install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map localversion.* version vmlinux 2>/dev/null || true
+  install -Dt "$builddir/kernel" -m644 kernel/Makefile
+  install -Dt "$builddir/arch/arm64" -m644 arch/arm64/Makefile
+  cp -t "$builddir" -a scripts
+  cp -t "$builddir/arch/arm64" -a arch/arm64/include
+  install -Dt "$builddir/arch/arm64/kernel" -m644 arch/arm64/kernel/asm-offsets.s
+  cp -t "$builddir" -a include
+  find . -name 'Kconfig*' -exec install -Dm644 {} "$builddir/{}" \;
+  find -L "$builddir" -type l -printf 'removing broken link %p\n' -delete 2>/dev/null | head -3 || true
+  find "$builddir" -type f -name '*.o' -delete
+  mkdir -p "$pkgdir/usr/src"; ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
+}
