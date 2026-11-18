@@ -28,15 +28,22 @@ if findmnt -rn -O ro /mnt/fedora/home >/dev/null; then echo "error: /mnt/fedora/
 sudo -v
 inner="set -euo pipefail
 cd ~/src/linux-73
-git checkout -q -B audio-bisect book4/7.3
+git fetch -q origin book4/7.3
+echo \"   tree changes before reverting: \$(git status --porcelain --untracked-files=no | wc -l)\" >&2
+git status --porcelain --untracked-files=no | head -5 >&2
+git checkout -q -B audio-bisect origin/book4/7.3
 for c in $revs; do
-    git revert --no-edit \$c >/dev/null 2>&1 || { git revert --abort; echo \"   revert of \$c conflicts, skipped\" >&2; continue; }
-    echo \"   reverted \$(git log -1 --format=%s | cut -c1-70)\" >&2
+    if out=\$(git -c user.name=bisect -c user.email=bisect@localhost revert --no-edit \$c 2>&1); then
+        echo \"   reverted \$(git log -1 --format=%s | cut -c1-70)\" >&2
+    else
+        echo \"   revert of \$c failed: \$(echo \"\$out\" | grep -m1 -iE 'error|fatal|conflict')\" >&2
+        git revert --abort 2>/dev/null || git reset -q --hard HEAD
+    fi
 done
 make -s LOCALVERSION= M=sound/soc/qcom/qdsp6 modules >&2
 rm -rf ~/src/out-audio; mkdir -p ~/src/out-audio
 cp sound/soc/qcom/qdsp6/*.ko ~/src/out-audio/
-git checkout -q book4/7.3
+git checkout -q -B book4/7.3 origin/book4/7.3
 echo \"   \$(ls ~/src/out-audio | wc -l) modules\" >&2"
 bash "$repo/install/arch/fedora-shell.sh" bash -lc "$inner"
 h=$(mktemp -d); sudo mount -o ro,subvol=home "$DEV_ROOT" "$h"
