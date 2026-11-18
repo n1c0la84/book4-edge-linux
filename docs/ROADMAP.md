@@ -184,6 +184,8 @@ Steps:
 
 ## 5. Boot: Fedora out, Arch's own GRUB in (Limine later, optional)
 
+Detailed plan: [plan-arch-boot.md](plan-arch-boot.md) (18 November).
+
 Today Fedora owns `/boot` (sda4) and GRUB, and is the kernel build
 container; the EL2 chain chainloads Fedora's GRUB.
 
