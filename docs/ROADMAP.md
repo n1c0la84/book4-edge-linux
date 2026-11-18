@@ -86,6 +86,19 @@ so the daily system is untouched:
    list is checked
    (quickshell and yt-dlp move to Omarchy's builds; Hyprland: theirs is
    older, decide then), and folio/flea update through pacman.
+   **Done in the copy, 18 November:** Omarchy 4.5.0-3 from pkgs.omarchy.org
+   (22 packages from [omarchy]); NoExtract held (no Limine/mkinitcpio files),
+   battery found. Migrations: 1791403310 (titlebars) marked done by hand:
+   `omarchy-hyprland-titlebars` pins Omarchy's hyprland 0.56.2, ours is Arch's
+   0.57.1 (aquamarine 0.16.0 likewise newer than Omarchy's 0.15.1); the other
+   47 ran (all Limine/N1x/ASUS ones skip themselves; power-profiles-daemon
+   swapped for Omarchy's build). `ttfx` installed by hand (screensaver; its
+   migration ran before our repo switch), `mise install` (node 26).
+   **Name clash:** our locally built `folio` (omacom/folio file manager)
+   vs the unrelated AUR `folio` 25.02: `omarchy-update` runs
+   `yay -Sua --noconfirm` and would replace it, so `folio` is in IgnorePkg
+   in the copy. checkupdates: nothing pending; AUR: artcraft-launcher
+   0.14 -> 0.19.2. Orphans offered: build tools (meson, sassc, ...).
 5. Fix or drop the `iamcheyan.launcher` plugin (it shows every "pick one"
    menu as the apps grid; Super+K is worked around).
 
