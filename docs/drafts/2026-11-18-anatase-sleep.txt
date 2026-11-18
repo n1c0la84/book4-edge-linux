@@ -1,4 +1,4 @@
-For: anatase-org/kernel-anatase#1, reply to antheas (17 Nov 14:15, 18 Nov 00:12). Not posted.
+Posted 18 November: kernel-anatase#1 issuecomment-6972571372.
 ------------------------------------------------------------------------
 Sleep works here on our 7.2 tree, and on your 7.3 tree it doesn't yet, for
 me either, so we may be chasing the same thing.
