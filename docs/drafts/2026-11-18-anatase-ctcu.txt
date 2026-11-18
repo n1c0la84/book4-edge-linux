@@ -1,4 +1,4 @@
-For: anatase-org/kernel-anatase#1, follow-up to our 18 Nov reply. Not posted.
+Posted 18 November: kernel-anatase/issues/1#issuecomment-6974300913
 ------------------------------------------------------------------------
 Found it, at least at EL2: it's the CoreSight CTCU. Since "hamoa: enable ETR
 and CTCU devices" (8017f8fa34, in 7.3), the 14" never reaches CX collapse in
