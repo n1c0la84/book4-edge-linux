@@ -1,0 +1,43 @@
+For: anatase-org/kernel-anatase#1, reply to antheas (17 Nov 14:15, 18 Nov 00:12). Not posted.
+------------------------------------------------------------------------
+Sleep works here on our 7.2 tree, and on your 7.3 tree it doesn't yet, for
+me either, so we may be chasing the same thing.
+
+**7.2 (ours), s2idle:** at EL2 every nap reaches `cxsd`/`ddr` 96-100 %
+(about 0.7 W overnight). At EL1 it collapsed too (13 Nov: `apss`, `cxsd`,
+`ddr` 97.9 % of a 141 s s2idle), but only with all of these:
+- AOSD kept off (QMP `{class: aoss_slp, res: sleep, val: disable}`, what
+  linux-omarchy's `qcom_aoss.prevent_aoss_sleep` sends): with AOSD the 14"
+  resets or hangs on wake;
+- an interconnect hold for UFS, and `sync_state` forced on the providers
+  still waiting (gcc and others never sync otherwise, and their boot votes
+  stay);
+- the virtual timer armed at CPU_PM_ENTER, enabled **and unmasked**:
+  Gunyah only counts an enabled, unmasked vCPU timer as a wake deadline
+  and otherwise never lets APSS collapse. The deadline also has to fit:
+  2^56 ticks (the full max_delta) gave 0 entries exactly as you see; 2^55
+  collapsed. Caveat: I tested this with a module (`cntv_arm`); the kernel
+  patch (our 0045, `max_delta_ticks >> 1`) was written from it but not
+  built yet. If you took the first version, it has the full range.
+- `apss` 0 is the tell: if `apss` doesn't count, nothing above it will.
+
+**Your 7.3 tree + our sleep patches, at EL2 (17 Nov):** 5 naps, `apss`
+counts, both DSPs sleep, the system genpd picks DRIPS, but `cxsd`/`ddr`
+stay at 0. Ruled out one at a time: the SPSS drivers, Iris, coresight, the
+charger. Diffing every vote against 7.2: on 7.3 the primary USB-C
+controller (`a600000.usb`) holds 1.0/2.5 GB/s on DDR/LLCC plus a cfg vote,
+none on 7.2 (where that controller stops working after the first sleep, so
+it can't vote). Unbinding it before a nap is my next test; I'll report.
+
+Separately: on the 14" `qcom_spss_nvm` loops ("cannot locate secure NVM
+partition", -EINVAL, for `sec_nvm_sp_nvm` and `sec_nvm_stpm_lite_msft`,
+~700 lines/s), keeping journald and udev at 100 % CPU; I blacklisted it.
+
+**Fan:** on 7.2 with your earlier EC driver I haven't had a thermal
+shutdown, including 20 min of all-core load at 108-112 C; the 95 C passive
+trip keeps it at 95-97 C. One warning if you look at power limits: x1e-sleep's
+`qcom_adsp_pwr_lmts` (the Modern Standby message on
+`APPS_ADSP_PWR_LMTS_GLINK_PORT`) crashes this ADSP firmware at suspend, so I
+keep it blacklisted. From Qualcomm's PEP (qcpep8380.sys) the power-limit
+message on that port is 24 bytes, `{0x18, 0, 1, limit 0-2, value}`, re-sent
+on connect, in case that's the sync you mean.
