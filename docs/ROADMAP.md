@@ -222,7 +222,19 @@ book4-el2-sleep.service active, no failed units. Problems:
   controller `a600000.usb` (1.0/2.5 GB/s on DDR/LLCC, 40 MB/s cfg) that 7.2
   lacks (on 7.2 that controller dies after sleep), an enabled `a80000.i2c`
   SE clock (touchpad bus, likely busy during the dump), small qup1 votes.
-  Next on 7.3: `tools/power/usb0-unbind-test.sh`, nap.
+  18 November, rebuilt 7.3.4-book4 (Iris works, sound card on): naps still
+  0 % with `a600000.usb` unbound, and with the Bluetooth UART (`a98000`,
+  qup1 vote 25000 vs 2) unbound as well; awake votes then match 7.2. Not
+  it either: the boot log's PDC/PSCI/timer lines and the command line are
+  identical; the 12 reserved-memory regions 7.3's hamoa.dtsi dropped
+  (7d240c5dd3, "covered by EFI") are still reserved or outside RAM in
+  /proc/iomem; `arm,prefer-cpu-suspend` (cb723904b8/c2eb81d74b) only sets
+  the default we already pass; rpmh-rsc is the same. Next, split the
+  problem: the 7.3 kernel with 7.2's EL2 DTB (`test-entry.sh add 73-dt72
+  kernel=/vmlinuz-7.3.4-book4 initrd=/initramfs-7.3.4-book4-arch.img
+  dtb=/dtb-test/book4-sleep-el2.dtb -clk_ignore_unused -pd_ignore_unused`):
+  collapse = the cause is in the DT (also covers the SPSS GLINK node, new on
+  7.3), none = in the kernel code.
 - **Audio**: PipeWire had the card on profile "off" after boot (only the
   book4_speakers filter sink); `pactl set-card-profile alsa_card.platform-sound
   "HiFi (Headphones, Mic, Speaker)"` brought it back. Boot log: `qcom-apm CMD
