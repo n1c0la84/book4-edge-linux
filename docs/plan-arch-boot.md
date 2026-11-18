@@ -21,6 +21,18 @@ GRUB modules from an October experiment.
 
 ## A. Kernel builds on Arch (no boot change at all)
 
+**Test passed, 18 November:** `packages/linux-book4/PKGBUILD` with
+`BOOK4_SUFFIX=-book4p` built on Arch in 27 minutes (gcc 16.1.1; tree
+`~/src/linux-book4`, config copied from Fedora's `~/src/linux-73`, as the
+running kernel has no /proc/config.gz); `linux-book4p` (5905 modules, the
+DTB, the six sleep modules in extra/) and `linux-book4p-headers`.
+`tools/kernel/install-book4-kernel.sh book4p` installed it (pacman -U,
+initramfs, /boot, EL2 DTB, entry; test-entry.sh learned to work from the
+arch-45 copy). Boot: pacman-owned, DSPs, Iris, sound, mic, KVM,
+fingerprint, errors as usual; nap 97.2 %. Next: the same as
+`linux-book4` (7.3.4-book4) replacing the unpackaged install from
+build-73-kernel.sh, then remove book4p.
+
 1. `pacman -S --needed base-devel bc pahole` (+ `xmlto`/`python` if the
    build asks).
 2. Clone `book4/7.3` into `~/src/linux-book4` (blobless, ~2 GB +
