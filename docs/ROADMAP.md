@@ -234,7 +234,15 @@ book4-el2-sleep.service active, no failed units. Problems:
   kernel=/vmlinuz-7.3.4-book4 initrd=/initramfs-7.3.4-book4-arch.img
   dtb=/dtb-test/book4-sleep-el2.dtb -clk_ignore_unused -pd_ignore_unused`):
   collapse = the cause is in the DT (also covers the SPSS GLINK node, new on
-  7.3), none = in the kernel code.
+  7.3), none = in the kernel code. **Result: 97.1 % (18 Nov 10:03)**, so the
+  blocker is in 7.3's DTB. Bisecting by node group with
+  `tools/power/dt73-variant.sh nocs|noadc|nospss` (7.3 EL2 DTB with that
+  group disabled, own test entry). First: coresight (7.3 adds ETR/CTCU,
+  8017f8fa34; unloading the modules threw clk disable warnings).
+- **Microphone broken on 7.3** (both DTBs): `Failed to start APM port 110`
+  (VA_CODEC_DMA_TX_0, APM error on 0x01001002), retried hundreds of times;
+  the speaker PCM then stays PREPARED in PipeWire (echo-cancel ties them).
+  Speakers play with PipeWire paused (speaker-test, heard). 7.2 fine.
 - **Audio**: PipeWire had the card on profile "off" after boot (only the
   book4_speakers filter sink); `pactl set-card-profile alsa_card.platform-sound
   "HiFi (Headphones, Mic, Speaker)"` brought it back. Boot log: `qcom-apm CMD
