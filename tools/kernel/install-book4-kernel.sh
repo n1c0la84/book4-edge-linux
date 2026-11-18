@@ -7,6 +7,9 @@
 #
 #   bash tools/kernel/install-book4-kernel.sh book4p     install the newest linux-book4p package, entry "book4p"
 #   bash tools/kernel/install-book4-kernel.sh book4p remove   entry, /boot files and the package gone
+#   bash tools/kernel/install-book4-kernel.sh book4      the daily kernel (7.3.4-book4): same /boot
+#        files as build-73-kernel.sh wrote (/dtb-test/book4-73.dtb and its -el2), no entry
+#        change (el2-73 and omarchy45 keep working); replaces that unpackaged install
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd); repo=$(cd "$here/../.." && pwd)
 name=${1:?suffix name, e.g. book4p}
@@ -31,6 +34,13 @@ fi
 files=$(ls -t "$pkgdir"/$pkg-[0-9]*.pkg.tar.* "$pkgdir"/$pkg-headers-[0-9]*.pkg.tar.* 2>/dev/null | grep -v '\.sig$' | head -2)
 [ -n "$files" ] || { echo "error: no $pkg package in $pkgdir; build it first (makepkg)" >&2; exit 1; }
 echo "== 1. pacman -U"; echo "$files" | sed 's/^/   /'
+sudo -v
+want=$(bsdtar -tf $(echo "$files" | grep -v headers | head -1) | awk -F/ '$4=="modules" && $5!="" {print $5; exit}')
+if [ -d "/usr/lib/modules/$want" ] && ! pacman -Qqo "/usr/lib/modules/$want" >/dev/null 2>&1; then
+    [ "$(uname -r)" != "$want" ] || { echo "error: $want is running; boot another kernel first" >&2; exit 1; }
+    echo "   removing the unpackaged /usr/lib/modules/$want (build-73-kernel.sh)"
+    sudo rm -rf --one-file-system "/usr/lib/modules/$want"
+fi
 sudo pacman -U --noconfirm $files
 rel=$(pacman -Ql "$pkg" | awk -F/ '$4=="modules" && $5!="" {print $5; exit}')
 [ "$(uname -r)" != "$rel" ] || { echo "error: $rel is running; boot another kernel to reinstall it" >&2; exit 1; }
@@ -47,11 +57,19 @@ lsinitcpio "$work/initramfs.img" | grep -qE '/ufs-qcom\.ko' || { echo "error: uf
 b=$(mktemp -d); sudo mount /dev/sda4 "$b"
 sudo install -m 644 "$mod/vmlinuz" "$b/vmlinuz-$rel"
 sudo install -m 644 "$work/initramfs.img" "$b/initramfs-$rel-arch.img"
-sudo install -m 644 "$mod/dtb/qcom/$dtbname" "$b/dtb-test/$name.dtb"
+dtb=/dtb-test/$name.dtb; [ "$name" = book4 ] && dtb=/dtb-test/book4-73.dtb
+sudo install -m 644 "$mod/dtb/qcom/$dtbname" "$b$dtb"
+sudo rm -f "$b${dtb%.dtb}-el2.dtb"
 sync; df -h "$b" | tail -1; sudo umount "$b"; rmdir "$b"
+
+if [ "$name" = book4 ]; then
+    echo "== 3. EL2 DTB (entries unchanged)"
+    BOOK4_NO_ENTRY=1 bash "$repo/install/el2/el2-dtb.sh" "$dtb" >/dev/null
+    echo "Installed $rel; el2-73 and omarchy45 boot it. Reboot normally."; exit 0
+fi
 
 echo "== 3. GRUB entry '$name'"
 bash "$repo/install/arch/test-entry.sh" remove "$name" >/dev/null 2>&1 || true
-bash "$repo/install/el2/el2-dtb.sh" "/dtb-test/$name.dtb" "$name" -clk_ignore_unused -pd_ignore_unused \
+bash "$repo/install/el2/el2-dtb.sh" "$dtb" "$name" -clk_ignore_unused -pd_ignore_unused \
     "kernel=/vmlinuz-$rel" "initrd=/initramfs-$rel-arch.img"
 echo; echo "Installed $rel as '... - test: $name'. Reboot and pick it in GRUB."
