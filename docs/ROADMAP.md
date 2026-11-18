@@ -255,6 +255,12 @@ book4-el2-sleep.service active, no failed units. Problems:
   (VA_CODEC_DMA_TX_0, APM error on 0x01001002), retried hundreds of times;
   the speaker PCM then stays PREPARED in PipeWire (echo-cancel ties them).
   Speakers play with PipeWire paused (speaker-test, heard). 7.2 fine.
+  Checked, the same on both: UCM mixer path (VA DEC0/1 MUX, DMIC MUX, AIF1
+  CAP mixer all set), macro/dcodec/fsgen votes, lpass-va-macro and
+  pinctrl-lpass-lpi (trivial diff), the topology/card boot messages, the
+  codec-DMA channel mask (c663014e45 gives the same 0x3 for the default
+  map). Next: `tools/kernel/audio-bisect-73.sh all` (reverts the 12 7.3-only
+  qdsp6 commits, rebuilds only those modules into updates/), then halve.
 - **Audio**: PipeWire had the card on profile "off" after boot (only the
   book4_speakers filter sink); `pactl set-card-profile alsa_card.platform-sound
   "HiFi (Headphones, Mic, Speaker)"` brought it back. Boot log: `qcom-apm CMD
