@@ -112,5 +112,5 @@ echo
 echo "== 4. next"
 echo "Log out and in again (or reboot into this entry), look around, then:"
 echo "  bash install/arch/omarchy45-upgrade.sh migrate"
-echo "A full system update against the new repository (pacman -Syu) is a separate step: look at what it"
+echo "A full update against the new repository is a separate step, with omarchy-update (not a bare pacman -Syu); look at what it"
 echo "would replace first with  pacman -Syu --print | less  (quickshell and yt-dlp move to Omarchy's builds)."

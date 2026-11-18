@@ -4,7 +4,7 @@
 # subvolume, home included) with its own GRUB entry, to try the Omarchy 4.5
 # upgrade without touching the daily system (docs/TODO.md, "Omarchy 4.5").
 # The copy shares the data of the original and only grows as it changes.
-# /boot and the ESP are shared: the copy boots the same kernel and DTB.
+# /boot and the ESP are shared: the copy boots the daily 7.3 kernel and DTB.
 #
 #   bash install/arch/omarchy45-copy.sh          create arch-45 and the entry "... - test: omarchy45"
 #   bash install/arch/omarchy45-copy.sh undo     remove the entry and delete the copy (from the daily system)
@@ -38,7 +38,7 @@ create)
     bash "$here/test-entry.sh" remove $name >/dev/null 2>&1 || true
     bash "$here/test-entry.sh" add $name -rootflags "+rootflags=subvol=$COPY" +id_aa64mmfr0.ecv=1 \
         -clk_ignore_unused -pd_ignore_unused \
-        kernel=/vmlinuz-7.2.7-book4s initrd=/initramfs-7.2.7-book4s-arch.img dtb=/dtb-test/book4-sleep-el2.dtb
+        kernel=/vmlinuz-7.3.4-book4 initrd=/initramfs-7.3.4-book4-arch.img dtb=/dtb-test/book4-73-el2.dtb
     echo
     echo "Created $COPY. Reboot, pick '... - test: $name' in GRUB, check with:"
     echo "  findmnt -no FSROOT /      (must print /$COPY)"
