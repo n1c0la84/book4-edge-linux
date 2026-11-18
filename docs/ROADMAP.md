@@ -107,6 +107,13 @@ so the daily system is untouched:
    keep `folio` in IgnorePkg until it reaches stable, then drop the hold.
    `omarchy-update-restart` always asks to reboot here: it looks for a
    pacman-owned modules.builtin and ours are not packaged; a false alarm.
+   **Invisible pointer in X11 apps** (RealVNC Viewer's window): 4.5's startup
+   cursor (`default/hypr/startup-cursor.lua`) starts blank and runs
+   `xsetroot -cursor_name left_ptr` when it restores the real cursor; XWayland
+   came up later (it still carried OMARCHY_STARTUP_CURSOR_SESSION), so the X
+   root cursor stayed blank. `DISPLAY=:0 xsetroot -cursor_name left_ptr`
+   fixes it live; made permanent with a delayed `o.exec_on_start` in
+   `~/.config/hypr/autostart.lua`. Worth reporting to Omarchy.
    Next: a day or two in the copy, then `omarchy45-copy.sh adopt` or `undo`.
 5. Fix or drop the `iamcheyan.launcher` plugin (it shows every "pick one"
    menu as the apps grid; Super+K is worked around).
