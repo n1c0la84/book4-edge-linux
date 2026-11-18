@@ -259,8 +259,14 @@ book4-el2-sleep.service active, no failed units. Problems:
   CAP mixer all set), macro/dcodec/fsgen votes, lpass-va-macro and
   pinctrl-lpass-lpi (trivial diff), the topology/card boot messages, the
   codec-DMA channel mask (c663014e45 gives the same 0x3 for the default
-  map). Next: `tools/kernel/audio-bisect-73.sh all` (reverts the 12 7.3-only
-  qdsp6 commits, rebuilds only those modules into updates/), then halve.
+  map, yet it is the cause, see below).
+  **Found 18 November:** `audio-bisect-73.sh all` (12 7.3-only qdsp6 commits
+  reverted, module build in updates/): mic records, music plays. Then only
+  c663014e45 ("audioreach: compute active channel maps from channel_map")
+  reverted: mic records (RMS 1236, no APM errors), music fine. Reverted on
+  book4/7.3 (767f896). The updates/ modules match that until the next full
+  build, which replaces the whole modules dir. Why it breaks VA capture is
+  not understood yet (worth a report to linux-sound once understood).
 - **Audio**: PipeWire had the card on profile "off" after boot (only the
   book4_speakers filter sink); `pactl set-card-profile alsa_card.platform-sound
   "HiFi (Headphones, Mic, Speaker)"` brought it back. Boot log: `qcom-apm CMD

@@ -122,7 +122,7 @@ if [ -n "$old" ] && [ "$old" != "$rel" ]; then
         sync; sudo umount "$ob"; rmdir "$ob"
     fi
 fi
-sudo rm -rf "/usr/lib/modules/$rel"
+sudo rm -rf "/usr/lib/modules/$rel"   # also drops updates/ (audio-bisect-73.sh test modules)
 sudo cp -a "$src/lib/modules/$rel" "/usr/lib/modules/$rel"
 cp "$src/Image" "$src/$dtbname" "$work/"
 sudo umount "$h"; rmdir "$h"
