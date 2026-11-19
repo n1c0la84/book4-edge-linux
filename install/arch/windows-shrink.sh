@@ -26,7 +26,12 @@ findmnt -rn -S "$WIN" >/dev/null && { echo "error: $WIN is mounted" >&2; exit 1;
 grep -qx 1 /sys/class/power_supply/*/online 2>/dev/null || { echo "error: plug the charger in" >&2; exit 1; }
 [ "$(lsblk -no FSTYPE "$WIN")" = ntfs ] || { echo "error: $WIN is not NTFS" >&2; exit 1; }
 s3=$(sec $WIN start); n3=$(sec $WIN size); s4=$(sec $BOOTP start)
-[ $((s3 + n3)) -eq "$s4" ] || { echo "error: sda3 does not end where sda4 starts" >&2; exit 1; }
+if [ -e "$NEW" ]; then   # resuming: sda3 + sda6 must fill the old space exactly
+    [ $(( $(sec $NEW start) + $(sec $NEW size) )) -eq "$s4" ] || { echo "error: $NEW does not end where sda4 starts" >&2; exit 1; }
+    n3=$(( s4 - s3 ))       # the original size, for the computations below
+else
+    [ $((s3 + n3)) -eq "$s4" ] || { echo "error: sda3 does not end where sda4 starts" >&2; exit 1; }
+fi
 bytes=$((mb * 1000000))
 ntfs_sec=$(( (bytes + 511) / 512 ))
 new3=$(( (ntfs_sec + 32768 + 2047) / 2048 * 2048 ))      # + 16 MiB, 1 MiB aligned
