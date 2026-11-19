@@ -10,12 +10,13 @@
 #   cd packages/book4-edge-firmware && makepkg -f
 #   sudo pacman -U --overwrite '/usr/lib/firmware/updates/*' book4-edge-firmware-*.pkg.tar.*
 #
-# Not covered: the copies of the ADSP/CDSP images on the ESP that qebspil
-# loads at EL2 (install/el2/esp-install.sh).
+# tcblaunch.exe (build 10.0.26100.9616, the tested one; Windows Update has
+# moved System32 on to 9882) goes to /usr/lib/book4/; book4-el2
+# (book4-edge-el2) copies it and the ADSP/CDSP images to the ESP.
 pkgname=book4-edge-firmware
 pkgver=2026.11.19
-pkgrel=1
-pkgdesc='Galaxy Book4 Edge 14": ADSP/CDSP/GPU firmware from its own Windows, Wi-Fi c5-00302, audio topology alias (local only)'
+pkgrel=2
+pkgdesc='Galaxy Book4 Edge 14": ADSP/CDSP/GPU firmware and tcblaunch.exe from its own Windows, Wi-Fi c5-00302, audio topology alias (local only)'
 arch=(any)
 license=(LicenseRef-proprietary)
 depends=(linux-firmware-qcom)
@@ -29,7 +30,10 @@ package() {
     case "$sum" in ''|\#*) continue ;; esac
     [ -e "$_stage/$path" ] || { echo "missing $_stage/$path (run install/arch/firmware-stage.sh)" >&2; return 1; }
     [ "$(sha256sum < "$_stage/$path" | cut -d' ' -f1)" = "$sum" ] || { echo "checksum mismatch: $path" >&2; return 1; }
-    install -Dm644 "$_stage/$path" "$fw/$path"
+    case "$path" in
+      /*) install -Dm644 "$_stage/$path" "$pkgdir$path" ;;   # e.g. /usr/lib/book4/tcblaunch.exe
+      *)  install -Dm644 "$_stage/$path" "$fw/$path" ;;
+    esac
   done < "$sums"
   # The card's topology is the CRD's (docs/audio.md): an alias, no copy.
   install -d "$fw/qcom/x1e80100"

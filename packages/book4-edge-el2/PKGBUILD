@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# book4-edge-el2: the Galaxy Book4 Edge's EL2 boot chain (docs/el2.md): the
+# UEFI Shell (pbatard's release, pinned), qebspil and slbounce built from
+# pinned upstream commits with our two patches, startup.nsh and windows.nsh,
+# and `book4-el2`, which installs them into \EFI\book4-el2-arch\ on the ESP
+# (with tcblaunch.exe and the DSP images from the local book4-edge-firmware)
+# and keeps them current through a pacman hook. Nothing proprietary in here.
+#
+#   cd packages/book4-edge-el2 && makepkg -f
+#   sudo book4-el2 install          once, after the packages are installed
+pkgname=book4-edge-el2
+pkgver=2026.11.19
+pkgrel=1
+pkgdesc='Galaxy Book4 Edge 14": EL2 boot chain (UEFI Shell, qebspil, slbounce) and book4-el2 to keep it on the ESP'
+arch=(aarch64)
+url='https://github.com/n1c0la84/book4-edge-linux'
+license=(GPL-2.0-only BSD-3-Clause BSD-2-Clause)
+depends=(bash efibootmgr util-linux)
+makedepends=(git make gcc)
+optdepends=('book4-edge-firmware: tcblaunch.exe and the ADSP/CDSP images (required for book4-el2 install)')
+options=(!buildflags !makeflags !lto !debug !strip)
+_qebspil=8e4d9e676a3b3afe136cda9b953a2139ff1a32d0
+_slbounce=c090a8cdafa25e4c99df90f8d6f73f3805d9b397
+source=("qebspil::git+https://github.com/stephan-gh/qebspil.git#commit=$_qebspil"
+        "slbounce::git+https://github.com/TravMurav/slbounce.git#commit=$_slbounce"
+        'gnu-efi::git+https://github.com/ncroxon/gnu-efi.git'
+        'dtc::git+https://git.kernel.org/pub/scm/utils/dtc/dtc.git'
+        'arm64-sysreg-lib::git+https://github.com/ashwio/arm64-sysreg-lib.git'
+        'Shellaa64.efi::https://github.com/pbatard/UEFI-Shell/releases/download/26H1/shellaa64.efi')
+sha256sums=(SKIP SKIP SKIP SKIP SKIP
+            1569b6db4e391c3c59194aa3319a3945efb800fb25349eb9d36ff3d258517ea6)
+
+_repo() { cd "$startdir/../.." && pwd; }
+
+_submodules() {  # project, submodule names: use the sources fetched above
+  local p=$1 s; shift
+  git -C "$srcdir/$p" submodule init
+  for s in "$@"; do git -C "$srcdir/$p" config "submodule.external/$s.url" "$srcdir/$s"; done
+  git -C "$srcdir/$p" -c protocol.file.allow=always submodule update
+}
+
+prepare() {
+  local r; r=$(_repo)
+  _submodules qebspil gnu-efi dtc
+  _submodules slbounce gnu-efi dtc arm64-sysreg-lib
+  git -C "$srcdir/qebspil" apply "$r/install/el2/qebspil-aoss-load-state.patch"
+  git -C "$srcdir/slbounce" apply "$r/install/el2/slbounce-tcblaunch-fallback.patch"
+}
+
+build() {
+  make -s -C "$srcdir/qebspil" CROSS_COMPILE=
+  make -s -C "$srcdir/slbounce" CROSS_COMPILE= "$srcdir/slbounce/out/slbounce.efi"
+  strings -el "$srcdir/slbounce/out/slbounce.efi" | grep -q 'book4-el2-arch' ||
+    { echo "slbounce.efi lacks the \\EFI\\book4-el2-arch\\ tcblaunch path" >&2; return 1; }
+}
+
+package() {
+  local r; r=$(_repo)
+  local d=$pkgdir/usr/lib/book4/el2
+  install -Dm644 "$srcdir/Shellaa64.efi"                 "$d/Shellaa64.efi"
+  install -Dm644 "$srcdir/qebspil/out/qebspilaa64.efi"   "$d/qebspilaa64.efi"
+  install -Dm644 "$srcdir/slbounce/out/slbounce.efi"     "$d/slbounce.efi"
+  install -Dm644 "$r/userspace/el2/startup.nsh"          "$d/startup.nsh"
+  install -Dm644 "$r/userspace/el2/windows.nsh"          "$d/windows.nsh"
+  install -Dm755 "$r/userspace/el2/book4-el2"            "$pkgdir/usr/bin/book4-el2"
+  install -Dm644 "$r/userspace/el2/95-book4-el2.hook"    "$pkgdir/usr/share/libalpm/hooks/95-book4-el2.hook"
+  install -Dm644 "$srcdir/slbounce/LICENSE"              "$pkgdir/usr/share/licenses/$pkgname/LICENSE.slbounce"
+  install -Dm644 "$srcdir/qebspil/COPYING"               "$pkgdir/usr/share/licenses/$pkgname/COPYING.qebspil"
+}

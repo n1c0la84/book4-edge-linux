@@ -1,0 +1,15 @@
+# book4-edge-linux (userspace/el2): keep the EL2 boot chain on the ESP equal
+# to the installed packages (book4-edge-el2, book4-edge-firmware). Does
+# nothing until 'book4-el2 install' has run once.
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/lib/book4/el2/*
+Target = usr/lib/book4/tcblaunch.exe
+Target = usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge/*
+
+[Action]
+Description = Book4: updating the EL2 boot chain on the ESP...
+When = PostTransaction
+Exec = /usr/bin/book4-el2 update

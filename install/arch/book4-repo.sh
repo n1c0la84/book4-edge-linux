@@ -1,7 +1,8 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
 # A local pacman repository [book4] for the Book4 layer's packages
-# (packages/: linux-book4, book4-edge, book4-edge-boot, book4-edge-firmware).
+# (packages/: linux-book4, book4-edge, book4-edge-boot, book4-edge-el2,
+# book4-edge-firmware).
 # It lives on this laptop only (the firmware package must never be
 # published): /var/lib/book4-repo, owned by you so adding needs no root,
 # declared in /etc/pacman.d/book4-repo.conf and included at the end of
@@ -21,7 +22,7 @@ repo=$(cd "$(dirname "$0")/../.." && pwd)
 R=/var/lib/book4-repo
 DB=$R/book4.db.tar.gz
 CONF=/etc/pacman.d/book4-repo.conf
-NAMES=(linux-book4 book4-edge book4-edge-boot book4-edge-firmware)
+NAMES=(linux-book4 book4-edge book4-edge-boot book4-edge-el2 book4-edge-firmware)
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
 
 newest() {  # packages/NAME -> its newest built package files (main, and -headers for the kernel)

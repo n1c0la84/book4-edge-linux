@@ -1,6 +1,6 @@
 @echo -off
 # Start Windows' boot manager from the UEFI Shell (book4-edge-linux,
-# userspace/boot/arch/windows.nsh, in \EFI\book4-el2-arch\). Arch GRUB 2.16
+# userspace/el2/windows.nsh, in \EFI\book4-el2-arch\). Arch GRUB 2.16
 # cannot chainload bootmgfw.efi on this disk (BCD 0xc00000bb, 19 November);
 # its "Windows Boot Manager" entry chainloads the Shell with this script,
 # and the Shell loads bootmgfw.efi with the firmware's own device path, as

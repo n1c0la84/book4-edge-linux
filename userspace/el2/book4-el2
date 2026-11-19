@@ -1,0 +1,100 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# book4-el2: the Galaxy Book4 Edge's EL2 boot chain on the ESP, from the
+# packages (book4-edge-el2: UEFI Shell, qebspil, slbounce, scripts;
+# book4-edge-firmware, local only: tcblaunch.exe and the ADSP/CDSP images).
+#
+#   book4-el2 install   copy everything to the ESP and create the firmware
+#                       entry "Omarchy (EL2, Arch GRUB)" if it is missing
+#                       (placed first in the boot order)
+#   book4-el2 update    copy what changed (the pacman hook runs this; it
+#                       does nothing until 'install' has run once)
+#   book4-el2 status
+#
+# Writes only into its own folders: \EFI\book4-el2-arch\ and the qebspil
+# firmware folder \firmware\qcom\x1e80100\SAMSUNG\galaxy-book4-edge\; never
+# deletes anything on the ESP. \EFI\book4-el2\ (esp-install.sh, behind the
+# fallback entry) is left alone. Arch GRUB in \EFI\arch\ comes from
+# install/arch/arch-grub.sh.
+set -euo pipefail
+SRC=/usr/lib/book4/el2
+TCB=/usr/lib/book4/tcblaunch.exe
+FWSRC=/usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
+DIR=EFI/book4-el2-arch
+FWDIR=firmware/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
+LABEL="Omarchy (EL2, Arch GRUB)"
+SHELLARGS="Shellaa64.efi -delay 0"   # the Shell skips its first word as its own name
+FILES=(Shellaa64.efi qebspilaa64.efi slbounce.efi startup.nsh windows.nsh)
+FWFILES=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf)
+
+die() { echo "book4-el2: error: $*" >&2; exit 1; }
+[ "$(id -u)" = 0 ] || die "run as root"
+
+esp() {   # the mounted ESP (the /efi automount, or any vfat mount of the ESP partition)
+    local m
+    ls /efi/EFI >/dev/null 2>&1 && [ -d /efi/EFI ] && { echo /efi; return; }
+    for m in /boot/efi /boot; do [ -d "$m/EFI" ] && { echo "$m"; return; }; done
+    return 1
+}
+
+copy() {  # src dst: copy when different; prints what it did
+    if [ -e "$2" ] && cmp -s "$1" "$2"; then return 0; fi
+    install -m 644 "$1" "$2.new" && mv "$2.new" "$2"
+    cmp -s "$1" "$2" || die "$2 did not copy correctly"
+    echo "   ${2#"$E"/}"
+}
+
+sync_files() {
+    local f need
+    for f in "${FILES[@]}"; do [ -e "$SRC/$f" ] || die "$SRC/$f missing (book4-edge-el2)"; done
+    [ -e "$TCB" ] || die "$TCB missing (book4-edge-firmware, built from this laptop's Windows)"
+    for f in "${FWFILES[@]}"; do [ -e "$FWSRC/$f" ] || die "$FWSRC/$f missing (book4-edge-firmware)"; done
+    need=$(( $(du -cb "${FILES[@]/#/$SRC/}" "$TCB" "${FWFILES[@]/#/$FWSRC/}" | tail -1 | cut -f1) / 1024 + 1024 ))
+    [ "$(df --output=avail -k "$E" | tail -1)" -ge "$need" ] || die "not enough room on the ESP (${need} KiB needed at most)"
+    mkdir -p "$E/$DIR" "$E/$FWDIR"
+    for f in "${FILES[@]}"; do copy "$SRC/$f" "$E/$DIR/$f"; done
+    copy "$TCB" "$E/$DIR/tcblaunch.exe"
+    for f in "${FWFILES[@]}"; do copy "$FWSRC/$f" "$E/$FWDIR/$f"; done
+    sync -f "$E/$DIR/startup.nsh"
+}
+
+entry() {  # Boot#### of our loader path
+    efibootmgr | awk 'BEGIN { l = tolower(")/\\EFI\\book4-el2-arch\\Shellaa64.efi") }
+        /^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ { if (index(tolower($0), l)) { print substr($0, 5, 4); exit } }'
+}
+
+case "${1:-}" in
+install)
+    E=$(esp) || die "the ESP is not mounted (expected at /efi)"
+    echo "book4-el2: files on the ESP ($E)"
+    sync_files
+    if [ -z "$(entry)" ]; then
+        dev=$(findmnt -rn -o SOURCE --target "$E" | tail -1)
+        disk=/dev/$(lsblk -no PKNAME "$dev"); part=$(cat "/sys/class/block/${dev#/dev/}/partition")
+        order=$(efibootmgr | sed -n 's/^BootOrder: //p')
+        efibootmgr -q --create --disk "$disk" --part "$part" --label "$LABEL" \
+            --loader '\EFI\book4-el2-arch\Shellaa64.efi' --unicode "$SHELLARGS"
+        n=$(entry); [ -n "$n" ] || die "firmware entry not created"
+        efibootmgr -q -o "$n${order:+,$(tr ',' '\n' <<<"$order" | grep -vx "$n" | paste -sd, -)}"
+        echo "book4-el2: firmware entry Boot$n \"$LABEL\", first in the boot order"
+    else
+        echo "book4-el2: firmware entry Boot$(entry) present (order unchanged)"
+    fi ;;
+update)
+    E=$(esp) || { echo "book4-el2: ESP not mounted; skipped (run 'book4-el2 update' later)"; exit 0; }
+    [ -e "$E/$DIR/startup.nsh" ] || { echo "book4-el2: not installed on the ESP yet; 'book4-el2 install' does it"; exit 0; }
+    echo "book4-el2: updating the ESP ($E)"
+    sync_files ;;
+status)
+    E=$(esp) || die "the ESP is not mounted"
+    for f in "${FILES[@]}"; do
+        printf '   %-18s %s\n' "$f" "$(cmp -s "$SRC/$f" "$E/$DIR/$f" 2>/dev/null && echo current || echo DIFFERS/missing)"
+    done
+    printf '   %-18s %s\n' tcblaunch.exe "$(cmp -s "$TCB" "$E/$DIR/tcblaunch.exe" 2>/dev/null && echo current || echo DIFFERS/missing)"
+    for f in "${FWFILES[@]}"; do
+        printf '   %-18s %s\n' "$f" "$(cmp -s "$FWSRC/$f" "$E/$FWDIR/$f" 2>/dev/null && echo current || echo DIFFERS/missing)"
+    done
+    n=$(entry); echo "   firmware entry: ${n:+Boot$n}${n:-none}; $(efibootmgr | grep '^BootOrder')" ;;
+*)
+    sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1 ;;
+esac

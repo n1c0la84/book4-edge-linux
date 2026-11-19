@@ -1,0 +1,11 @@
+src/
+pkg/
+*.pkg.tar.*
+*.log
+src-*/
+/qebspil/
+/slbounce/
+/gnu-efi/
+/dtc/
+/arm64-sysreg-lib/
+*.efi

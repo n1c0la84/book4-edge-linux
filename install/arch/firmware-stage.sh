@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Stage the files of the local-only package book4-edge-firmware
 # (packages/book4-edge-firmware) in a private directory outside the repo:
-# ADSP, CDSP and GPU firmware from this laptop's own Windows driver store
-# (sda3 mounted read-only), the rest from the copies installed here. Each
+# ADSP, CDSP and GPU firmware from this laptop's own Windows driver store and
+# tcblaunch.exe from WinSxS (sda3 mounted read-only), the rest from the
+# copies installed here. Each
 # file is picked by its checksum in packages/book4-edge-firmware/sha256sums.txt:
 # Windows keeps several versions side by side (19 November: a newer
 # qcdxkmsuc8380.mbn from 18 November, an older CDSP pair), and only the ones
@@ -37,8 +38,13 @@ while read -r sum path src; do
             if [ "$(sudo sha256sum < "$c" | cut -d' ' -f1)" = "$sum" ]; then found=$c; break; fi
         done < <(sudo find "$R" -maxdepth 2 -ipath "*/${src#windows:}*/$name" -print0)
         ;;
+    winsxs:*)
+        while IFS= read -r -d '' c; do
+            if [ "$(sudo sha256sum < "$c" | cut -d' ' -f1)" = "$sum" ]; then found=$c; break; fi
+        done < <(sudo find "$m/Windows/WinSxS" -maxdepth 2 -ipath "*/${src#winsxs:}*/$name" -print0)
+        ;;
     local)
-        c=/usr/lib/firmware/updates/$path
+        case "$path" in /*) c=$path ;; *) c=/usr/lib/firmware/updates/$path ;; esac
         [ -e "$c" ] && [ "$(sha256sum < "$c" | cut -d' ' -f1)" = "$sum" ] && found=$c
         ;;
     esac

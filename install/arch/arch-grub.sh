@@ -100,7 +100,7 @@ install)
     echo "== 3. EL2 test folder \\$NEW"
     sudo mkdir -p "$esp/$NEW"
     for f in Shellaa64.efi qebspilaa64.efi slbounce.efi tcblaunch.exe; do sudo install -m 644 "$esp/$OLD/$f" "$esp/$NEW/$f"; done
-    sudo install -m 644 "$repo/userspace/boot/arch/windows.nsh" "$esp/$NEW/windows.nsh"
+    sudo install -m 644 "$repo/userspace/el2/windows.nsh" "$esp/$NEW/windows.nsh"
     sudo sed -e 's|\\EFI\\fedora\\grubaa64\.efi|\\EFI\\arch\\grubaa64.efi|g' -e 's|\\EFI\\book4-el2\\|\\EFI\\book4-el2-arch\\|g' \
         -e 's|Fedora.s GRUB|Arch GRUB|g' "$esp/$OLD/startup.nsh" |
         sed -e 's|^%esp%:\\EFI\\arch\\grubaa64\.efi$|&\
@@ -127,7 +127,7 @@ menu) mountboot; menu; umountboot ;;
 windows)
     ensure_efi
     sudo test -e "$esp/$NEW/Shellaa64.efi" || { echo "error: no \\$NEW; run install first" >&2; exit 1; }
-    sudo install -m 644 "$repo/userspace/boot/arch/windows.nsh" "$esp/$NEW/windows.nsh"
+    sudo install -m 644 "$repo/userspace/el2/windows.nsh" "$esp/$NEW/windows.nsh"
     echo "== \\$NEW\\windows.nsh installed"
     pacman -Q book4-edge-boot >/dev/null 2>&1 || sudo install -m 755 "$repo/userspace/boot/arch/book4-boot" /usr/local/bin/book4-boot
     mountboot; menu; umountboot
