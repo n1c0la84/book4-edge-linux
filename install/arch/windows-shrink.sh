@@ -17,7 +17,9 @@ set -euo pipefail
 DISK=/dev/sda WIN=/dev/sda3 BOOTP=/dev/sda4 NEW=/dev/sda6
 mb=${1:-300000}
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
-sec() { cat "/sys/class/block/${1#/dev/}/$2"; }
+sec() { cat "/sys/class/block/${1#/dev/}/$2"; }   # always 512-byte units
+# sfdisk counts in the disk's logical sectors: 4096 bytes on this UFS disk.
+lbs=$(cat "/sys/block/${DISK#/dev/}/queue/logical_block_size"); f=$((lbs / 512))
 
 echo "== 1. checks"
 findmnt -rn -S "$WIN" >/dev/null && { echo "error: $WIN is mounted" >&2; exit 1; }
@@ -53,10 +55,14 @@ fi
 vb=$(volbytes); echo "   NTFS volume: $vb bytes"
 [ -n "$vb" ] && [ $(( (vb + 511) / 512 )) -le "$new3" ] || { echo "error: the NTFS is larger than the new partition would be" >&2; exit 1; }
 
-echo "== 3. partition 3 -> $new3 sectors"
-echo ",$new3" | sudo sfdisk --no-reread --no-tell-kernel -N 3 "$DISK" >/dev/null
+[ $((new3 % f)) -eq 0 ] && [ $((s6 % f)) -eq 0 ] && [ $((n6 % f)) -eq 0 ] && [ $((s3 % f)) -eq 0 ] ||
+    { echo "error: sizes not multiples of the $lbs-byte sector" >&2; exit 1; }
+echo "== 3. partition 3 -> $((new3 / f)) sectors of $lbs bytes"
+echo ",$((new3 / f))" | sudo sfdisk --no-act --no-reread --no-tell-kernel -N 3 "$DISK" >/dev/null ||
+    { echo "error: sfdisk test of the resize failed; nothing changed" >&2; exit 1; }
+echo ",$((new3 / f))" | sudo sfdisk --no-reread --no-tell-kernel -N 3 "$DISK" >/dev/null
 echo "== 4. partition 6"
-echo "$s6,$n6,L" | sudo sfdisk --no-reread --no-tell-kernel --append "$DISK" >/dev/null
+echo "$((s6 / f)),$((n6 / f)),L" | sudo sfdisk --no-reread --no-tell-kernel --append "$DISK" >/dev/null
 sudo partx -u --nr 3 "$DISK"; sudo partx -a --nr 6 "$DISK"; sudo udevadm settle
 [ "$(sec $WIN size)" -eq "$new3" ] && [ -e "$NEW" ] && [ "$(sec $NEW start)" -eq "$s6" ] ||
     { echo "error: the kernel does not see the new table yet; reboot, then: sudo btrfs device add $NEW /" >&2; exit 1; }
