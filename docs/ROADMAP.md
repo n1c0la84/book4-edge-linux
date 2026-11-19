@@ -142,7 +142,13 @@ tags each night.
 4. Then from the regulator tree (TODO.md, board power item): USB-C PHYs
    ("HS-PHY not in L2" at every suspend), the Wi-Fi port ("Timeout waiting
    for L2 entry"), the PTN3222 repeater, `VREG_WCN_3P3`, `vreg_l12b_1p2`,
-   camera supplies, mic bias. linux-omarchy carries dwc3-qcom and qmp-combo
+   camera supplies (checked 19 Nov: the OV02C10 sits runtime-suspended
+   with CCI, so the sensor is in reset; but its 2.8 V rail `vreg_l7b_2p8`,
+   used by the camera alone for avdd and dvdd, is `regulator-always-on`
+   with `regulator-initial-mode = <3>` (HPM), so it stays on in high-power
+   mode through sleep; its 1.8 V `vreg_l10b_1p8` is shared IO. Expected
+   milliwatts, not the 0.5 W; test: an overlay without always-on / in LPM,
+   camera checked, one night), mic bias. linux-omarchy carries dwc3-qcom and qmp-combo
    suspend fixes (its 2350-2357, 2374-2376) worth comparing.
 
 ## 3. Omarchy 4.5 and Omarchy's repositories (step 1 towards stock)
