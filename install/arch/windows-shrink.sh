@@ -34,15 +34,24 @@ s6=$((s3 + new3)); n6=$((s4 - s6))
 echo "   Windows: $((n3 * 512 / 1000000)) MB -> NTFS $mb MB, partition $((new3 * 512 / 1000000)) MB"
 echo "   new $NEW: sectors $s6-$((s4 - 1)), $((n6 * 512 / 1000000)) MB for the root filesystem"
 sudo -v
-sudo ntfsresize --no-progress-bar -n -s "${mb}M" "$WIN" | tail -1 | grep -q 'ended successfully' ||
-    { echo "error: the ntfsresize dry run failed; nothing changed" >&2; exit 1; }
-echo "   dry run OK"
-sudo sfdisk --dump "$DISK" > "$HOME/sda-table-before-shrink.sfdisk"
+# After a resize the volume is marked for chkdsk, and ntfsresize then needs
+# --force even for --info (read-only).
+volbytes() { sudo ntfsresize --info --force --no-progress-bar "$WIN" | sed -n 's/^Current volume size: \([0-9]*\) bytes.*/\1/p'; }
+vb=$(volbytes); [ -n "$vb" ] || { echo "error: cannot read the NTFS size" >&2; exit 1; }
+[ -e "$HOME/sda-table-before-shrink.sfdisk" ] || sudo sfdisk --dump "$DISK" > "$HOME/sda-table-before-shrink.sfdisk"
 echo "   partition table saved: ~/sda-table-before-shrink.sfdisk (restore: sudo sfdisk $DISK < it)"
 
-echo "== 2. NTFS -> $mb MB (answer y; takes a few minutes: ~43 GB to relocate)"
-sudo ntfsresize --no-progress-bar -s "${mb}M" "$WIN"
-sudo ntfsresize --info "$WIN" | grep -E 'Current volume size' | sed 's/^/   /'
+if [ "$vb" -le "$bytes" ]; then
+    echo "== 2. NTFS is already $((vb / 1000000)) MB (an earlier run): skipped"
+else
+    sudo ntfsresize --no-progress-bar -n -s "${mb}M" "$WIN" | tail -1 | grep -q 'ended successfully' ||
+        { echo "error: the ntfsresize dry run failed; nothing changed" >&2; exit 1; }
+    echo "   dry run OK"
+    echo "== 2. NTFS -> $mb MB (answer y; takes a few minutes: ~43 GB to relocate)"
+    sudo ntfsresize --no-progress-bar -s "${mb}M" "$WIN"
+fi
+vb=$(volbytes); echo "   NTFS volume: $vb bytes"
+[ -n "$vb" ] && [ $(( (vb + 511) / 512 )) -le "$new3" ] || { echo "error: the NTFS is larger than the new partition would be" >&2; exit 1; }
 
 echo "== 3. partition 3 -> $new3 sectors"
 echo ",$new3" | sudo sfdisk --no-reread --no-tell-kernel -N 3 "$DISK" >/dev/null
@@ -51,7 +60,8 @@ echo "$s6,$n6,L" | sudo sfdisk --no-reread --no-tell-kernel --append "$DISK" >/d
 sudo partx -u --nr 3 "$DISK"; sudo partx -a --nr 6 "$DISK"; sudo udevadm settle
 [ "$(sec $WIN size)" -eq "$new3" ] && [ -e "$NEW" ] && [ "$(sec $NEW start)" -eq "$s6" ] ||
     { echo "error: the kernel does not see the new table yet; reboot, then: sudo btrfs device add $NEW /" >&2; exit 1; }
-sudo ntfsresize --info "$WIN" >/dev/null 2>&1 && echo "   Windows NTFS readable after the change"
+[ "$(volbytes)" = "$vb" ] && echo "   Windows NTFS readable after the change, same size" ||
+    { echo "error: NTFS not readable after the partition change; restore: sudo sfdisk $DISK < ~/sda-table-before-shrink.sfdisk" >&2; exit 1; }
 lsblk -o NAME,SIZE,FSTYPE "$DISK" | sed 's/^/   /'
 
 echo "== 5. $NEW into the root filesystem"
