@@ -9,7 +9,7 @@
 # Services are enabled by the migration script (Arch packages do not enable
 # units by themselves); see book4-edge.install for the list.
 pkgname=book4-edge
-pkgver=r560.5917b02
+pkgver=r561.3bd6807
 pkgrel=1
 pkgdesc='Galaxy Book4 Edge 14": audio (UCM, PipeWire), sleep, battery, keyboard, fingerprint and boot-time services'
 arch=(aarch64)
