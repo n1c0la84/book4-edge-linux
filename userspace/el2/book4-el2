@@ -94,7 +94,7 @@ status)
     for f in "${FWFILES[@]}"; do
         printf '   %-18s %s\n' "$f" "$(cmp -s "$FWSRC/$f" "$E/$FWDIR/$f" 2>/dev/null && echo current || echo DIFFERS/missing)"
     done
-    n=$(entry); echo "   firmware entry: ${n:+Boot$n}${n:-none}; $(efibootmgr | grep '^BootOrder')" ;;
+    n=$(entry); echo "   firmware entry: $([ -n "$n" ] && echo "Boot$n" || echo none); $(efibootmgr | grep "^BootOrder")" ;;
 *)
     sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1 ;;
 esac

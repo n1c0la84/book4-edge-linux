@@ -10,7 +10,7 @@
 #   sudo book4-el2 install          once, after the packages are installed
 pkgname=book4-edge-el2
 pkgver=2026.11.19
-pkgrel=1
+pkgrel=2
 pkgdesc='Galaxy Book4 Edge 14": EL2 boot chain (UEFI Shell, qebspil, slbounce) and book4-el2 to keep it on the ESP'
 arch=(aarch64)
 url='https://github.com/n1c0la84/book4-edge-linux'

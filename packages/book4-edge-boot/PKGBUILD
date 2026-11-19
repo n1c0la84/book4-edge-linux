@@ -9,7 +9,7 @@
 #
 #   cd packages/book4-edge-boot && makepkg -f
 pkgname=book4-edge-boot
-pkgver=r561.3bd6807
+pkgver=r566.cb92be3
 pkgrel=1
 pkgdesc='Galaxy Book4 Edge 14": kernels, device trees and the Arch GRUB menu on /boot, from pacman hooks'
 arch=(any)
