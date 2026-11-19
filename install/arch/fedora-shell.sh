@@ -21,6 +21,7 @@
 # initramfs keeps its .prev copy, so boot Fedora once after such a change.
 set -euo pipefail
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
+echo "note: Fedora is retired (docs/fedora-retired.md); this container works until Fedora is deleted." >&2
 DEV_ROOT=/dev/disk/by-uuid/4d74e1d5-7bca-48bf-a6e0-1362fd77882e   # btrfs (sda5)
 DEV_BOOT=/dev/disk/by-uuid/3c3204e5-ed67-4e72-b0dc-75b7e3cdb3a5   # Fedora /boot (sda4)
 DEV_ESP=/dev/disk/by-uuid/EE27-EF4A                               # ESP (sda1), shared with Windows

@@ -125,6 +125,14 @@ Fedora's home, delete the `root` and `home` subvolumes (~25 GB), remove
 Fedora's kernels and BLS entries from sda4, the Fedora firmware entry
 (0001) only if wanted. `\EFI\fedora\` stays on the ESP.
 
+**Started 19 November, in two halves.** Retire (now, nothing deleted):
+`install/arch/fedora-retire.sh archive` copies Fedora's home into
+`~/fedora-archive/` (reflinks) and its kernel trees' branches and
+uncommitted changes; the Fedora-container module builds are ported to
+`tools/power/build-module.sh`; every script that used Fedora is classified in
+[fedora-retired.md](fedora-retired.md). Delete (later, on the owner's go):
+the subvolumes, Fedora's files on sda4, optionally its firmware entry.
+
 ## Order and reboots
 
 A (1 reboot) -> B (3-4 reboots) -> a few days -> C (no reboot).
