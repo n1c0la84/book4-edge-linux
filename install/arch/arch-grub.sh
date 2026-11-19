@@ -62,7 +62,8 @@ install)
     for f in Shellaa64.efi qebspilaa64.efi slbounce.efi tcblaunch.exe; do sudo install -m 644 "$esp/$OLD/$f" "$esp/$NEW/$f"; done
     sudo sed -e 's|\\EFI\\fedora\\grubaa64\.efi|\\EFI\\arch\\grubaa64.efi|g' -e 's|\\EFI\\book4-el2\\|\\EFI\\book4-el2-arch\\|g' \
         -e 's|Fedora.s GRUB|Arch GRUB|g' "$esp/$OLD/startup.nsh" | sudo tee "$esp/$NEW/startup.nsh" >/dev/null
-    sudo grep -q 'EFI\\arch\\grubaa64.efi' "$esp/$NEW/startup.nsh" && ! sudo grep -q 'EFI\\fedora' "$esp/$NEW/startup.nsh" ||
+    cmds=$(sudo grep -v '^#' "$esp/$NEW/startup.nsh")   # comments may mention \EFI\fedora\
+    grep -q 'EFI\\arch\\grubaa64.efi' <<<"$cmds" && ! grep -q 'EFI\\fedora' <<<"$cmds" ||
         { echo "error: the test startup.nsh does not point at Arch GRUB only" >&2; exit 1; }
     echo "== 4. firmware entry '$LABEL', last in the boot order"
     order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
