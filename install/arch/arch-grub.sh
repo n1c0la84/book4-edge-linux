@@ -10,6 +10,10 @@
 #   bash install/arch/arch-grub.sh install   GRUB, menu, EL2 test folder, firmware entry
 #   bash install/arch/arch-grub.sh menu      regenerate /grub/grub.cfg (book4-boot menu)
 #   bash install/arch/arch-grub.sh next      boot the Arch GRUB entry ONCE at the next boot
+#   bash install/arch/arch-grub.sh default   make it the default boot (B5): descriptive entry labels,
+#        boot order Arch GRUB, Fedora GRUB at EL2, Fedora GRUB at EL1, Windows;
+#        the OpenBSD entry removed (its files stay on the ESP)
+#   bash install/arch/arch-grub.sh fedora-default   Fedora's GRUB first again (labels stay)
 #   bash install/arch/arch-grub.sh status
 #   bash install/arch/arch-grub.sh undo      remove the entry and our folders (not Fedora's)
 #
@@ -19,16 +23,35 @@
 # (the Windows entry using this GRUB's own chainloader). Arch's GRUB 2.16 has
 # cutmem (mmap), devicetree (fdt) and chainloader (chain).
 set -euo pipefail
-LABEL="Book4 EL2 (Arch GRUB)"
+LABEL="Omarchy (EL2, Arch GRUB)"
+LABEL_OLD="Omarchy (EL2, Fedora GRUB, fallback)"   # \EFI\book4-el2\ (esp-install.sh)
+LABEL_FED="Fedora GRUB (EL1)"                      # \EFI\fedora\grubaa64.efi
 OLD=EFI/book4-el2; NEW=EFI/book4-el2-arch
 SHELLARGS="Shellaa64.efi -delay 0"
 esp=/efi
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
 if findmnt -rn -S /dev/sda4 >/dev/null; then echo "error: /dev/sda4 (/boot) is mounted; unmount it first" >&2; exit 1; fi
 sudo -v
-entry() { sudo efibootmgr | awk -v l="$LABEL" '/^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ {
-    n = substr($0, 5, 4); t = substr($0, 10); sub(/^\* ?/, "", t); sub(/^ /, "", t); sub(/\t.*/, "", t)
-    if (t == l) { print n; exit } }'; }
+# Entries are found by their loader path, so renaming them is safe.
+byloader() {  # \EFI\...\file.efi -> Boot number
+    sudo efibootmgr | L="$1" awk 'BEGIN { l = tolower(")/" ENVIRON["L"]) }
+        /^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ { if (index(tolower($0), l)) { print substr($0, 5, 4); exit } }'; }
+entry() { byloader '\EFI\book4-el2-arch\Shellaa64.efi'; }
+# Re-create entry N with LABEL (efibootmgr cannot rename), same place in BootOrder.
+relabel() {  # N LABEL LOADER [UNICODE-OPTIONS]
+    local n=$1 label=$2 loader=$3 opts=${4:-} order m
+    order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
+    sudo efibootmgr -q -b "$n" -B
+    if [ -n "$opts" ]; then
+        sudo efibootmgr -q --create --disk /dev/sda --part 1 --label "$label" --loader "$loader" --unicode "$opts"
+    else
+        sudo efibootmgr -q --create --disk /dev/sda --part 1 --label "$label" --loader "$loader"
+    fi
+    m=$(byloader "$loader"); [ -n "$m" ] || { echo "error: '$label' not re-created" >&2; exit 1; }
+    sudo efibootmgr -q -o "$(tr ',' '\n' <<<"$order" | sed "s/^$n\$/$m/" | grep -vx '' | paste -sd, -)"
+    echo "   Boot$m: $label" >&2
+    echo "$m"
+}
 mountboot() { b=$(mktemp -d); sudo mount /dev/sda4 "$b"; }
 umountboot() { sync; sudo umount "$b"; rmdir "$b"; }
 
@@ -48,8 +71,22 @@ menu() {  # $b mounted
     echo "   /grub/grub.cfg: $(grep -c '^menuentry' "$b/grub/grub.cfg") entries + book4-extra.cfg"
 }
 
+ensure_efi() {
+  echo "== 0. /efi in fstab"
+  # systemd's gpt-auto automount of the ESP at /efi needs the loader to name
+  # the ESP (LoaderDevicePartUUID): Fedora's GRUB does, Arch's does not.
+  if ! grep -qE '^[^#]*[[:space:]]/efi[[:space:]]' /etc/fstab; then
+      uuid=$(lsblk -no UUID /dev/sda1); [ -n "$uuid" ] || { echo "error: no UUID for /dev/sda1" >&2; exit 1; }
+      printf '\n# ESP (book4-edge-linux arch-grub.sh), as the gpt-auto automount that only Fedora GRUB enables\nUUID=%s  /efi  vfat  noauto,x-systemd.automount,x-systemd.idle-timeout=120,umask=0077,nofail  0 2\n' "$uuid" |
+          sudo tee -a /etc/fstab >/dev/null
+      sudo systemctl daemon-reload; sudo systemctl start efi.automount
+      echo "   added (UUID=$uuid)"
+  else echo "   present"; fi
+  sudo test -d "$esp/EFI" || { echo "error: the ESP is not mounted at $esp" >&2; exit 1; }
+}
 case "${1:-}" in
 install)
+    ensure_efi
     command -v grub-install >/dev/null || { echo "error: grub missing (sudo pacman -S grub)" >&2; exit 1; }
     [ -n "$(ls /sys/firmware/efi/efivars 2>/dev/null | head -1)" ] || { echo "error: no EFI variables" >&2; exit 1; }
     sudo test -e "$esp/$OLD/Shellaa64.efi" || { echo "error: $esp/$OLD missing" >&2; exit 1; }
@@ -63,10 +100,18 @@ install)
     sudo mkdir -p "$esp/$NEW"
     for f in Shellaa64.efi qebspilaa64.efi slbounce.efi tcblaunch.exe; do sudo install -m 644 "$esp/$OLD/$f" "$esp/$NEW/$f"; done
     sudo sed -e 's|\\EFI\\fedora\\grubaa64\.efi|\\EFI\\arch\\grubaa64.efi|g' -e 's|\\EFI\\book4-el2\\|\\EFI\\book4-el2-arch\\|g' \
-        -e 's|Fedora.s GRUB|Arch GRUB|g' "$esp/$OLD/startup.nsh" | sudo tee "$esp/$NEW/startup.nsh" >/dev/null
+        -e 's|Fedora.s GRUB|Arch GRUB|g' "$esp/$OLD/startup.nsh" |
+        sed -e 's|^%esp%:\\EFI\\arch\\grubaa64\.efi$|&\
+# Arch GRUB missing or returned: Fedora'"'"'s GRUB, the same menu as before part B.\
+if exist %esp%:\\EFI\\fedora\\grubaa64.efi then\
+  %esp%:\\EFI\\fedora\\grubaa64.efi\
+endif|' | sudo tee "$esp/$NEW/startup.nsh" >/dev/null
     cmds=$(sudo grep -v '^#' "$esp/$NEW/startup.nsh")   # comments may mention \EFI\fedora\
-    grep -q 'EFI\\arch\\grubaa64.efi' <<<"$cmds" && ! grep -q 'EFI\\fedora' <<<"$cmds" ||
-        { echo "error: the test startup.nsh does not point at Arch GRUB only" >&2; exit 1; }
+    # Arch GRUB first; Fedora's only as the fallback after it.
+    grep -q 'EFI\\arch\\grubaa64.efi' <<<"$cmds" &&
+    [ "$(grep -n 'grubaa64.efi' <<<"$cmds" | head -1 | grep -c 'EFI\\arch')" = 1 ] &&
+    [ "$(grep -c 'EFI\\fedora' <<<"$cmds")" -le 2 ] ||
+        { echo "error: the startup.nsh does not start Arch GRUB first" >&2; exit 1; }
     echo "== 4. firmware entry '$LABEL', last in the boot order"
     order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
     n=$(entry); [ -z "$n" ] || sudo efibootmgr -q -b "$n" -B
@@ -77,6 +122,31 @@ install)
     sudo efibootmgr | grep -E "^BootOrder|^BootCurrent"
     echo; echo "Done. Nothing boots differently yet. To try it once: bash install/arch/arch-grub.sh next, then reboot." ;;
 menu) mountboot; menu; umountboot ;;
+default)
+    ensure_efi
+    n=$(entry); [ -n "$n" ] || { echo "error: no Arch GRUB entry; run install first" >&2; exit 1; }
+    sudo grep -q 'EFI\\fedora\\grubaa64.efi' "$esp/$NEW/startup.nsh" ||
+        { echo "error: \\$NEW\\startup.nsh has no Fedora fallback yet; rerun install first" >&2; exit 1; }
+    echo "== 1. descriptive labels"
+    n=$(relabel "$n" "$LABEL" '\EFI\book4-el2-arch\Shellaa64.efi' "$SHELLARGS")
+    o=$(byloader '\EFI\book4-el2\Shellaa64.efi'); [ -z "$o" ] || o=$(relabel "$o" "$LABEL_OLD" '\EFI\book4-el2\Shellaa64.efi' "$SHELLARGS")
+    f=$(byloader '\EFI\fedora\grubaa64.efi'); [ -z "$f" ] || f=$(relabel "$f" "$LABEL_FED" '\EFI\fedora\grubaa64.efi')
+    echo "== 2. the OpenBSD entry (files on the ESP stay)"
+    x=$(byloader '\EFI\OPENBSD\bootaa64.efi')
+    if [ -n "$x" ]; then sudo efibootmgr -q -b "$x" -B; echo "   removed Boot$x"; else echo "   none"; fi
+    echo "== 3. boot order"
+    order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
+    rest=$(tr ',' '\n' <<<"$order" | grep -vxE "$n|${o:-x}|${f:-x}" | paste -sd, -)
+    sudo efibootmgr -q -o "$(printf '%s\n' "$n" "$o" "$f" "$rest" | grep -v '^$' | paste -sd, -)"
+    sudo efibootmgr | grep -vE '^(Timeout|BootNext)' | cut -f1
+    echo; echo "Done: power-on starts Arch GRUB (falls back to Fedora's if it is missing)."
+    echo "Back: bash install/arch/arch-grub.sh fedora-default" ;;
+fedora-default)
+    n=$(entry); o=$(byloader '\EFI\book4-el2\Shellaa64.efi')
+    [ -n "$o" ] || { echo "error: no Fedora GRUB EL2 entry" >&2; exit 1; }
+    order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
+    sudo efibootmgr -q -o "$(printf '%s\n' "$o" $(tr ',' '\n' <<<"$order" | grep -vxE "$o|${n:-x}") $n | paste -sd, -)"
+    sudo efibootmgr | grep -vE '^(Timeout|BootNext)' | cut -f1 ;;
 next)
     n=$(entry); [ -n "$n" ] || { echo "error: no '$LABEL' entry; run install first" >&2; exit 1; }
     sudo efibootmgr -q -n "$n"
@@ -91,5 +161,5 @@ undo)
     sudo rm -rf "$esp/$NEW" "$esp/EFI/arch"
     mountboot; sudo rm -rf "$b/grub"; umountboot
     echo "removed \\$NEW, \\EFI\\arch, /grub (Fedora's GRUB untouched)" ;;
-*) sed -n '3,16p' "$0"; exit 1 ;;
+*) sed -n '3,/^set -euo/p' "$0" | sed '$d'; exit 1 ;;
 esac

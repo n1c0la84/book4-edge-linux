@@ -37,7 +37,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 ESPDEV=/dev/sda1
 DIR=EFI/book4-el2
 FWDIR=firmware/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
-LABEL="Book4 EL2 (slbounce)"
+LABEL="Omarchy (EL2, Fedora GRUB, fallback)"   # was "Book4 EL2 (slbounce)" until arch-grub.sh default
 # Options for the UEFI Shell: no 5 s "Press ESC ... startup.nsh" countdown.
 # EDK2's Shell skips the first word of its load options as its own name.
 SHELLARGS="Shellaa64.efi -delay 0"
@@ -66,10 +66,9 @@ fw=/usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
     { echo "error: no EFI variables on this boot (efibootmgr needs them)" >&2; exit 1; }
 command -v efibootmgr >/dev/null || { echo "error: efibootmgr missing (pacman -S efibootmgr)" >&2; exit 1; }
 sudo -v
-# "Boot0003* Book4 EL2 (slbounce)" possibly followed by a tab and the device path
-entry() { sudo efibootmgr | awk -v l="$LABEL" '/^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ {
-    n = substr($0, 5, 4); t = substr($0, 10); sub(/^\* ?/, "", t); sub(/^ /, "", t); sub(/\t.*/, "", t)
-    if (t == l) { print n; exit } }'; }
+# Found by its loader path (\EFI\book4-el2\Shellaa64.efi), whatever its label.
+entry() { sudo efibootmgr | L=")/\\${DIR//\//\\}\\Shellaa64.efi" awk 'BEGIN { l = tolower(ENVIRON["L"]) }
+    /^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ { if (index(tolower($0), l)) { print substr($0, 5, 4); exit } }'; }
 
 if [ "${1:-}" = entry-off ]; then
     n=$(entry); [ -n "$n" ] && sudo efibootmgr -q -b "$n" -B && echo "removed Boot$n ($LABEL)" || echo "no '$LABEL' entry"

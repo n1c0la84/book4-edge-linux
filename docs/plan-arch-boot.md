@@ -108,6 +108,11 @@ the daily kernel stays installed).
    `startup.nsh` tries `\EFI\arch\` first and falls back to
    `\EFI\fedora\`. Fedora's GRUB stays on the ESP (hard rule: never
    delete from the ESP).
+   **Written 19 November** as `arch-grub.sh default` (by BootOrder: the Arch
+   GRUB entry first, its startup.nsh falling back to Fedora's GRUB; the main
+   `\EFI\book4-el2\` stays untouched as the second entry), with descriptive
+   entry labels and an fstab line for `/efi` (no gpt-auto ESP automount
+   under Arch GRUB).
 
 Cost: one session, 3-4 reboots. Risk: low, thanks to step 4; the
 fallback at every point is the current default firmware entry, untouched
