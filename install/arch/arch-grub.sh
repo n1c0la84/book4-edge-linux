@@ -8,15 +8,16 @@
 # the boot order. Nothing of Fedora's or of the current EL2 folder changes.
 #
 #   bash install/arch/arch-grub.sh install   GRUB, menu, EL2 test folder, firmware entry
-#   bash install/arch/arch-grub.sh menu      regenerate /grub/grub.cfg from today's menu
+#   bash install/arch/arch-grub.sh menu      regenerate /grub/grub.cfg (book4-boot menu)
 #   bash install/arch/arch-grub.sh next      boot the Arch GRUB entry ONCE at the next boot
 #   bash install/arch/arch-grub.sh status
 #   bash install/arch/arch-grub.sh undo      remove the entry and our folders (not Fedora's)
 #
-# The menu, for now, is today's menu (Fedora's static \EFI\fedora\grub.cfg,
-# written by 99-book4-devicetree.install) with the Windows entry using this
-# GRUB's own chainloader; the generator moves to Arch in step B3. Arch's
-# GRUB 2.16 has cutmem (mmap), devicetree (fdt) and chainloader (chain).
+# The menu is written by book4-boot (userspace/boot/arch, installed by
+# install/arch/book4-boot-setup.sh, step B3), whose pacman hooks keep it
+# current. Without book4-boot: Fedora's static \EFI\fedora\grub.cfg converted
+# (the Windows entry using this GRUB's own chainloader). Arch's GRUB 2.16 has
+# cutmem (mmap), devicetree (fdt) and chainloader (chain).
 set -euo pipefail
 LABEL="Book4 EL2 (Arch GRUB)"
 OLD=EFI/book4-el2; NEW=EFI/book4-el2-arch
@@ -32,6 +33,7 @@ mountboot() { b=$(mktemp -d); sudo mount /dev/sda4 "$b"; }
 umountboot() { sync; sudo umount "$b"; rmdir "$b"; }
 
 menu() {  # $b mounted
+    if [ -x /usr/local/bin/book4-boot ]; then sudo BOOK4_BOOTDEV=/dev/sda4 book4-boot menu | sed 's/^/   /'; return; fi
     local src=$esp/EFI/fedora/grub.cfg tmp; tmp=$(mktemp)
     sudo test -f "$src" || { echo "error: $src missing" >&2; return 1; }
     { echo "# Arch GRUB (install/arch/arch-grub.sh menu): today's menu from \\EFI\\fedora\\grub.cfg,"

@@ -1,0 +1,12 @@
+# book4-edge-linux (userspace/boot/arch): drop a removed linux-book4*
+# kernel's files from /boot (sda4) and from the Arch GRUB menu.
+[Trigger]
+Type = Path
+Operation = Remove
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Description = Book4: removing the kernel from /boot (sda4) and the Arch GRUB menu...
+When = PreTransaction
+Exec = /usr/local/bin/book4-boot hook-remove
+NeedsTargets

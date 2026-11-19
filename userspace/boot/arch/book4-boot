@@ -1,0 +1,230 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# book4-boot: /boot (sda4) for the linux-book4* packages on Arch, and Arch
+# GRUB's menu /grub/grub.cfg there (docs/plan-arch-boot.md, part B3). The
+# Arch counterpart of Fedora's 99-book4-devicetree.install. Run as root; the
+# pacman hooks 61-book4-boot-remove.hook and 91-book4-boot.hook call it.
+# Installed to /usr/local/bin by install/arch/book4-boot-setup.sh.
+#
+#   book4-boot kernel REL    vmlinuz, initramfs and DTBs of REL on /boot, then the menu
+#   book4-boot menu          regenerate /grub/grub.cfg
+#   book4-boot menu --print  print the menu, write nothing
+#   book4-boot hook-install / hook-remove   (pacman, targets on stdin)
+#
+# Per kernel REL (one with its own Book4 DTB in /usr/lib/modules/REL/dtb):
+#   /vmlinuz-REL, /initramfs-REL-arch.img, /dtb-REL/<dtb> (EL1) and
+#   /dtb-REL/<dtb>-el2.dtb (EL2: dts/src/x1-el2-book4.dtso applied).
+# Menu: this system's default kernel (the DEFAULT_PKG package) at EL2, verbose
+# and EL1; its other kernels; Fedora's GRUB (chainloaded, its own menu);
+# /book4-extra.cfg (install/arch/test-entry.sh); Windows; firmware settings.
+# Settings: /etc/book4/boot.conf (CMDLINE, NAME, DEFAULT_PKG, LEGACY_DTB).
+set -euo pipefail
+BOOTDEV=${BOOK4_BOOTDEV:-/dev/sda4}
+DTB=x1e80100-samsung-galaxy-book4-edge-14.dtb
+DTB_EL2=${DTB%.dtb}-el2.dtb
+OVERLAY=/usr/local/share/book4/x1-el2-book4.dtso
+CONF=${BOOK4_CONF:-/etc/book4/boot.conf}
+MARK=.book4-boot   # in /dtb-REL/: made by this script, so it may prune it
+
+CMDLINE= NAME=Omarchy DEFAULT_PKG=linux-book4 LEGACY_DTB=()
+[ -r "$CONF" ] || { echo "book4-boot: $CONF missing (install/arch/book4-boot-setup.sh)" >&2; exit 1; }
+. "$CONF"
+[ -n "$CMDLINE" ] || { echo "book4-boot: no CMDLINE in $CONF" >&2; exit 1; }
+SUBVOL=$(findmnt -rn -o FSROOT /); SUBVOL=${SUBVOL#/}
+ROOTUUID=$(findmnt -rn -o UUID /)
+
+log() { echo "book4-boot: $*"; }
+die() { echo "book4-boot: error: $*" >&2; exit 1; }
+
+# --- /boot ------------------------------------------------------------------
+b= own=
+mountboot() {   # $1 = ro|rw
+    [ -z "${BOOK4_TESTBOOT:-}" ] || { b=$BOOK4_TESTBOOT; return; }   # self-test: a plain directory
+    local m; m=$(findmnt -rn -o TARGET -S "$BOOTDEV" | head -1) || true
+    if [ -n "$m" ]; then
+        b=$m
+        [ "$1" = ro ] || findmnt -rn -O rw "$m" >/dev/null || die "$BOOTDEV is mounted read-only at $m"
+    else
+        b=$(mktemp -d /run/book4-boot.XXXXXX); own=1
+        mount -o "$1" "$BOOTDEV" "$b"
+    fi
+}
+umountboot() { [ -z "$own" ] || { sync; umount "$b"; rmdir "$b"; own=; }; }
+trap 'umountboot 2>/dev/null || true' EXIT
+
+ours() { [ -e "/usr/lib/modules/$1/dtb/qcom/$DTB" ] && [ -e "/usr/lib/modules/$1/vmlinuz" ]; }
+our_kernels() { local d; for d in /usr/lib/modules/*/; do d=${d%/}; d=${d##*/}; ! ours "$d" || echo "$d"; done; }
+put() { install -m 644 "$1" "$2.new" && mv "$2.new" "$2"; }   # atomic on /boot
+
+kernel() {   # REL; /boot mounted rw
+    local rel=$1 mod=/usr/lib/modules/$1 w
+    ours "$rel" || die "$rel is not a Book4 package kernel (no $mod/dtb/qcom/$DTB)"
+    w=$(mktemp -d); depmod "$rel"
+    mkinitcpio -k "$rel" -g "$w/initramfs.img" >"$w/mkinitcpio.log" 2>&1 ||
+        { tail -5 "$w/mkinitcpio.log" >&2; rm -rf "$w"; die "mkinitcpio failed for $rel"; }
+    lsinitcpio "$w/initramfs.img" | grep -qE '/ufs-qcom\.ko' || { rm -rf "$w"; die "ufs-qcom.ko missing from the $rel initramfs"; }
+    # GRUB needs slack in the blob to write /chosen; kernel-built DTBs have none.
+    dtc -q -I dtb -O dtb -p 8192 -o "$w/el1.dtb" "$mod/dtb/qcom/$DTB"
+    dtc -q -@ -I dts -O dtb -o "$w/el2.dtbo" "$OVERLAY"
+    fdtoverlay -i "$mod/dtb/qcom/$DTB" -o "$w/merged.dtb" "$w/el2.dtbo"
+    dtc -q -I dtb -O dtb -p 8192 -o "$w/el2.dtb" "$w/merged.dtb"
+    [ "$(fdtget -ts "$w/el2.dtb" /soc@0/gpu@3d00000/zap-shader status)" = disabled ] ||
+        { rm -rf "$w"; die "EL2 DTB: zap shader not disabled, slbounce would not switch"; }
+    install -d "$b/dtb-$rel"; : > "$b/dtb-$rel/$MARK"
+    put "$w/el1.dtb" "$b/dtb-$rel/$DTB"
+    put "$w/el2.dtb" "$b/dtb-$rel/$DTB_EL2"
+    put "$w/initramfs.img" "$b/initramfs-$rel-arch.img"
+    put "$mod/vmlinuz" "$b/vmlinuz-$rel"
+    # Fedora's GRUB (the default boot until part B5) boots the daily kernel
+    # through test entries with these fixed DTB paths; keep them current.
+    if [ "$rel" = "$(pkgrel "$DEFAULT_PKG")" ]; then
+        [ ! -e "$b/dtb-test/book4-73.dtb" ] || put "$mod/dtb/qcom/$DTB" "$b/dtb-test/book4-73.dtb"
+        [ ! -e "$b/dtb-test/book4-73-el2.dtb" ] || put "$w/el2.dtb" "$b/dtb-test/book4-73-el2.dtb"
+    fi
+    rm -rf "$w"
+    log "/boot: $rel (vmlinuz, initramfs, EL1 and EL2 DTB)"
+}
+
+unkernel() {   # REL; only what kernel() made
+    local rel=$1
+    [ -e "$b/dtb-$rel/$MARK" ] || return 0
+    rm -f "$b/vmlinuz-$rel" "$b/initramfs-$rel-arch.img"
+    rm -rf "$b/dtb-$rel"
+    log "/boot: removed $rel"
+}
+
+prune() {   # kernels kernel() made whose modules are gone (an upgrade to a new release)
+    local d rel
+    for d in "$b"/dtb-*/"$MARK"; do
+        [ -e "$d" ] || continue
+        rel=${d%/"$MARK"}; rel=${rel##*/dtb-}
+        [ -d "/usr/lib/modules/$rel" ] || unkernel "$rel"
+    done
+}
+
+pkgrel() { pacman -Ql "$1" 2>/dev/null | awk -F/ '$4=="modules" && $5!="" {print $5; exit}'; }
+
+# --- menu -------------------------------------------------------------------
+el2dtb() {   # REL -> EL2 DTB path under /boot, or nothing
+    local m
+    [ ! -e "$b/dtb-$1/$DTB_EL2" ] || { echo "/dtb-$1/$DTB_EL2"; return; }
+    for m in "${LEGACY_DTB[@]}"; do
+        [ "${m%%=*}" = "$1" ] && [ -e "$b${m#*=}" ] && { echo "${m#*=}"; return; }
+    done
+    return 0
+}
+bootable() { [ -e "$b/vmlinuz-$1" ] && [ -e "$b/initramfs-$1-arch.img" ] && [ -d "/usr/lib/modules/$1" ] && [ -n "$(el2dtb "$1")" ]; }
+
+entry() {   # title id rel dtb extra-args
+    cat <<EOF
+
+menuentry "$1" --id $2 {
+    devicetree (\$bootdev)$4
+    linux  (\$bootdev)/vmlinuz-$3 root=UUID=$ROOTUUID $CMDLINE rootflags=subvol=$SUBVOL$5
+    initrd (\$bootdev)/initramfs-$3-arch.img
+}
+EOF
+}
+
+gen() {   # [REL to leave out]
+    local skip=${1:-} rels=() r def bootuuid
+    while read -r r; do
+        [ "$r" != "$skip" ] && bootable "$r" && rels+=("$r")
+    done < <(ls /usr/lib/modules | sort -rV)
+    [ ${#rels[@]} -gt 0 ] || return 1
+    def=$(pkgrel "$DEFAULT_PKG")
+    [[ " ${rels[*]} " == *" $def "* ]] || def=${rels[0]}
+    bootuuid=${BOOK4_TESTUUID:-$(blkid -s UUID -o value "$BOOTDEV")}
+    cat <<EOF
+# Arch GRUB menu (Galaxy Book4 Edge 14"), regenerated by book4-boot
+# (book4-edge-linux userspace/boot/arch) on every kernel install or removal
+# and by 'book4-boot menu'. Hand edits are lost; edit /etc/book4/boot.conf.
+set timeout=5
+set timeout_style=menu
+set gfxpayload=keep
+set default=book4-default
+
+search --no-floppy --set=bootdev --fs-uuid $bootuuid
+
+# Snapdragon X firmware memory-map workaround. Removing this causes instant
+# reboots on this machine. Refused under Secure Boot lockdown.
+if [ "\$lockdown" != "y" ]; then
+  cutmem 0x8800000000 0x8fffffffff
+fi
+EOF
+    entry "$NAME ($def)" book4-default "$def" "$(el2dtb "$def")" " id_aa64mmfr0.ecv=1"
+    entry "$NAME ($def) - verbose" book4-verbose "$def" "$(el2dtb "$def")" " id_aa64mmfr0.ecv=1 earlycon keep_bootcon ignore_loglevel"
+    [ ! -e "$b/dtb-$def/$DTB" ] || entry "$NAME ($def) - EL1" book4-el1 "$def" "/dtb-$def/$DTB" ""
+    for r in "${rels[@]}"; do
+        [ "$r" = "$def" ] || entry "$NAME ($r)" "book4-$r" "$r" "$(el2dtb "$r")" " id_aa64mmfr0.ecv=1"
+    done
+    cat <<'EOF'
+
+menuentry "Fedora Linux (Fedora's GRUB menu)" --id book4-fedora {
+    search --no-floppy --set=fedesp --file /EFI/fedora/grubaa64.efi
+    insmod chain
+    chainloader ($fedesp)/EFI/fedora/grubaa64.efi
+}
+
+# Test entries (install/arch/test-entry.sh), shared with Fedora's GRUB menu.
+if [ -f ($bootdev)/book4-extra.cfg ]; then
+  source ($bootdev)/book4-extra.cfg
+fi
+# Fedora's GRUB boots this system through the test entry omarchy45; here the
+# generated default entry replaces it.
+if [ "$default" = "book4-test-omarchy45" ]; then
+  set default=book4-default
+fi
+
+menuentry "Windows Boot Manager" --id book4-windows {
+    search --no-floppy --set=winesp --file /EFI/Microsoft/Boot/bootmgfw.efi
+    insmod chain
+    chainloader ($winesp)/EFI/Microsoft/Boot/bootmgfw.efi
+}
+
+menuentry "UEFI Firmware Settings" { fwsetup }
+EOF
+}
+
+menu() {   # [REL to leave out]; /boot mounted
+    local cfg=$b/grub/grub.cfg tmp
+    [ -d "$b/grub" ] || die "no /grub on $BOOTDEV (install/arch/arch-grub.sh install)"
+    tmp=$(mktemp)
+    gen "${1:-}" > "$tmp" || { rm -f "$tmp"; log "no bootable kernel, $cfg left as it is"; return 0; }
+    if ! grep -q '^  cutmem 0x8800000000 0x8fffffffff' "$tmp" || ! grep -q -- '--id book4-default {' "$tmp" ||
+       { command -v grub-script-check >/dev/null && ! grub-script-check "$tmp"; }; then
+        rm -f "$tmp"; die "the generated menu failed its checks, $cfg left as it is"
+    fi
+    [ ! -e "$cfg" ] || cp -p "$cfg" "$cfg.prev"
+    put "$tmp" "$cfg"; rm -f "$tmp"
+    log "/grub/grub.cfg: $(grep -c '^menuentry' "$cfg") entries, default $(sed -n 's/^menuentry "\(.*\)" --id book4-default {$/\1/p' "$cfg")"
+}
+
+# --- commands ---------------------------------------------------------------
+[ "$(id -u)" = 0 ] || [ -n "${BOOK4_TESTBOOT:-}" ] || die "run as root"
+case "${1:-}" in
+kernel)
+    [ -n "${2:-}" ] || die "usage: book4-boot kernel REL"
+    mountboot rw; kernel "$2"; menu ;;
+menu)
+    if [ "${2:-}" = --print ]; then mountboot ro; gen || die "no bootable kernel"; else mountboot rw; menu; fi ;;
+hook-install)
+    # Targets: usr/lib/modules/REL/vmlinuz for a new kernel; anything else
+    # (firmware, mkinitcpio hooks, systemd, ...) rebuilds every initramfs.
+    rels=() all=
+    while read -r t; do
+        if [[ $t =~ ^usr/lib/modules/([^/]+)/vmlinuz$ ]]; then rels+=("${BASH_REMATCH[1]}"); else all=1; fi
+    done
+    [ -z "$all" ] || mapfile -t rels < <(our_kernels)
+    mountboot rw
+    for r in "${rels[@]}"; do ! ours "$r" || kernel "$r"; done
+    prune; menu ;;
+hook-remove)
+    rels=()
+    while read -r t; do [[ $t =~ ^usr/lib/modules/([^/]+)/vmlinuz$ ]] && rels+=("${BASH_REMATCH[1]}"); done
+    [ ${#rels[@]} -gt 0 ] || exit 0
+    mountboot rw
+    for r in "${rels[@]}"; do unkernel "$r"; menu "$r"; done ;;
+*)
+    sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1 ;;
+esac

@@ -85,6 +85,19 @@ the daily kernel stays installed).
    7.3, 7.2 fallback, EL1 variants), same `devicetree` lines, still
    sourcing `/boot/book4-extra.cfg`, so `test-entry.sh` keeps working.
    Not grub-mkconfig (it does not handle per-kernel DTBs).
+   **Written 19 November:** `userspace/boot/arch/book4-boot` with the hooks
+   `91-book4-boot.hook` (new kernel, or anything in an initramfs: firmware,
+   systemd, mkinitcpio hooks) and `61-book4-boot-remove.hook`, installed by
+   `install/arch/book4-boot-setup.sh`; settings in `/etc/book4/boot.conf`.
+   Per package kernel it writes `/vmlinuz-REL`, `/initramfs-REL-arch.img`,
+   `/dtb-REL/<dtb>` and its EL2 variant (same bytes as today's
+   `book4-73-el2.dtb`), keeps the two `/dtb-test/book4-73*.dtb` that
+   Fedora's GRUB uses current, and writes the menu: "Omarchy (REL)" at EL2
+   (default), verbose, EL1, other kernels (7.2.7-book4s through
+   `LEGACY_DTB`), Fedora's GRUB chainloaded, the test entries, Windows.
+   `install-book4-kernel.sh` then only runs pacman. `test-entry.sh` takes its
+   base entry from this menu and titles entries "<system> (<release>)"
+   (`retitle` for the old ones).
 4. Test without changing anything: a second EL2 Shell directory
    `\EFI\book4-el2-arch\` (copies of Shell/qebspil/slbounce/tcblaunch,
    a startup.nsh that starts `\EFI\arch\grubaa64.efi`) and a firmware

@@ -16,12 +16,16 @@
 #   bash install/arch/test-entry.sh list
 #   bash install/arch/test-entry.sh remove NAME
 #   bash install/arch/test-entry.sh clear
+#   bash install/arch/test-entry.sh retitle
+#        rename every entry "<system> (<its kernel release>) - test: NAME"
 #   bash install/arch/test-entry.sh default NAME|none
 #        make test entry NAME GRUB's default (a "set default" line in the same
 #        file, which overrides the boot hook's default), or drop that line
 #
 # Example: add synced -clk_ignore_unused -pd_ignore_unused +fw_devlink.sync_state=timeout
-# NAME becomes part of the menu title: "<entry title> - test: NAME".
+# NAME becomes part of the menu title: "<system> (<kernel release>) - test: NAME",
+# <system> from the entry's subvolume: Omarchy (the running one), Fedora Linux
+# (root), "Arch [<subvolume>]" otherwise.
 set -euo pipefail
 BOOTDEV=/dev/sda4
 ESPDEV=/dev/sda1
@@ -29,7 +33,7 @@ EXTRA=book4-extra.cfg
 ESPCFG=EFI/fedora/grub.cfg
 
 cmd=${1:-}; shift || true
-case "$cmd" in add|remove|default) [ -n "${1:-}" ] || cmd=help ;; list|clear) ;; *) cmd=help ;; esac
+case "$cmd" in add|remove|default) [ -n "${1:-}" ] || cmd=help ;; list|clear|retitle) ;; *) cmd=help ;; esac
 if [ "$cmd" = help ]; then sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1; fi
 
 if [ -n "${BOOK4_TESTROOT:-}" ]; then   # self-test: plain directories, no mounts, no sudo
@@ -54,6 +58,16 @@ else
   if [ "$cmd" = list ]; then sudo mount -o ro $BOOTDEV "$boot"; else sudo mount $BOOTDEV "$boot"; fi
 fi
 file=$boot/$EXTRA
+subvol=$(findmnt -rn -o FSROOT /); subvol=${subvol#/}
+
+# Menu title of an entry from its linux line: "<system> (<release>)".
+title_of() {  # linux line (image and arguments)
+  local img sv rel sys
+  img=${1%% *}; rel=${img##*/vmlinuz-}
+  sv=$(grep -o 'rootflags=subvol=[^ ]*' <<<"$1" | head -1); sv=${sv#rootflags=subvol=}
+  case "$sv" in "$subvol") sys=Omarchy ;; root) sys="Fedora Linux" ;; *) sys="Arch [$sv]" ;; esac
+  echo "$sys ($rel)"
+}
 
 # Entries are blocks that start with "# test-entry: NAME" and end with "}";
 # the default is one line ending in "# test-entry-default NAME".
@@ -93,14 +107,40 @@ default)
   echo "GRUB default: test entry '$1' (--id $id)"; exit 0 ;;
 remove)
   drop "$1" | write; echo "removed test entry '$1'"; exit 0 ;;
+retitle)
+  [ -e "$file" ] || { echo "(no test entries)"; exit 0; }
+  tmp=$(mktemp); name=; hold=
+  while IFS= read -r line; do
+    case "$line" in
+      "# test-entry: "*) name=${line#\# test-entry: }; echo "$line" ;;
+      "menuentry "*) hold=$line ;;
+      "    linux "*)
+        if [ -n "$hold" ]; then
+          l=$(sed 's/^    linux[[:space:]]*//' <<<"$line")
+          sed -E "s/^menuentry \"[^\"]*\"/menuentry \"$(title_of "$l" | sed 's/[&/\]/\\&/g') - test: $name\"/" <<<"$hold"
+          hold=
+        fi
+        echo "$line" ;;
+      *) [ -z "$hold" ] && echo "$line" || hold=$hold$'\n'$line ;;
+    esac
+  done < "$file" > "$tmp"
+  write < "$tmp"; rm -f "$tmp"
+  grep '^menuentry' "$file"; exit 0 ;;
 esac
 
 name=$1; shift
 [[ $name =~ ^[A-Za-z0-9._+-]+$ ]] || { echo "error: NAME may only use letters, digits and . _ + -" >&2; exit 1; }
 
-# The generated entry for the subvolume we are running from.
-subvol=$(findmnt -rn -o FSROOT /); subvol=${subvol#/}
-block=$(awk -v sv="rootflags=subvol=$subvol" '
+# The generated entry for the subvolume we are running from: Arch GRUB's menu
+# (book4-boot) when it has one, else Fedora's.
+block=
+if [ -e "$boot/grub/grub.cfg" ]; then
+  block=$(awk -v sv="rootflags=subvol=$subvol" '
+    /^menuentry / { buf = $0 "\n"; inside = 1; next }
+    inside { buf = buf $0 "\n" }
+    inside && /^}/ { inside = 0; if (index(buf, sv) && !found) { printf "%s", buf; found = 1 } }' "$boot/grub/grub.cfg")
+fi
+[ -n "$block" ] || block=$(awk -v sv="rootflags=subvol=$subvol" '
   /^menuentry / { buf = $0 "\n"; inside = 1; next }
   inside { buf = buf $0 "\n" }
   inside && /^}/ { inside = 0; if (index(buf, sv) && !found) { printf "%s", buf; found = 1 } }' < <($SUDO cat "$esp/$ESPCFG"))
@@ -116,7 +156,7 @@ fi
 [ -n "$block" ] || { echo "error: no entry with rootflags=subvol=$subvol in $ESPCFG" >&2; exit 1; }
 grep -q "rootflags=subvol=$subvol\b" <<<"$block" || { echo "error: the copied entry does not boot $subvol" >&2; exit 1; }
 
-title=$(sed -n '1s/^menuentry "\(.*\)" {$/\1/p' <<<"$block")
+title=$(sed -n '1s/^menuentry "\([^"]*\)".*{$/\1/p' <<<"$block")
 dt=$(sed -n 's/^[[:space:]]*devicetree[[:space:]]\+//p' <<<"$block")
 linux=$(sed -n 's/^[[:space:]]*linux[[:space:]]\+//p' <<<"$block")
 initrd=$(sed -n 's/^[[:space:]]*initrd[[:space:]]\+//p' <<<"$block")
@@ -130,7 +170,7 @@ for a in "$@"; do
         for w in "${args[@]}"; do [ "$w" = "$k" ] || [ "${w%%=*}" = "$k" ] || new+=("$w"); done
         [ ${#new[@]} -lt ${#args[@]} ] || { echo "error: '$k' is not in the command line" >&2; exit 1; }
         args=("${new[@]}") ;;
-    +*) args+=("${a#+}") ;;
+    +*) w=${a#+}; [[ " ${args[*]} " == *" $w "* ]] || args+=("$w") ;;
     dtb=/*) p=${a#dtb=}
         [ -e "$boot$p" ] || { echo "error: $p does not exist under /boot" >&2; exit 1; }
         dt="(\$bootdev)$p" ;;
@@ -149,7 +189,7 @@ done
   cat <<EOF
 
 # test-entry: $name
-menuentry "$title - test: $name" --id book4-test-$name {
+menuentry "$(title_of "${words[0]} ${args[*]}") - test: $name" --id book4-test-$name {
     devicetree $dt
     linux  ${words[0]} ${args[*]}
     initrd $initrd

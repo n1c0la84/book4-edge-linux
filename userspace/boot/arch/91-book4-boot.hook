@@ -1,0 +1,33 @@
+# book4-edge-linux (userspace/boot/arch): /boot (sda4) and Arch GRUB's menu
+# for the linux-book4* packages. The same triggers as Arch's
+# 90-mkinitcpio-install.hook, whose initramfs the packages do not get (no
+# pkgbase file): a new kernel, or anything that goes into an initramfs.
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/lib/modules/*/vmlinuz
+
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Target = usr/lib/initcpio/*
+Target = usr/lib/firmware/*
+Target = usr/lib/modules/*/extramodules/
+Target = usr/lib/systemd/systemd
+Target = usr/lib/systemd/systemd-udevd
+Target = usr/lib/modprobe.d/
+
+[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Target = mkinitcpio
+
+[Action]
+Description = Book4: kernels on /boot (sda4) and the Arch GRUB menu...
+When = PostTransaction
+Exec = /usr/local/bin/book4-boot hook-install
+NeedsTargets

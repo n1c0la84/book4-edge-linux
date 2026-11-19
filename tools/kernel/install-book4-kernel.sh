@@ -48,6 +48,17 @@ mod=/usr/lib/modules/$rel
 sudo depmod "$rel"
 echo "   $rel: $(find "$mod" -name '*.ko*' | wc -l) modules, extra: $(ls "$mod/extra" | tr '\n' ' ')"
 
+if [ -e /etc/pacman.d/hooks/91-book4-boot.hook ]; then
+    # book4-boot's pacman hook has put vmlinuz, initramfs and DTBs on /boot and
+    # rewritten Arch GRUB's menu (install/arch/book4-boot-setup.sh).
+    if [ "$name" = book4 ]; then echo "Installed $rel (book4-boot: /boot and both menus' entries current). Reboot normally."; exit 0; fi
+    echo "== 2. GRUB test entry '$name' (for Fedora's GRUB; Arch GRUB lists $rel by itself)"
+    bash "$repo/install/arch/test-entry.sh" remove "$name" >/dev/null 2>&1 || true
+    bash "$repo/install/arch/test-entry.sh" add "$name" +id_aa64mmfr0.ecv=1 \
+        "dtb=/dtb-$rel/${dtbname%.dtb}-el2.dtb" "kernel=/vmlinuz-$rel" "initrd=/initramfs-$rel-arch.img"
+    echo; echo "Installed $rel. Reboot and pick it in GRUB."; exit 0
+fi
+
 echo "== 2. initramfs and /boot"
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 sudo mkinitcpio -k "$rel" -g "$work/initramfs.img" >/dev/null 2>&1 || true
