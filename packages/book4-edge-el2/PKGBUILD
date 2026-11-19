@@ -40,7 +40,10 @@ _submodules() {  # project, submodule names: use the sources fetched above
 }
 
 prepare() {
-  local r; r=$(_repo)
+  local r p; r=$(_repo)
+  for p in qebspil slbounce; do   # a rebuild reuses src/: drop the last patch and build
+    git -C "$srcdir/$p" checkout -q -- . && git -C "$srcdir/$p" clean -q -fd
+  done
   _submodules qebspil gnu-efi dtc
   _submodules slbounce gnu-efi dtc arm64-sysreg-lib
   git -C "$srcdir/qebspil" apply "$r/install/el2/qebspil-aoss-load-state.patch"
