@@ -105,8 +105,12 @@ its own space, rather than converting this system. It makes sense; plan for:
    import, keyboard; helpers in /usr/lib/book4, units in /usr/lib/systemd)
    and `packages/book4-edge-boot` (book4-boot, its hooks, the EL2 overlay,
    windows.nsh); `install/arch/book4-edge-migrate.sh` moves this machine
-   from the script-installed copies. Still to package: firmware
-   (`book4-edge-firmware`, local only). Before: only the kernel was a package (`packages/linux-book4`, with the sleep
+   from the script-installed copies. Firmware packaged the same day
+   (`book4-edge-firmware`, local only, staged from Windows by checksum), and
+   all four go into a local pacman repository `[book4]`
+   (`install/arch/book4-repo.sh`): a fresh install needs that directory,
+   one Include line, `pacman -S linux-book4 book4-edge book4-edge-boot
+   book4-edge-firmware`, `/etc/book4/boot.conf` and the EL2 chain. Before: only the kernel was a package (`packages/linux-book4`, with the sleep
    modules and Samsung drivers inside, so `book4-edge-dkms` is not needed
    while we ship our kernel). Everything else installs by script from
    `userspace/` (audio UCM/PipeWire, battery, Bluetooth address, crash
