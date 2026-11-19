@@ -23,7 +23,6 @@ lbs=$(cat "/sys/block/${DISK#/dev/}/queue/logical_block_size"); f=$((lbs / 512))
 
 echo "== 1. checks"
 findmnt -rn -S "$WIN" >/dev/null && { echo "error: $WIN is mounted" >&2; exit 1; }
-[ ! -e "$NEW" ] || { echo "error: $NEW exists already" >&2; exit 1; }
 grep -qx 1 /sys/class/power_supply/*/online 2>/dev/null || { echo "error: plug the charger in" >&2; exit 1; }
 [ "$(lsblk -no FSTYPE "$WIN")" = ntfs ] || { echo "error: $WIN is not NTFS" >&2; exit 1; }
 s3=$(sec $WIN start); n3=$(sec $WIN size); s4=$(sec $BOOTP start)
@@ -57,22 +56,33 @@ vb=$(volbytes); echo "   NTFS volume: $vb bytes"
 
 [ $((new3 % f)) -eq 0 ] && [ $((s6 % f)) -eq 0 ] && [ $((n6 % f)) -eq 0 ] && [ $((s3 % f)) -eq 0 ] ||
     { echo "error: sizes not multiples of the $lbs-byte sector" >&2; exit 1; }
+if [ -e "$NEW" ]; then   # an earlier run got this far
+    [ "$(sec $WIN size)" -eq "$new3" ] && [ "$(sec $NEW start)" -eq "$s6" ] && [ "$(sec $NEW size)" -eq "$n6" ] ||
+        { echo "error: $NEW exists but is not the expected partition" >&2; exit 1; }
+    echo "== 3./4. partitions already done (an earlier run)"
+else
 echo "== 3. partition 3 -> $((new3 / f)) sectors of $lbs bytes"
 echo ",$((new3 / f))" | sudo sfdisk --no-act --no-reread --no-tell-kernel -N 3 "$DISK" >/dev/null ||
     { echo "error: sfdisk test of the resize failed; nothing changed" >&2; exit 1; }
 echo ",$((new3 / f))" | sudo sfdisk --no-reread --no-tell-kernel -N 3 "$DISK" >/dev/null
 echo "== 4. partition 6"
 echo "$((s6 / f)),$((n6 / f)),L" | sudo sfdisk --no-reread --no-tell-kernel --append "$DISK" >/dev/null
-sudo partx -u --nr 3 "$DISK"; sudo partx -a --nr 6 "$DISK"; sudo udevadm settle
+sudo partx -u --nr 3 "$DISK"; [ -e "$NEW" ] || sudo partx -a --nr 6 "$DISK" || true; sudo udevadm settle
 [ "$(sec $WIN size)" -eq "$new3" ] && [ -e "$NEW" ] && [ "$(sec $NEW start)" -eq "$s6" ] ||
     { echo "error: the kernel does not see the new table yet; reboot, then: sudo btrfs device add $NEW /" >&2; exit 1; }
 [ "$(volbytes)" = "$vb" ] && echo "   Windows NTFS readable after the change, same size" ||
     { echo "error: NTFS not readable after the partition change; restore: sudo sfdisk $DISK < ~/sda-table-before-shrink.sfdisk" >&2; exit 1; }
+fi
+[ "$(volbytes)" = "$vb" ] && echo "   Windows NTFS readable at its new partition size" ||
+    { echo "error: NTFS not readable; restore: sudo sfdisk $DISK < ~/sda-table-before-shrink.sfdisk" >&2; exit 1; }
 lsblk -o NAME,SIZE,FSTYPE "$DISK" | sed 's/^/   /'
 
 echo "== 5. $NEW into the root filesystem"
-sudo wipefs -q -a "$NEW"          # old NTFS free space; no signature may remain
-sudo btrfs device add "$NEW" /
+if sudo btrfs filesystem show / | grep -q "$NEW\b"; then echo "   already part of the root filesystem"
+else
+    sudo wipefs -q -a "$NEW"          # old NTFS free space; no signature may remain
+    sudo btrfs device add "$NEW" /
+fi
 sudo btrfs filesystem show / | sed 's/^/   /'
 df -h / | sed 's/^/   /'
 echo; echo "Done. Boot Windows once soon: it checks the volume (chkdsk) on its first start."
