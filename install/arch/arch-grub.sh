@@ -57,7 +57,7 @@ mountboot() { b=$(mktemp -d); sudo mount /dev/sda4 "$b"; }
 umountboot() { sync; sudo umount "$b"; rmdir "$b"; }
 
 menu() {  # $b mounted
-    if [ -x /usr/local/bin/book4-boot ]; then sudo BOOK4_BOOTDEV=/dev/sda4 book4-boot menu | sed 's/^/   /'; return; fi
+    if command -v book4-boot >/dev/null; then sudo BOOK4_BOOTDEV=/dev/sda4 book4-boot menu | sed 's/^/   /'; return; fi
     local src=$esp/EFI/fedora/grub.cfg tmp; tmp=$(mktemp)
     sudo test -f "$src" || { echo "error: $src missing" >&2; return 1; }
     { echo "# Arch GRUB (install/arch/arch-grub.sh menu): today's menu from \\EFI\\fedora\\grub.cfg,"
@@ -129,7 +129,7 @@ windows)
     sudo test -e "$esp/$NEW/Shellaa64.efi" || { echo "error: no \\$NEW; run install first" >&2; exit 1; }
     sudo install -m 644 "$repo/userspace/boot/arch/windows.nsh" "$esp/$NEW/windows.nsh"
     echo "== \\$NEW\\windows.nsh installed"
-    sudo install -m 755 "$repo/userspace/boot/arch/book4-boot" /usr/local/bin/book4-boot
+    pacman -Q book4-edge-boot >/dev/null 2>&1 || sudo install -m 755 "$repo/userspace/boot/arch/book4-boot" /usr/local/bin/book4-boot
     mountboot; menu; umountboot
     echo "Windows from GRUB now goes through the UEFI Shell. Try it: reboot, pick 'Windows Boot Manager'." ;;
 default)

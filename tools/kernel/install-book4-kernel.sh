@@ -48,7 +48,7 @@ mod=/usr/lib/modules/$rel
 sudo depmod "$rel"
 echo "   $rel: $(find "$mod" -name '*.ko*' | wc -l) modules, extra: $(ls "$mod/extra" | tr '\n' ' ')"
 
-if [ -e /etc/pacman.d/hooks/91-book4-boot.hook ]; then
+if [ -e /usr/share/libalpm/hooks/91-book4-boot.hook ] || [ -e /etc/pacman.d/hooks/91-book4-boot.hook ]; then
     # book4-boot's pacman hook has put vmlinuz, initramfs and DTBs on /boot and
     # rewritten Arch GRUB's menu (install/arch/book4-boot-setup.sh).
     if [ "$name" = book4 ]; then echo "Installed $rel (book4-boot: /boot and both menus' entries current). Reboot normally."; exit 0; fi

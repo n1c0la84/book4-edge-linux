@@ -29,5 +29,5 @@ Target = mkinitcpio
 [Action]
 Description = Book4: kernels on /boot (sda4) and the Arch GRUB menu...
 When = PostTransaction
-Exec = /usr/local/bin/book4-boot hook-install
+Exec = /usr/bin/book4-boot hook-install
 NeedsTargets

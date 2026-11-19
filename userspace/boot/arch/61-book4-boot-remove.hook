@@ -8,5 +8,5 @@ Target = usr/lib/modules/*/vmlinuz
 [Action]
 Description = Book4: removing the kernel from /boot (sda4) and the Arch GRUB menu...
 When = PreTransaction
-Exec = /usr/local/bin/book4-boot hook-remove
+Exec = /usr/bin/book4-boot hook-remove
 NeedsTargets

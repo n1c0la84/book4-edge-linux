@@ -15,6 +15,9 @@
 set -euo pipefail
 src=$(cd "$(dirname "$0")/../../userspace/fingerprint" && pwd)
 [ -e /etc/arch-release ] || { echo "Run this on Arch." >&2; exit 1; }
+if pacman -Q book4-edge >/dev/null 2>&1 && [ "${1:-}" != undo ]; then
+    echo "The fingerprint import comes with the book4-edge package now (packages/book4-edge); nothing to install." >&2; exit 0
+fi
 sudo -v
 if [ "${1:-}" = undo ]; then
     sudo systemctl disable book4-fingerprint-import.service 2>/dev/null || true

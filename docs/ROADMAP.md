@@ -98,8 +98,15 @@ its own space, rather than converting this system. It makes sense; plan for:
    a device tree per kernel, the EL2 chain through the UEFI Shell. Limine
    must provide all three; until it does, the new install can boot from our
    Arch GRUB with one more menu entry.
-4. **The Book4 layer as packages first** (the table above). As of 19 Nov
-   only the kernel is a package (`packages/linux-book4`, with the sleep
+4. **The Book4 layer as packages first** (the table above). **Started 19
+   Nov:** `packages/book4-edge` (userspace/: audio UCM and PipeWire/
+   WirePlumber drop-ins, udev, modprobe, sleep log and EL2 sleep helper,
+   battery warnings, Bluetooth address, crash log, GPU busy, fingerprint
+   import, keyboard; helpers in /usr/lib/book4, units in /usr/lib/systemd)
+   and `packages/book4-edge-boot` (book4-boot, its hooks, the EL2 overlay,
+   windows.nsh); `install/arch/book4-edge-migrate.sh` moves this machine
+   from the script-installed copies. Still to package: firmware
+   (`book4-edge-firmware`, local only). Before: only the kernel was a package (`packages/linux-book4`, with the sleep
    modules and Samsung drivers inside, so `book4-edge-dkms` is not needed
    while we ship our kernel). Everything else installs by script from
    `userspace/` (audio UCM/PipeWire, battery, Bluetooth address, crash

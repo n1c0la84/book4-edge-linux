@@ -1,0 +1,12 @@
+# book4-boot (book4-edge-linux userspace/boot/arch). After editing:
+#   sudo book4-boot menu
+# Kernel arguments of every entry; book4-boot adds root=, rootflags=subvol=
+# (the running subvolume) and, at EL2, id_aa64mmfr0.ecv=1.
+CMDLINE="ro arm64.nopauth systemd.tpm2_wait=0 cma=256M mem_sleep_default=s2idle pcie_port_pm=force"
+# Menu titles: "$NAME (<kernel release>)"
+NAME="Omarchy"
+# The package whose kernel is the default entry
+DEFAULT_PKG=linux-book4
+# Kernels from before book4-boot (no /dtb-<release>/ of their own):
+# "<release>=<EL2 DTB under /boot>"; listed while their files exist.
+LEGACY_DTB=("7.2.7-book4s=/dtb-test/book4-sleep-el2.dtb")

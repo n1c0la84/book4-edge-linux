@@ -1,0 +1,19 @@
+_units() {
+  cat <<'EOF'
+  system: book4-bt-addr book4-fingerprint-import book4-live-log book4-el2-sleep
+          (book4-kbd-backlight: optional)
+  user:   book4-battery-warn.timer book4-gpu-busy
+EOF
+}
+
+post_install() {
+  echo ">>> book4-edge: enable the services (install/arch/book4-edge-migrate.sh does it):"
+  _units
+  echo ">>> sudo systemctl enable book4-bt-addr book4-fingerprint-import book4-live-log book4-el2-sleep"
+  echo ">>> systemctl --user enable --now book4-battery-warn.timer book4-gpu-busy"
+}
+
+post_upgrade() {
+  systemctl daemon-reload 2>/dev/null || true
+  udevadm control --reload 2>/dev/null || true
+}

@@ -28,11 +28,15 @@ for c in dtc fdtoverlay fdtget mkinitcpio grub-script-check; do
 done
 bash -n "$src/book4-boot"
 sudo -v
-echo "== 1. book4-boot, overlay, pacman hooks"
-sudo install -D -m 755 "$src/book4-boot" /usr/local/bin/book4-boot
-sudo install -D -m 644 "$repo/dts/src/x1-el2-book4.dtso" /usr/local/share/book4/x1-el2-book4.dtso
-sudo install -D -m 644 "$src/91-book4-boot.hook" /etc/pacman.d/hooks/91-book4-boot.hook
-sudo install -D -m 644 "$src/61-book4-boot-remove.hook" /etc/pacman.d/hooks/61-book4-boot-remove.hook
+if pacman -Q book4-edge-boot >/dev/null 2>&1; then
+    echo "== 1. book4-boot and its hooks: from the book4-edge-boot package"
+else
+    echo "== 1. book4-boot, overlay, pacman hooks (better: the book4-edge-boot package)"
+    sudo install -D -m 755 "$src/book4-boot" /usr/local/bin/book4-boot
+    sudo install -D -m 644 "$repo/dts/src/x1-el2-book4.dtso" /usr/local/share/book4/x1-el2-book4.dtso
+    sudo install -D -m 644 "$src/91-book4-boot.hook" /etc/pacman.d/hooks/91-book4-boot.hook
+    sudo install -D -m 644 "$src/61-book4-boot-remove.hook" /etc/pacman.d/hooks/61-book4-boot-remove.hook
+fi
 
 echo "== 2. $conf"
 if sudo test -e "$conf"; then

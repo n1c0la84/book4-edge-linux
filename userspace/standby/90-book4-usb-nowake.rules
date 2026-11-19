@@ -1,0 +1,2 @@
+# Book4: USB may not wake from suspend, so dwc3 powers its PHYs down (docs/power.md)
+ACTION=="bind|change", SUBSYSTEM=="platform", KERNEL=="a[0-9a-f]*.usb", DRIVER=="dwc3-qcom", ATTR{power/wakeup}="disabled"

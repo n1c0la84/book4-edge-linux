@@ -4,7 +4,8 @@
 # GRUB's menu /grub/grub.cfg there (docs/plan-arch-boot.md, part B3). The
 # Arch counterpart of Fedora's 99-book4-devicetree.install. Run as root; the
 # pacman hooks 61-book4-boot-remove.hook and 91-book4-boot.hook call it.
-# Installed to /usr/local/bin by install/arch/book4-boot-setup.sh.
+# Packaged as book4-edge-boot (packages/book4-edge-boot); before that
+# installed to /usr/local/bin by install/arch/book4-boot-setup.sh.
 #
 #   book4-boot kernel REL    vmlinuz, initramfs and DTBs of REL on /boot, then the menu
 #   book4-boot menu          regenerate /grub/grub.cfg
@@ -22,7 +23,8 @@ set -euo pipefail
 BOOTDEV=${BOOK4_BOOTDEV:-/dev/sda4}
 DTB=x1e80100-samsung-galaxy-book4-edge-14.dtb
 DTB_EL2=${DTB%.dtb}-el2.dtb
-OVERLAY=/usr/local/share/book4/x1-el2-book4.dtso
+OVERLAY=/usr/share/book4/x1-el2-book4.dtso     # book4-edge-boot package
+[ -e "$OVERLAY" ] || OVERLAY=/usr/local/share/book4/x1-el2-book4.dtso   # book4-boot-setup.sh
 CONF=${BOOK4_CONF:-/etc/book4/boot.conf}
 MARK=.book4-boot   # in /dtb-REL/: made by this script, so it may prune it
 

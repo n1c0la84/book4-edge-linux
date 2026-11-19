@@ -1,0 +1,17 @@
+# Book4 (book4-edge package; was install/el2/sleep-setup.sh)
+[Unit]
+Description=Book4: EL2 deep-sleep setup (el1tmr, UFS hold, release boot votes)
+ConditionKernelCommandLine=id_aa64mmfr0.ecv=1
+ConditionPathExists=/usr/lib/modules/%v/extra/el1tmr.ko
+After=systemd-modules-load.service
+
+[Service]
+# exec, not oneshot: the helper waits for the sound card and the AOSS driver
+# (up to two minutes), and as a oneshot it held the login screen back by
+# ~6 s (23 October). It only has to be done before the first suspend.
+Type=exec
+RemainAfterExit=yes
+ExecStart=/usr/lib/book4/book4-el2-sleep
+
+[Install]
+WantedBy=multi-user.target

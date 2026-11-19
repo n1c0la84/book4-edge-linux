@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# book4-edge: the Galaxy Book4 Edge 14" (NP940XMA) layer on top of Omarchy,
+# from this repository's userspace/ (ROADMAP "Where it is heading"). Built
+# from the working tree, like packages/linux-book4:
+#
+#   cd packages/book4-edge && makepkg -f
+#   bash install/arch/book4-edge-migrate.sh     first install over the script-installed copies
+#
+# Services are enabled by the migration script (Arch packages do not enable
+# units by themselves); see book4-edge.install for the list.
+pkgname=book4-edge
+pkgver=r560.5917b02
+pkgrel=1
+pkgdesc='Galaxy Book4 Edge 14": audio (UCM, PipeWire), sleep, battery, keyboard, fingerprint and boot-time services'
+arch=(aarch64)
+url='https://github.com/n1c0la84/book4-edge-linux'
+license=(GPL-2.0-only)
+depends=(bash systemd pipewire wireplumber alsa-ucm-conf upower python-gobject)
+optdepends=('keyd: Copilot key as Super'
+            'libfprint-sdcp: the fingerprint reader (book4-fingerprint-import)'
+            'linux-book4: the kernel whose extra modules book4-el2-sleep loads')
+backup=(etc/keyd/book4.conf
+        etc/UPower/UPower.conf.d/70-book4.conf
+        etc/mkinitcpio.conf.d/book4.conf)
+install=book4-edge.install
+
+_repo() { cd "$startdir/../.." && pwd; }
+
+pkgver() {
+  local repo; repo=$(_repo)
+  printf 'r%s.%s' "$(git -C "$repo" rev-list --count HEAD)" "$(git -C "$repo" rev-parse --short HEAD)"
+}
+
+package() {
+  local u; u=$(_repo)/userspace
+  local L=$pkgdir/usr/lib
+
+  # Helpers. Units name them by these paths (the scripts' old /usr/local and
+  # ~/.local paths are rewritten below).
+  install -Dm755 "$u/bluetooth/book4-bt-addr"                 "$L/book4/book4-bt-addr"
+  install -Dm755 "$u/fingerprint/book4-fingerprint-import"    "$L/book4/book4-fingerprint-import"
+  install -Dm755 "$u/crash-log/book4-live-log"                "$L/book4/book4-live-log"
+  install -Dm755 "$u/standby/book4-el2-sleep"                 "$L/book4/book4-el2-sleep"
+  install -Dm755 "$u/battery/book4-battery-warn"              "$L/book4/book4-battery-warn"
+  install -Dm755 "$u/desktop/book4-gpu-busy"                  "$L/book4/book4-gpu-busy"
+  install -Dm755 "$u/kbd-backlight/book4-kbd-backlight-bind"  "$L/book4/book4-kbd-backlight-bind"
+  install -d "$pkgdir/usr/bin"
+  ln -s ../lib/book4/book4-fingerprint-import "$pkgdir/usr/bin/book4-fingerprint-import"
+
+  _unit() {  # source, destination directory
+    install -Dm644 "$1" "$2/${1##*/}"
+    sed -i -e 's|/usr/local/sbin/|/usr/lib/book4/|g' -e 's|/usr/local/bin/|/usr/lib/book4/|g' \
+           -e 's|%h/\.local/bin/|/usr/lib/book4/|g' -e 's|/usr/local/lib/book4/|/usr/lib/book4/|g' "$2/${1##*/}"
+    ! grep -nE '/usr/local|\.local/bin' "$2/${1##*/}" || { echo "unrewritten path in ${1##*/}" >&2; return 1; }
+  }
+  for f in bluetooth/book4-bt-addr.service fingerprint/book4-fingerprint-import.service \
+           crash-log/book4-live-log.service standby/book4-el2-sleep.service \
+           kbd-backlight/book4-kbd-backlight.service; do
+    _unit "$u/$f" "$L/systemd/system"
+  done
+  for f in battery/book4-battery-warn.service battery/book4-battery-warn.timer desktop/book4-gpu-busy.service; do
+    _unit "$u/$f" "$L/systemd/user"
+  done
+  install -Dm755 "$u/standby/book4-sleep-log"       "$L/systemd/system-sleep/book4-sleep-log"
+  install -Dm644 "$u/crash-log/60-book4-sync.conf"  "$L/systemd/journald.conf.d/60-book4-sync.conf"
+
+  # udev, modprobe, modules-load
+  install -Dm644 "$u/fingerprint/90-book4-fingerprint.rules" "$L/udev/rules.d/90-book4-fingerprint.rules"
+  install -Dm644 "$u/standby/90-book4-usb-nowake.rules"      "$L/udev/rules.d/90-book4-usb-nowake.rules"
+  install -Dm644 "$u/battery/91-book4-boost.rules"           "$L/udev/rules.d/91-book4-boost.rules"
+  install -Dm644 "$u/keyboard/99-book4-keyboard.rules"       "$L/udev/rules.d/99-book4-keyboard.rules"
+  for f in book4-no-battmgr book4-no-pwrlmts book4-spss-nvm; do
+    install -Dm644 "$u/modprobe/$f.conf" "$L/modprobe.d/$f.conf"
+  done
+  install -Dm644 "$u/modules-load/book4-cpufreq.conf" "$L/modules-load.d/book4-cpufreq.conf"
+
+  # Audio: UCM (the conf.d name is this model's card long name) and the
+  # PipeWire/WirePlumber drop-ins, system-wide (a same-named copy in
+  # ~/.config still takes precedence).
+  local ucm=$pkgdir/usr/share/alsa/ucm2
+  install -Dm644 "$u/audio/ucm2/Samsung-GalaxyBook4Edge.conf"      "$ucm/Qualcomm/x1e80100/Samsung-GalaxyBook4Edge.conf"
+  install -Dm644 "$u/audio/ucm2/Samsung-GalaxyBook4Edge-HiFi.conf" "$ucm/Qualcomm/x1e80100/Samsung-GalaxyBook4Edge-HiFi.conf"
+  install -d "$ucm/conf.d/x1e80100"
+  ln -s ../../Qualcomm/x1e80100/Samsung-GalaxyBook4Edge.conf \
+        "$ucm/conf.d/x1e80100/SAMSUNGELECTRONICSCO.LTD.-GalaxyBook4Edge-2.1-NP940XMA_KB1IT.conf"
+  install -Dm644 "$u/audio/pipewire/book4-speakers.conf" "$pkgdir/usr/share/pipewire/pipewire.conf.d/book4-speakers.conf"
+  install -Dm644 "$u/audio/pipewire/book4-mic-ns.conf"   "$pkgdir/usr/share/pipewire/pipewire.conf.d/book4-mic-ns.conf"
+  install -Dm644 "$u/audio/pipewire/book4-speakers-wireplumber.conf" \
+                 "$pkgdir/usr/share/wireplumber/wireplumber.conf.d/book4-speakers.conf"
+  install -Dm644 "$u/audio/pipewire/book4-software-volume-wireplumber.conf" \
+                 "$pkgdir/usr/share/wireplumber/wireplumber.conf.d/90-book4-software-volume.conf"
+
+  # Configuration the programs read only from /etc
+  install -Dm644 "$u/keyboard/keyd-book4.conf"   "$pkgdir/etc/keyd/book4.conf"
+  install -Dm644 "$u/battery/70-book4.conf"      "$pkgdir/etc/UPower/UPower.conf.d/70-book4.conf"
+  install -Dm644 "$u/initcpio/book4.conf"        "$pkgdir/etc/mkinitcpio.conf.d/book4.conf"
+}

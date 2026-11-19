@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# book4-edge-boot: book4-boot and its pacman hooks (userspace/boot/arch):
+# every linux-book4* kernel on /boot (sda4) with its EL1 and EL2 device trees
+# and initramfs, and Arch GRUB's menu /grub/grub.cfg. Settings stay in
+# /etc/book4/boot.conf (written once by install/arch/book4-boot-setup.sh;
+# an example is in /usr/share/book4/boot.conf.example). The EL2 chain on
+# the ESP (UEFI Shell, qebspil, slbounce, Windows' tcblaunch.exe) and Arch
+# GRUB itself stay with install/arch/arch-grub.sh; windows.nsh is shipped
+# here for it.
+#
+#   cd packages/book4-edge-boot && makepkg -f
+pkgname=book4-edge-boot
+pkgver=r560.5917b02
+pkgrel=1
+pkgdesc='Galaxy Book4 Edge 14": kernels, device trees and the Arch GRUB menu on /boot, from pacman hooks'
+arch=(any)
+url='https://github.com/n1c0la84/book4-edge-linux'
+license=(GPL-2.0-only)
+depends=(bash dtc mkinitcpio grub util-linux pacman)
+
+_repo() { cd "$startdir/../.." && pwd; }
+
+pkgver() {
+  local repo; repo=$(_repo)
+  printf 'r%s.%s' "$(git -C "$repo" rev-list --count HEAD)" "$(git -C "$repo" rev-parse --short HEAD)"
+}
+
+package() {
+  local r; r=$(_repo)
+  install -Dm755 "$r/userspace/boot/arch/book4-boot"                 "$pkgdir/usr/bin/book4-boot"
+  install -Dm644 "$r/userspace/boot/arch/91-book4-boot.hook"         "$pkgdir/usr/share/libalpm/hooks/91-book4-boot.hook"
+  install -Dm644 "$r/userspace/boot/arch/61-book4-boot-remove.hook"  "$pkgdir/usr/share/libalpm/hooks/61-book4-boot-remove.hook"
+  install -Dm644 "$r/dts/src/x1-el2-book4.dtso"                      "$pkgdir/usr/share/book4/x1-el2-book4.dtso"
+  install -Dm644 "$r/userspace/boot/arch/windows.nsh"                "$pkgdir/usr/share/book4/windows.nsh"
+  install -Dm644 "$r/userspace/boot/arch/boot.conf.example"          "$pkgdir/usr/share/book4/boot.conf.example"
+}
