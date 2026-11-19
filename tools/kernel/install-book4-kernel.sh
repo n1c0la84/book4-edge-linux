@@ -43,7 +43,6 @@ if [ -d "/usr/lib/modules/$want" ] && ! pacman -Qqo "/usr/lib/modules/$want" >/d
 fi
 sudo pacman -U --noconfirm $files
 rel=$(pacman -Ql "$pkg" | awk -F/ '$4=="modules" && $5!="" {print $5; exit}')
-[ "$(uname -r)" != "$rel" ] || { echo "error: $rel is running; boot another kernel to reinstall it" >&2; exit 1; }
 mod=/usr/lib/modules/$rel
 [ -e "$mod/vmlinuz" ] && [ -e "$mod/dtb/qcom/$dtbname" ] || { echo "error: $mod lacks vmlinuz or the DTB" >&2; exit 1; }
 sudo depmod "$rel"
