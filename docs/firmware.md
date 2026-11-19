@@ -44,3 +44,16 @@ and 7.2.7 (16 October) a PCI remove of `0004:01:00.0` and a rescan of
 `0004:00:00.0` work: no panic, Wi-Fi reconnected within 25 s (the MAC
 address changes across the reload). If Wi-Fi misbehaves, reboot.
 `cma=256M` on the kernel command line is required (it cleared an ath12k DMA failure).
+
+## Package (19 November 2026)
+
+`book4-edge-firmware` (packages/book4-edge-firmware) installs everything
+above into `/usr/lib/firmware/updates/`: the ADSP, CDSP (the NPU driver
+package's pair, `qcnspmcdm_ext_cdsp8380`) and GPU zap images from this
+laptop's own Windows driver store, `gen70500_sqe.fw`, the Wi-Fi c5-00302 set
+with its `board.bin`, and the topology alias to the CRD's. It is built
+locally and never published: `install/arch/firmware-stage.sh` stages the
+files in `~/.local/share/book4-edge-firmware` (Windows mounted read-only),
+picking each by the checksum in `packages/book4-edge-firmware/sha256sums.txt`;
+Windows keeps several versions side by side and updates them (a newer
+`qcdxkmsuc8380.mbn` arrived on 18 November and is not used).

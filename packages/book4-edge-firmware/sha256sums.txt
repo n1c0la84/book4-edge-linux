@@ -1,0 +1,15 @@
+# book4-edge-firmware: the files this laptop runs with (checked 19 November
+# 2026). Paths are under /usr/lib/firmware/updates. Source in the third
+# column: windows:<driver package prefix> (this laptop's own Windows driver
+# store, FileRepository) or local (the copy already installed here; see
+# docs/firmware.md for where it came from).
+3681f643c11da8fb4f2750ca572874e2331ab7aff4e89e0f18fb49c271233224  qcom/x1e80100/SAMSUNG/galaxy-book4-edge/qcadsp8380.mbn     windows:qcsubsys_ext_adsp8380.inf_arm64_
+449487aa30bb77c7f012911944d31d9045c21d095fe5a33aeb146a786b52861c  qcom/x1e80100/SAMSUNG/galaxy-book4-edge/adsp_dtbs.elf      windows:qcsubsys_ext_adsp8380.inf_arm64_
+4a67a03367f2eff2f8a0e867ca25d2bf2fcd5aee3e41e2c9f436c804e257c789  qcom/x1e80100/SAMSUNG/galaxy-book4-edge/qccdsp8380.mbn     windows:qcnspmcdm_ext_cdsp8380.inf_arm64_
+93941f040da14b8305d39579686d886706d22954a538b03da676c1aaa191797f  qcom/x1e80100/SAMSUNG/galaxy-book4-edge/cdsp_dtbs.elf      windows:qcnspmcdm_ext_cdsp8380.inf_arm64_
+10ac12861f2b12154f055928033a407f37fb9d87967e6d0cc0636a277f007932  qcom/x1e80100/SAMSUNG/galaxy-book4-edge/qcdxkmsuc8380.mbn  windows:qcdx8380.inf_arm64_
+05ae89e6dea62268cec3f4abb5d7d6db2c95270ff105fd056f77262e39d2e527  qcom/gen70500_sqe.fw                                     local
+5660a1aa3db12716b42c687b0c88ef4f6ac80bd46e42cfe3636ed332d3f6e6ee  ath12k/WCN7850/hw2.0/amss.bin                            local
+ff40c57556c2fac552ac192c6e2ad59689fd8f50c9f9bcc997d13623c2bcee86  ath12k/WCN7850/hw2.0/m3.bin                              local
+4e865a00e1331d6f5ebe8aa75cc5e56ea7ddd06bf6c44d0d72477284957b77de  ath12k/WCN7850/hw2.0/board.bin                           local
+8ef5b3efa86d3d36513d2852aaa17f81a8a77374005509825522bd81a8df539b  ath12k/WCN7850/hw2.0/board-2.bin                         local

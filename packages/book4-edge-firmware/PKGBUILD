@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: GPL-2.0-only (this file; the firmware is not)
+# book4-edge-firmware: the firmware this Galaxy Book4 Edge 14" needs beyond
+# linux-firmware, built LOCALLY and NEVER PUBLISHED (the DSP and GPU files
+# are Samsung/Qualcomm's, from this laptop's own Windows partition). Nothing
+# proprietary is in this repository: install/arch/firmware-stage.sh copies
+# the files into a private staging directory, picked and checked by
+# sha256sums.txt, and this package takes them from there.
+#
+#   bash install/arch/firmware-stage.sh            (Windows partition read-only)
+#   cd packages/book4-edge-firmware && makepkg -f
+#   sudo pacman -U --overwrite '/usr/lib/firmware/updates/*' book4-edge-firmware-*.pkg.tar.*
+#
+# Not covered: the copies of the ADSP/CDSP images on the ESP that qebspil
+# loads at EL2 (install/el2/esp-install.sh).
+pkgname=book4-edge-firmware
+pkgver=2026.11.19
+pkgrel=1
+pkgdesc='Galaxy Book4 Edge 14": ADSP/CDSP/GPU firmware from its own Windows, Wi-Fi c5-00302, audio topology alias (local only)'
+arch=(any)
+license=(LicenseRef-proprietary)
+depends=(linux-firmware-qcom)
+options=(!strip !debug)
+
+_stage=${BOOK4_FW_STAGE:-$HOME/.local/share/book4-edge-firmware}
+
+package() {
+  local sums=$startdir/sha256sums.txt fw=$pkgdir/usr/lib/firmware/updates sum path src
+  while read -r sum path src; do
+    case "$sum" in ''|\#*) continue ;; esac
+    [ -e "$_stage/$path" ] || { echo "missing $_stage/$path (run install/arch/firmware-stage.sh)" >&2; return 1; }
+    [ "$(sha256sum < "$_stage/$path" | cut -d' ' -f1)" = "$sum" ] || { echo "checksum mismatch: $path" >&2; return 1; }
+    install -Dm644 "$_stage/$path" "$fw/$path"
+  done < "$sums"
+  # The card's topology is the CRD's (docs/audio.md): an alias, no copy.
+  install -d "$fw/qcom/x1e80100"
+  ln -s ../../../qcom/x1e80100/X1E80100-CRD-tplg.bin "$fw/qcom/x1e80100/X1E80100-GalaxyBook4Edge-tplg.bin"
+}
