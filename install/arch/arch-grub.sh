@@ -14,6 +14,7 @@
 #        boot order Arch GRUB, Fedora GRUB at EL2, Fedora GRUB at EL1, Windows;
 #        the OpenBSD entry removed (its files stay on the ESP)
 #   bash install/arch/arch-grub.sh fedora-default   Fedora's GRUB first again (labels stay)
+#   bash install/arch/arch-grub.sh windows   (re)install windows.nsh, book4-boot, regenerate the menu
 #   bash install/arch/arch-grub.sh status
 #   bash install/arch/arch-grub.sh undo      remove the entry and our folders (not Fedora's)
 #
@@ -23,6 +24,7 @@
 # (the Windows entry using this GRUB's own chainloader). Arch's GRUB 2.16 has
 # cutmem (mmap), devicetree (fdt) and chainloader (chain).
 set -euo pipefail
+repo=$(cd "$(dirname "$0")/../.." && pwd)
 LABEL="Omarchy (EL2, Arch GRUB)"
 LABEL_OLD="Omarchy (EL2, Fedora GRUB, fallback)"   # \EFI\book4-el2\ (esp-install.sh)
 OLD=EFI/book4-el2; NEW=EFI/book4-el2-arch
@@ -98,6 +100,7 @@ install)
     echo "== 3. EL2 test folder \\$NEW"
     sudo mkdir -p "$esp/$NEW"
     for f in Shellaa64.efi qebspilaa64.efi slbounce.efi tcblaunch.exe; do sudo install -m 644 "$esp/$OLD/$f" "$esp/$NEW/$f"; done
+    sudo install -m 644 "$repo/userspace/boot/arch/windows.nsh" "$esp/$NEW/windows.nsh"
     sudo sed -e 's|\\EFI\\fedora\\grubaa64\.efi|\\EFI\\arch\\grubaa64.efi|g' -e 's|\\EFI\\book4-el2\\|\\EFI\\book4-el2-arch\\|g' \
         -e 's|Fedora.s GRUB|Arch GRUB|g' "$esp/$OLD/startup.nsh" |
         sed -e 's|^%esp%:\\EFI\\arch\\grubaa64\.efi$|&\
@@ -121,6 +124,14 @@ endif|' | sudo tee "$esp/$NEW/startup.nsh" >/dev/null
     sudo efibootmgr | grep -E "^BootOrder|^BootCurrent"
     echo; echo "Done. Nothing boots differently yet. To try it once: bash install/arch/arch-grub.sh next, then reboot." ;;
 menu) mountboot; menu; umountboot ;;
+windows)
+    ensure_efi
+    sudo test -e "$esp/$NEW/Shellaa64.efi" || { echo "error: no \\$NEW; run install first" >&2; exit 1; }
+    sudo install -m 644 "$repo/userspace/boot/arch/windows.nsh" "$esp/$NEW/windows.nsh"
+    echo "== \\$NEW\\windows.nsh installed"
+    sudo install -m 755 "$repo/userspace/boot/arch/book4-boot" /usr/local/bin/book4-boot
+    mountboot; menu; umountboot
+    echo "Windows from GRUB now goes through the UEFI Shell. Try it: reboot, pick 'Windows Boot Manager'." ;;
 default)
     ensure_efi
     n=$(entry); [ -n "$n" ] || { echo "error: no Arch GRUB entry; run install first" >&2; exit 1; }

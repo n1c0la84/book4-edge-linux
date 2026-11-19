@@ -176,10 +176,17 @@ if [ "$default" = "book4-test-omarchy45" ]; then
   set default=book4-default
 fi
 
+# GRUB 2.16's own chainload of bootmgfw.efi fails on this disk (BCD
+# 0xc00000bb); the UEFI Shell starts it instead (windows.nsh, which finds
+# the ESP itself). The Shell skips the first word of its options as its name.
 menuentry "Windows Boot Manager" --id book4-windows {
-    search --no-floppy --set=winesp --file /EFI/Microsoft/Boot/bootmgfw.efi
     insmod chain
-    chainloader ($winesp)/EFI/Microsoft/Boot/bootmgfw.efi
+    if search --no-floppy --set=winesp --file /EFI/book4-el2-arch/windows.nsh; then
+        chainloader ($winesp)/EFI/book4-el2-arch/Shellaa64.efi Shellaa64.efi -nostartup -delay 0 'fs0:\EFI\book4-el2-arch\windows.nsh'
+    else
+        search --no-floppy --set=winesp --file /EFI/Microsoft/Boot/bootmgfw.efi
+        chainloader ($winesp)/EFI/Microsoft/Boot/bootmgfw.efi
+    fi
 }
 
 menuentry "UEFI Firmware Settings" { fwsetup }
