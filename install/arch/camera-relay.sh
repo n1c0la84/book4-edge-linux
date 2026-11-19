@@ -63,6 +63,10 @@ After=book4-camera-loopback.service
 
 [Service]
 RestartSec=2
+# libcamera's software ISP (debayering) needs a dma-buf allocator; the
+# packaged unit's DeviceAllow list has none, so it delivered raw frames only.
+DeviceAllow=/dev/udmabuf rw
+DeviceAllow=char-dma_heap rw
 # sync=false: a synced sink drops frames stamped with their capture time.
 ExecStart=
 ExecStart=/bin/sh -c 'DEVICE=$(grep -l -m1 -E "^${CARD_LABEL}$" /sys/devices/virtual/video4linux/*/name | cut -d/ -f6); exec /usr/bin/v4l2-relayd -i "${VIDEOSRC}" $${SPLASHSRC:+-s "$${SPLASHSRC}"} -o "appsrc name=appsrc caps=video/x-raw,format=${FORMAT},width=${WIDTH},height=${HEIGHT},framerate=${FRAMERATE} ! videoconvert ! v4l2sink name=v4l2sink sync=false device=/dev/$${DEVICE}" $EXTRA_OPTS'
