@@ -83,16 +83,34 @@ its own space, rather than converting this system. It makes sense; plan for:
    remove /dev/sda6 /` moves its data to sda5; needs the data to fit, easier
    after the Fedora deletion), shrink Windows further, or a subvolume of the
    existing btrfs if the installer allows it.
-2. **ESP of 260 MB**, shared with Windows: Omarchy's Limine setup puts a
-   UKI (kernel + initramfs) per kernel there. Check what the ISO writes;
-   this is the likeliest real obstacle.
+2. **ESP of 260 MB** (checked 19 Nov: 116 MB free; Microsoft 28 MB, Fedora
+   GRUB 10 MB, the rest small). Omarchy on Qualcomm builds one UKI per
+   kernel with systemd-ukify, every x1/hamoa DTB embedded for
+   `DeviceTreeAuto` (`install/hardware/qualcomm/dtb-uki.sh`), on the ESP via
+   limine-mkinitcpio. Ours as a UKI would be about 100 MB (Image 61 MB,
+   initramfs 39 MB): one fits, a second kernel or snapper's boot entries do
+   not. Way out: a second, larger ESP for the new install (the firmware
+   takes several; e.g. sda4, 2 GB, reformatted FAT32 once this system no
+   longer boots from it, or part of the space the new install gets).
+   Also open: the nightly ISO booted the 14" without our `cutmem`
+   (17 Nov, EL1); whether an installed Limine/UKI boot needs it is unknown.
 3. **What this machine needs to boot**: `cutmem 0x8800000000 0x8fffffffff`,
    a device tree per kernel, the EL2 chain through the UEFI Shell. Limine
    must provide all three; until it does, the new install can boot from our
    Arch GRUB with one more menu entry.
-4. **The Book4 layer as packages first** (the table above): kernel package,
-   firmware, boot tools (book4-boot, EL2 chain), speaker/sleep/fingerprint
-   setup. The more is packaged, the easier the move; it is also step 5.
+4. **The Book4 layer as packages first** (the table above). As of 19 Nov
+   only the kernel is a package (`packages/linux-book4`, with the sleep
+   modules and Samsung drivers inside, so `book4-edge-dkms` is not needed
+   while we ship our kernel). Everything else installs by script from
+   `userspace/` (audio UCM/PipeWire, battery, Bluetooth address, crash
+   log, GPU busy, fingerprint import, keyboard and its backlight,
+   modprobe, sleep hooks) and `install/` (firmware sync, EL2 chain,
+   book4-boot). Next: `book4-edge` (userspace/, one PKGBUILD, files under
+   /usr, services enabled by a post-install note), `book4-edge-boot`
+   (book4-boot, its hooks, the overlay; the EL2 chain files stay a script:
+   tcblaunch.exe comes from Windows), `book4-edge-firmware` built locally
+   from this laptop's Windows partition, never published. The more is
+   packaged, the easier the move; it is also step 5.
 
 ## Pending features
 
