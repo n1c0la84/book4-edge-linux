@@ -42,7 +42,7 @@ index 0aa5bc5..2f1a6c4 100755
 +  [[ $cpu_model == "Snapdragon X Plus" ]] && gname="Adreno X1-45"
 +  entry="{$(printf '%s: %s, ' "$(json_str kind)" "$(json_str msm)")"
 +  entry+="$(printf '%s: %s, ' "$(json_str name)" "$(json_str "$gname")")"
-+  if [[ -x $HOME/.local/bin/book4-gpu-busy ]]; then
++  if [[ -x /usr/lib/book4/book4-gpu-busy || -x $HOME/.local/bin/book4-gpu-busy ]]; then   # book4-edge package, or the old script install
 +    entry+="$(printf '%s: %s, ' "$(json_str busyPath)" "$(json_str "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gpu_busy_percent")")"
 +  fi
 +  for hwmon in /sys/class/hwmon/hwmon*; do
