@@ -1,4 +1,4 @@
-# Roadmap (17 November 2026)
+# Roadmap (updated 19 November 2026)
 
 The single list of what to do on this laptop, in order, and where it is
 heading. It replaces `PLAN.md`. Evidence and history are in
@@ -29,21 +29,71 @@ loads `qcom_adsp_pwr_lmts` (which crashes this ADSP). Each of those is a
 line in "Kernel and upstream" below; the layer covers them until upstream
 does.
 
-## 1. Next, when you're back (owner, short)
+## Status (19 November 2026)
 
-1. **Fingerprint:** in Windows, Settings > Accounts > Sign-in options >
-   Fingerprint, enroll. Back on Arch: `bash install/arch/fingerprint-import.sh`
-   (installs the import, shows what the sensor holds), then try login,
-   lock screen and sudo. Never enroll the same finger in Linux as well.
-2. **Test antheas's reworked drivers** while he goes through our issues:
-   the assistant builds his `samsung-emuec` and `samsung-galaxybook-ec` for
-   our 7.2 kernel as modules (as `tools/kernel/update-sleep-emuec.sh` does).
-   Then: plug/unplug the charger awake, charge from low, one sleep with an
-   unplug during it (issue #3), and report on kernel-anatase.
-3. **mako:** `sudo pacman -R mako` (it can grab the notifications at login).
-4. **Clean up:** `bash tools/experiments/omarchy-kernel-test.sh undo`
-   (the failed test entry); the Omarchy image can be deleted from
-   `~/Downloads/omarchy-nightly/` once birkskyum has answered.
+| Step | State |
+|---|---|
+| 1. Kernel 7.3 daily, 7.2 in GRUB as the fallback | **done**. Release name fixed; deep sleep (CTCU off) and audio (c663014e45 reverted) fixed; Iris patch ported and working; battery refresh tested; DSP signalling (dspsignal) ported, not yet exercised (only the NPU uses it). Package linux-book4 7.3.4-3 |
+| 2. Omarchy 4.5, its repositories, `omarchy-update` | **done** (btrfs copy `arch-45`, the default boot) |
+| 3. Kernel packaged on Arch, Arch's own GRUB | **done**: `packages/linux-book4`, `book4-boot` and its pacman hooks write `/boot` and the menu; firmware entry "Omarchy (EL2, Arch GRUB)" first, Fedora's GRUB as fallback. Limine postponed (see "Fresh install" below) |
+| 4. Retire Fedora | **done except the deletion** (archive in `~/fedora-archive`, [fedora-retired.md](fedora-retired.md)); Windows shrunk to 300 GB, root btrfs now sda5 + sda6, 196 GB |
+| 5. Omarchy's own kernel with our patches as the Book4 layer | later, once linux-omarchy covers enough (section 4) |
+
+Problems from these steps:
+
+- **Iris**: works after a fresh boot (1080p H.264/HEVC clean); one odd-size
+  stream (2832x1700) faults it until reboot. mpv decodes in software
+  (`hwdec=auto-safe`), which loses nothing for H.264 and little for HEVC.
+  Left like that.
+- **Charger during sleep**: the unplug reset is fixed again on 7.3 and
+  verified; waking for a charger plugged in during sleep is built, not tested.
+
+## 1. Next (owner, short)
+
+1. **Windows**: boot it once (it runs chkdsk after the resize), then enroll
+   fingers in Settings > Accounts > Sign-in options > Fingerprint (needs a
+   PIN). Beforehand on Arch: `bash install/arch/fingerprint-import.sh`
+   (the import service; not yet on the arch-45 copy). Back on Arch it imports
+   at boot; check with `fprintd-list $USER`, then try login, lock screen and
+   sudo. Enroll fingers only in Windows from now on.
+2. **First Linux boot with root on two partitions** (sda5 + sda6): comes
+   with the Windows round trip.
+3. **7.3 at EL1**: Arch GRUB entry "Omarchy (7.3.4-book4) - EL1", once.
+4. **Wake on plug-in**: lid closed on battery, plug the charger in; it should
+   wake briefly to negotiate, then sleep again (`samsung-emuec ... wake=1`).
+5. **Fedora deletion**, when the new boot has run a few days: the `root`
+   and `home` subvolumes (~23 GB back after the archive's share), its files
+   on sda4. `\EFI\fedora\` stays on the ESP.
+
+Done or obsolete since 17 November: antheas's reworked drivers are in our
+7.3 kernel (the unplug fix ported back onto them); mako is gone; the
+`omarchy-kernel-test.sh` entry and its modules are gone.
+
+## Fresh install from the official Omarchy ISO (owner's plan, later)
+
+Why Limine is postponed: when the official ISO lands, a fresh install in
+its own space, rather than converting this system. It makes sense; plan for:
+
+1. **Space**: no free partition now. Options: take sda6 back (`btrfs device
+   remove /dev/sda6 /` moves its data to sda5; needs the data to fit, easier
+   after the Fedora deletion), shrink Windows further, or a subvolume of the
+   existing btrfs if the installer allows it.
+2. **ESP of 260 MB**, shared with Windows: Omarchy's Limine setup puts a
+   UKI (kernel + initramfs) per kernel there. Check what the ISO writes;
+   this is the likeliest real obstacle.
+3. **What this machine needs to boot**: `cutmem 0x8800000000 0x8fffffffff`,
+   a device tree per kernel, the EL2 chain through the UEFI Shell. Limine
+   must provide all three; until it does, the new install can boot from our
+   Arch GRUB with one more menu entry.
+4. **The Book4 layer as packages first** (the table above): kernel package,
+   firmware, boot tools (book4-boot, EL2 chain), speaker/sleep/fingerprint
+   setup. The more is packaged, the easier the move; it is also step 5.
+
+## Pending features
+
+Section 6 below: ambient light sensor, external monitor over USB-C, headset
+microphone, NPU, speaker VI feedback, hibernation, USB-C controller after
+sleep.
 
 ## 2. The ~0.6 W of board power in sleep (one night each, on battery)
 
@@ -186,8 +236,8 @@ Steps:
 
 Detailed plan: [plan-arch-boot.md](plan-arch-boot.md) (18 November).
 
-Today Fedora owns `/boot` (sda4) and GRUB, and is the kernel build
-container; the EL2 chain chainloads Fedora's GRUB.
+**Done 19 November** (parts A, B and C of the plan, Fedora's deletion still
+pending; see Status above). Kept for the record:
 
 Decided 18 November: two moves instead of one. Limine is not required by
 Omarchy (only in the installer's `omarchy-other.packages`; every Limine
