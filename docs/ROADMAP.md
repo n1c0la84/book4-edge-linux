@@ -50,7 +50,12 @@ Problems from these steps:
 
 ## 1. Next (owner, short)
 
-1. **Windows**: boot it once (it runs chkdsk after the resize), then enroll
+1. **Windows** (19 Nov: chkdsk done, fingerprints enrolled and imported).
+   Still: start Windows from the firmware menu (F10), not from Arch GRUB
+   (2.16's chainload fails: BCD 0xc00000bb), until the GRUB entry is fixed;
+   next time in Windows, `bcdedit /enum firmware` and `bcdedit /delete` the
+   "Fedora" object, or Windows puts that (hanging) entry first again.
+   Done steps: boot it once (it runs chkdsk after the resize), then enroll
    fingers in Settings > Accounts > Sign-in options > Fingerprint (needs a
    PIN). Beforehand on Arch: `bash install/arch/fingerprint-import.sh`
    (the import service; not yet on the arch-45 copy). Back on Arch it imports

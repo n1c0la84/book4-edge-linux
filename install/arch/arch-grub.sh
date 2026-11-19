@@ -25,7 +25,6 @@
 set -euo pipefail
 LABEL="Omarchy (EL2, Arch GRUB)"
 LABEL_OLD="Omarchy (EL2, Fedora GRUB, fallback)"   # \EFI\book4-el2\ (esp-install.sh)
-LABEL_FED="Fedora GRUB (EL1)"                      # \EFI\fedora\grubaa64.efi
 OLD=EFI/book4-el2; NEW=EFI/book4-el2-arch
 SHELLARGS="Shellaa64.efi -delay 0"
 esp=/efi
@@ -130,14 +129,17 @@ default)
     echo "== 1. descriptive labels"
     n=$(relabel "$n" "$LABEL" '\EFI\book4-el2-arch\Shellaa64.efi' "$SHELLARGS")
     o=$(byloader '\EFI\book4-el2\Shellaa64.efi'); [ -z "$o" ] || o=$(relabel "$o" "$LABEL_OLD" '\EFI\book4-el2\Shellaa64.efi' "$SHELLARGS")
-    f=$(byloader '\EFI\fedora\grubaa64.efi'); [ -z "$f" ] || f=$(relabel "$f" "$LABEL_FED" '\EFI\fedora\grubaa64.efi')
+    # Fedora's direct entry is left as it is and put last: Windows keeps a copy
+    # of it in its BCD and re-creates it, first in the order, whenever ours
+    # differs (19 November). At EL1 its default (an EL2 entry) hangs.
+    f=$(byloader '\EFI\fedora\grubaa64.efi')
     echo "== 2. the OpenBSD entry (files on the ESP stay)"
     x=$(byloader '\EFI\OPENBSD\bootaa64.efi')
     if [ -n "$x" ]; then sudo efibootmgr -q -b "$x" -B; echo "   removed Boot$x"; else echo "   none"; fi
     echo "== 3. boot order"
     order=$(sudo efibootmgr | sed -n 's/^BootOrder: //p')
     rest=$(tr ',' '\n' <<<"$order" | grep -vxE "$n|${o:-x}|${f:-x}" | paste -sd, -)
-    sudo efibootmgr -q -o "$(printf '%s\n' "$n" "$o" "$f" "$rest" | grep -v '^$' | paste -sd, -)"
+    sudo efibootmgr -q -o "$(printf '%s\n' "$n" "$o" "$rest" "$f" | grep -v '^$' | paste -sd, -)"
     sudo efibootmgr | grep -vE '^(Timeout|BootNext)' | cut -f1
     echo; echo "Done: power-on starts Arch GRUB (falls back to Fedora's if it is missing)."
     echo "Back: bash install/arch/arch-grub.sh fedora-default" ;;
