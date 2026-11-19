@@ -1,8 +1,233 @@
+Snapdragon X support for meviusisback/omarchy-hw-monitor, on top of upstream 1.7.0 (6571bdd):
+CPU model and temperature from the tsens zones, Adreno GPU (load from book4-gpu-busy,
+clock from devfreq, temperature from gpuss), and Commons.Color qualified names.
+Applied by install/arch/gpu-busy.sh. Rebased 19 November 2026 from 1.1.1.
+
+diff --git i/Dial.qml w/Dial.qml
+index c95ec97..c1f7499 100644
+--- i/Dial.qml
++++ w/Dial.qml
+@@ -1,6 +1,7 @@
+ import QtQuick
+ import QtQuick.Shapes
+ import qs.Commons
++import qs.Commons as Commons
+ 
+ // A 270-degree circular arc dial based on the SpeedTestOverlay pattern.
+ // Used in the system panel for CPU, GPU, and RAM readouts.
+@@ -15,9 +16,9 @@ Item {
+   property string valueText: ""
+   property string subText: ""
+   property int severity: 0
+-  property color baseColor: Color.foreground
+-  property color accentColor: Color.accent
+-  property color hotColor: Color.urgent
++  property color baseColor: Commons.Color.foreground
++  property color accentColor: Commons.Color.accent
++  property color hotColor: Commons.Color.urgent
+   property color valueColor: {
+     if (severity >= 2) return hotColor
+     if (severity === 1) return Qt.rgba(baseColor.r + (hotColor.r - baseColor.r) * 0.6,
+diff --git i/Gauge.qml w/Gauge.qml
+index 155c0d1..61cd85e 100644
+--- i/Gauge.qml
++++ w/Gauge.qml
+@@ -1,6 +1,7 @@
+ import QtQuick
+ import QtQuick.Effects
+ import qs.Commons
++import qs.Commons as Commons
+ 
+ // A vertical gauge: a rounded body that fills from the bottom in proportion to
+ // load. No battery terminal on top — at 7px wide that nub read as an
+@@ -14,7 +15,7 @@ Item {
+   id: root
+ 
+   property real ratio: 0
+-  property color fillColor: Color.foreground
++  property color fillColor: Commons.Color.foreground
+   property color trackColor: Qt.rgba(fillColor.r, fillColor.g, fillColor.b, 0.14)
+   property color borderColor: Qt.rgba(fillColor.r, fillColor.g, fillColor.b, 0.4)
+   // Set while the reading is past its critical threshold. A blurred copy of the
+diff --git i/SystemPanel.qml w/SystemPanel.qml
+index 1fca7b9..b842920 100644
+--- i/SystemPanel.qml
++++ w/SystemPanel.qml
+@@ -6,6 +6,7 @@ import Quickshell.Io
+ import qs.Ui
+ import qs.Commons
+ import "Model.js" as Model
++import qs.Commons as Commons
+ 
+ // First-class Omarchy system popup panel displaying visual telemetry for CPU,
+ // GPU, Memory, and live CPU load history, with an interactive settings drawer.
+@@ -48,8 +49,8 @@ KeyboardPanel {
+     }
+   }
+ 
+-  readonly property color baseColor: root.bar ? root.bar.foreground : Color.foreground
+-  readonly property color hotColor: root.bar ? root.bar.urgent : Color.urgent
++  readonly property color baseColor: root.bar ? root.bar.foreground : Commons.Color.foreground
++  readonly property color hotColor: root.bar ? root.bar.urgent : Commons.Color.urgent
+   readonly property color dimColor: Qt.darker(baseColor, 1.45)
+   readonly property string fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+ 
+@@ -205,7 +206,7 @@ KeyboardPanel {
+             Text {
+               textFormat: Text.PlainText
+               text: ""
+-              color: Color.accent
++              color: Commons.Color.accent
+               font.family: root.fontFamily
+               font.pixelSize: Style.font.display
+               anchors.verticalCenter: parent.verticalCenter
+@@ -284,7 +285,7 @@ KeyboardPanel {
+               Text {
+                 textFormat: Text.PlainText
+                 text: ""
+-                color: Color.accent
++                color: Commons.Color.accent
+                 font.family: root.fontFamily
+                 font.pixelSize: Style.font.caption
+                 anchors.verticalCenter: parent.verticalCenter
+@@ -533,7 +534,7 @@ KeyboardPanel {
+             ratio: hw.cpuPercent >= 0 ? hw.cpuPercent / 100 : 0
+             baseColor: root.baseColor
+             hotColor: root.hotColor
+-            accentColor: Color.accent
++            accentColor: Commons.Color.accent
+             severity: Model.severity(hw.cpuPercent, root.warnPercent, root.criticalPercent)
+             fontFamily: root.fontFamily
+           }
+@@ -548,7 +549,7 @@ KeyboardPanel {
+             ratio: hw.memPercent >= 0 ? hw.memPercent / 100 : 0
+             baseColor: root.baseColor
+             hotColor: root.hotColor
+-            accentColor: Color.accent
++            accentColor: Commons.Color.accent
+             severity: Model.severity(hw.memPercent, root.warnPercent, root.criticalPercent)
+             fontFamily: root.fontFamily
+           }
+@@ -566,7 +567,7 @@ KeyboardPanel {
+             ratio: tempOnly ? Math.min(1, Math.max(0, (hw.gpuTempC - 30) / Math.max(1, root.criticalTempC - 30))) : (hw.hasGpu ? (hw.gpuPercent >= 0 ? hw.gpuPercent / 100 : (hw.gpuVramPercent >= 0 ? hw.gpuVramPercent / 100 : 0)) : 0)
+             baseColor: root.baseColor
+             hotColor: root.hotColor
+-            accentColor: Color.accent
++            accentColor: Commons.Color.accent
+             severity: tempOnly ? Model.severity(hw.gpuTempC, root.warnTempC, root.criticalTempC) : (hw.hasGpu ? Model.severity(hw.gpuPercent >= 0 ? hw.gpuPercent : hw.gpuVramPercent, root.warnPercent, root.criticalPercent) : 0)
+             fontFamily: root.fontFamily
+           }
+@@ -652,7 +653,7 @@ KeyboardPanel {
+                 ShapePath {
+                   strokeWidth: 0
+                   strokeColor: "transparent"
+-                  fillColor: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.18)
++                  fillColor: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.18)
+ 
+                   startX: root.sparklineFirst.x
+                   startY: root.sparklineFirst.y
+@@ -672,7 +673,7 @@ KeyboardPanel {
+ 
+                 ShapePath {
+                   strokeWidth: Style.space(2)
+-                  strokeColor: Color.accent
++                  strokeColor: Commons.Color.accent
+                   fillColor: "transparent"
+                   capStyle: ShapePath.RoundCap
+                   joinStyle: ShapePath.RoundJoin
+@@ -711,7 +712,7 @@ KeyboardPanel {
+               Text {
+                 textFormat: Text.PlainText
+                 text: ""
+-                color: Color.accent
++                color: Commons.Color.accent
+                 font.family: root.fontFamily
+                 font.pixelSize: Style.font.bodySmall
+                 anchors.verticalCenter: parent.verticalCenter
+@@ -843,7 +844,7 @@ KeyboardPanel {
+               Text {
+                 textFormat: Text.PlainText
+                 text: ""
+-                color: Color.accent
++                color: Commons.Color.accent
+                 font.family: root.fontFamily
+                 font.pixelSize: Style.font.bodySmall
+                 anchors.verticalCenter: parent.verticalCenter
+@@ -1152,7 +1153,7 @@ KeyboardPanel {
+               Text {
+                 textFormat: Text.PlainText
+                 text: "󰾲"
+-                color: Color.accent
++                color: Commons.Color.accent
+                 font.family: root.fontFamily
+                 font.pixelSize: Style.font.bodySmall
+                 anchors.verticalCenter: parent.verticalCenter
+@@ -1392,7 +1393,7 @@ KeyboardPanel {
+     id: chip
+     property string label: ""
+     property bool selected: false
+-    property color activeColor: Color.accent
++    property color activeColor: Commons.Color.accent
+     signal picked()
+ 
+     implicitWidth: chipLabel.implicitWidth + Style.space(12)
+@@ -1466,8 +1467,8 @@ KeyboardPanel {
+     property string period: ""
+     property real value: 0
+     property real maxVal: 8
+-    property color baseColor: Color.foreground
+-    property color hotColor: Color.urgent
++    property color baseColor: Commons.Color.foreground
++    property color hotColor: Commons.Color.urgent
+     property string fontFamily: Style.font.family
+ 
+     spacing: Style.space(4)
+diff --git i/Widget.qml w/Widget.qml
+index 4054415..5d84bab 100644
+--- i/Widget.qml
++++ w/Widget.qml
+@@ -4,6 +4,7 @@ import Quickshell.Io
+ import qs.Commons
+ import qs.Ui
+ import "Model.js" as Model
++import qs.Commons as Commons
+ 
+ // Telemetry readouts for GPU, CPU, Temperatures, and Memory in the Omarchy bar
+ // with rich per-item data selection, ordering, and formatting controls.
+@@ -149,8 +150,8 @@ Panel {
+ 
+   // ------------------------------------------------------------------ color
+ 
+-  readonly property color base: bar ? bar.barForeground : Color.foreground
+-  readonly property color hot: bar ? bar.urgent : Color.urgent
++  readonly property color base: bar ? bar.barForeground : Commons.Color.foreground
++  readonly property color hot: bar ? bar.urgent : Commons.Color.urgent
+   readonly property color dim: Qt.darker(base, 1.45)
+   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
+ 
+@@ -165,7 +166,7 @@ Panel {
+ 
+   function tempColor(tempC) {
+     if (!isFinite(tempC) || tempC <= 0) return dim
+-    if (tempC < 50) return dim
++    if (tempC < 50) return base
+     var t = Math.min(1, Math.max(0, (tempC - 50) / Math.max(1, criticalTempC - 50)))
+     return Qt.rgba(base.r + (hot.r - base.r) * t,
+                    base.g + (hot.g - base.g) * t,
+@@ -724,7 +725,7 @@ Panel {
+             : root.warm(root.base, group.cellData.severity)
+           font.family: root.fontFamily
+           font.pixelSize: root.valueSize
+-          font.bold: !group.isTempCell
++          font.bold: true
+           verticalAlignment: Text.AlignVCenter
+           renderType: Text.NativeRendering
+           Behavior on color { ColorAnimation { duration: 240 } }
 diff --git i/hw-probe w/hw-probe
-index 0aa5bc5..2f1a6c4 100755
+index be0e507..b2eaba9 100755
 --- i/hw-probe
 +++ w/hw-probe
-@@ -50,6 +50,13 @@ trim() {
+@@ -57,6 +57,13 @@ trim() {
  cpu_model=$(awk -F: '/^model name/ {sub(/^[ \t]+/, "", $2); print $2; exit}' /proc/cpuinfo)
  # ARM boards have no "model name"; fall back to the SoC hardware line.
  [[ -z $cpu_model ]] && cpu_model=$(awk -F: '/^Hardware|^Model/ {sub(/^[ \t]+/, "", $2); print $2; exit}' /proc/cpuinfo)
@@ -16,9 +241,9 @@ index 0aa5bc5..2f1a6c4 100755
  [[ -z $cpu_model ]] && cpu_model="CPU"
  # Marketing suffixes eat tooltip width and say nothing.
  cpu_model=$(trim "${cpu_model//(R)/}")
-@@ -111,6 +118,10 @@ for hwmon in /sys/class/hwmon/hwmon*; do
-       cpu_thermal | soc_thermal | scpi_sensors | cpu-thermal)
-         consider_cpu_temp 70 "$input" "${label:-$name}"
+@@ -124,6 +131,10 @@ for hwmon in /sys/class/hwmon/hwmon*; do
+         # tens of degrees whenever one core gets busy.
+         [[ $label == "SMC TCMb" ]] && consider_cpu_temp 90 "$input" "$label"
          ;;
 +      # Snapdragon X: 30 tsens zones; a cluster-wide one stands for the
 +      # package (cluster 1 runs hottest under load).
@@ -27,7 +252,7 @@ index 0aa5bc5..2f1a6c4 100755
        acpitz)
          consider_cpu_temp 20 "$input" "${label:-$name}"
          ;;
-@@ -206,6 +217,30 @@ for card in /sys/class/drm/card[0-9]*; do
+@@ -335,6 +346,30 @@ for card in /sys/class/drm/card[0-9]*; do
    fi
  done
  
@@ -57,4 +282,4 @@ index 0aa5bc5..2f1a6c4 100755
 +
  # NVIDIA reports nothing useful through sysfs, so it gets sampled by polling
  # nvidia-smi instead. Declared last: a sysfs-capable card is always cheaper.
- if command -v nvidia-smi >/dev/null 2>&1; then
+ # Resolved once to an absolute path; the widget reuses it (nvidiaPath) for its
