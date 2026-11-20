@@ -57,8 +57,11 @@ ARM Build System key, `keys/archlinuxarm-build-system.asc`), builds with
 `makepkg --sign` (`.github/scripts/build-packages.sh`), adds the packages
 to the repository database (the older build of each is dropped) and uploads
 everything to the release. The kernel takes the longest (the run's limit is
-350 minutes). A build fails if a package names any home directory but the
-build user's.
+350 minutes). A build fails if a package's build metadata (`.BUILDINFO`,
+`.PKGINFO`) names a home directory other than the build user's (local builds
+record their own; package contents come from public sources and do mention
+upstream developers' homes, so they are not scanned). The kernel took about
+70 minutes on 20 November.
 
 Before a kernel build: bump `pkgver`/`pkgrel` and `_commit` in
 `packages/linux-book4/PKGBUILD`, push the kernel branch, and refresh
