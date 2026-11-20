@@ -1,0 +1,64 @@
+# Build the Book4 layer's packages on GitHub's arm64 runners, inside an Arch
+# Linux ARM container made from the official, signature-checked root
+# filesystem, and publish them as the pacman repository [book4] in the
+# release "repo". Started by hand (Actions > packages > Run workflow).
+# book4-edge-firmware is not built or published: see docs/packages-online.md.
+name: packages
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "packages to build (space separated)"
+        default: "linux-book4 book4-edge book4-edge-boot book4-edge-el2"
+permissions:
+  contents: write
+concurrency: packages
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # pkgver counts the commits
+
+      - name: Arch Linux ARM root filesystem
+        run: |
+          base=http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz
+          curl -fsSL -o alarm.tar.gz "$base"; curl -fsSL -o alarm.tar.gz.sig "$base.sig"
+          export GNUPGHOME=$(mktemp -d)
+          gpg --batch --import keys/archlinuxarm-build-system.asc
+          gpg --batch --status-fd 1 --verify alarm.tar.gz.sig alarm.tar.gz |
+            grep -q '^\[GNUPG:\] VALIDSIG 68B3537F39A313B3E574D06777193F152BDBE6A6 '
+          docker import alarm.tar.gz alarm
+          rm alarm.tar.gz*
+
+      - name: Current repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir out
+          gh release view repo >/dev/null 2>&1 ||
+            gh release create repo --title "[book4] pacman repository" --latest=false \
+              --notes "Pacman repository of the Book4 Edge layer. See docs/packages-online.md."
+          gh release download repo -D out || true
+
+      - name: Build
+        env:
+          BOOK4_SIGN_KEY: ${{ secrets.BOOK4_SIGN_KEY }}
+          BOOK4_SIGN_FPR: ${{ vars.BOOK4_SIGN_FPR }}
+          PKGS: ${{ inputs.packages }}
+        run: |
+          docker run --rm -v "$PWD:/w" -e BOOK4_SIGN_KEY -e BOOK4_SIGN_FPR alarm \
+            bash /w/.github/scripts/build-packages.sh $PKGS
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sudo chown -R "$(id -u)" out
+          gh release upload repo out/* --clobber
+          # drop release files the repository no longer lists (older builds)
+          gh release view repo --json assets -q '.assets[].name' | while read -r a; do
+            [ -e "out/$a" ] || gh release delete-asset repo "$a" -y
+          done

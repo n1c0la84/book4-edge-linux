@@ -110,7 +110,11 @@ its own space, rather than converting this system. It makes sense; plan for:
    all four go into a local pacman repository `[book4]`
    (`install/arch/book4-repo.sh`): a fresh install needs that directory,
    one Include line, `pacman -S linux-book4 book4-edge book4-edge-boot
-   book4-edge-firmware`, `/etc/book4/boot.conf` and the EL2 chain. Before: only the kernel was a package (`packages/linux-book4`, with the sleep
+   book4-edge-firmware`, `/etc/book4/boot.conf` and the EL2 chain. **Online
+   since 20 Nov** ([packages-online.md](packages-online.md)): GitHub Actions
+   builds the four public packages in an Arch Linux ARM container, signs them
+   (key only in the repository secrets) and publishes `[book4]` in the release
+   `repo`; the firmware stays a local build from Windows. Before: only the kernel was a package (`packages/linux-book4`, with the sleep
    modules and Samsung drivers inside, so `book4-edge-dkms` is not needed
    while we ship our kernel). Everything else installs by script from
    `userspace/` (audio UCM/PipeWire, battery, Bluetooth address, crash

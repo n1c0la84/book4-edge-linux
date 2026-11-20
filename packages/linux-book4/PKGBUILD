@@ -3,6 +3,10 @@
 # docs/plan-arch-boot.md, part A). Builds in place from the kernel tree at
 # $BOOK4_TREE (default ~/src/linux-book4, branch book4/7.3 of
 # n1c0la84/linux-book4-edge) rather than copying 1.5 GB into $srcdir.
+# A tree without a .config gets ./config (this machine's, committed here;
+# refresh it with cp ~/src/linux-book4/.config config after a config change).
+# The online repository's builds (.github/workflows/packages.yml) check out
+# the tree at $_commit; bump it with the kernel branch.
 #
 #   cd packages/linux-book4 && makepkg -f          linux-book4 + headers
 #   BOOK4_SUFFIX=-book4p makepkg -f                a test build under another
@@ -17,6 +21,7 @@ _suffix=${BOOK4_SUFFIX:--book4}
 _tree=${BOOK4_TREE:-$HOME/src/linux-book4}
 _repo() { cd "$startdir/../.." && pwd; }
 _dtb=x1e80100-samsung-galaxy-book4-edge-14.dtb
+_commit=f1ea704defc00eec405ca71893bc33f762eeafa9   # book4/7.3
 
 pkgbase=linux${_suffix}
 pkgname=("linux${_suffix}" "linux${_suffix}-headers")
@@ -34,7 +39,9 @@ _make() { make -C "$_tree" LOCALVERSION= "$@"; }
 prepare() {
   cd "$_tree"
   git submodule update -q --init --depth 1
-  [[ -f .config ]] || { echo "no .config in $_tree" >&2; return 1; }
+  [[ -f .config ]] || cp "$startdir/config" .config
+  [[ $(git rev-parse HEAD) == "$_commit" ]] ||
+    echo "note: $_tree is at $(git rev-parse --short HEAD), not \$_commit ${_commit:0:12}" >&2
   ./scripts/config --set-str LOCALVERSION "$_suffix" --disable LOCALVERSION_AUTO
   for o in PM_CLK QCOM_TZMEM_MODE_SHMBRIDGE CPU_IDLE_GOV_TEO; do
     ./scripts/config --enable $o
