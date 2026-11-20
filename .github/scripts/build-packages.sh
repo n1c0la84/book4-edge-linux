@@ -76,8 +76,10 @@ ls -l "$OUT"
 echo "::endgroup::"
 
 # No home directory in what gets published but the build user's and GitHub runners'
-# (the upstream UEFI Shell binary carries its own CI path)
+# (the upstream UEFI Shell binary carries its own CI path; the kernel's committed
+# BPF iterators skeleton, kernel/bpf/preload/iterators/iterators.lskel-*.h, a
+# kernel developer's source path)
 for f in "${built[@]}"; do
-    h=$(bsdtar -xOf "$f" 2>/dev/null | grep -aoE '/home/[A-Za-z0-9_.-]+' | sort -u | grep -vxE "/home/(builder|runner)" || true)
+    h=$(bsdtar -xOf "$f" 2>/dev/null | grep -aoE '/home/[A-Za-z0-9_.-]+' | sort -u | grep -vxE "/home/(builder|runner|aspsk)" || true)
     [ -z "$h" ] || { echo "${f##*/} names $h" >&2; exit 1; }
 done
