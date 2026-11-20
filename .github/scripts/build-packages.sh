@@ -75,8 +75,9 @@ rm -f "$OUT"/*.old "$OUT"/*.old.sig
 ls -l "$OUT"
 echo "::endgroup::"
 
-# No home directory other than the build user's in what gets published
+# No home directory in what gets published but the build user's and GitHub runners'
+# (the upstream UEFI Shell binary carries its own CI path)
 for f in "${built[@]}"; do
-    h=$(bsdtar -xOf "$f" 2>/dev/null | grep -aoE '/home/[A-Za-z0-9_.-]+' | sort -u | grep -vx /home/builder || true)
+    h=$(bsdtar -xOf "$f" 2>/dev/null | grep -aoE '/home/[A-Za-z0-9_.-]+' | sort -u | grep -vxE "/home/(builder|runner)" || true)
     [ -z "$h" ] || { echo "${f##*/} names $h" >&2; exit 1; }
 done
