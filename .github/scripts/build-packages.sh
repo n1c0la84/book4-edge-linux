@@ -18,7 +18,8 @@ for p; do
 done
 
 echo "::group::system"
-sed -i 's/^CheckSpace/#CheckSpace/' /etc/pacman.conf   # no mount table in a container
+# no mount table, and no Landlock for pacman's download sandbox, in a container
+sed -i -e 's/^CheckSpace/#CheckSpace/' -e '/^\[options\]/a DisableSandbox' /etc/pacman.conf
 pacman-key --init >/dev/null
 pacman-key --populate archlinuxarm >/dev/null
 pacman -Syu --noconfirm --needed base-devel git gnupg bc cpio pahole python dtc kmod >/dev/null
