@@ -20,6 +20,14 @@ done
 echo "::group::system"
 # no mount table, and no Landlock for pacman's download sandbox, in a container
 sed -i -e 's/^CheckSpace/#CheckSpace/' -e '/^\[options\]/a DisableSandbox' /etc/pacman.conf
+# the geo-redirecting default mirror stalls from GitHub's runners now and then
+cat > /etc/pacman.d/mirrorlist <<'EOF2'
+Server = http://fl.us.mirror.archlinuxarm.org/$arch/$repo
+Server = http://ca.us.mirror.archlinuxarm.org/$arch/$repo
+Server = http://de4.mirror.archlinuxarm.org/$arch/$repo
+Server = http://dk.mirror.archlinuxarm.org/$arch/$repo
+Server = http://mirror.archlinuxarm.org/$arch/$repo
+EOF2
 pacman-key --init >/dev/null
 pacman-key --populate archlinuxarm >/dev/null
 pacman -Syu --noconfirm --needed base-devel git gnupg bc cpio pahole python dtc kmod >/dev/null
