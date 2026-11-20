@@ -75,11 +75,11 @@ rm -f "$OUT"/*.old "$OUT"/*.old.sig
 ls -l "$OUT"
 echo "::endgroup::"
 
-# No home directory in what gets published but the build user's and GitHub runners'
-# (the upstream UEFI Shell binary carries its own CI path; the kernel's committed
-# BPF iterators skeleton, kernel/bpf/preload/iterators/iterators.lskel-*.h, a
-# kernel developer's source path)
+# The build machine must not show in what gets published. Package contents
+# come from public sources (upstream code mentions other people's home paths,
+# e.g. in kernel scripts and the BPF iterators skeleton), so check the
+# metadata makepkg writes about the build: .BUILDINFO and .PKGINFO.
 for f in "${built[@]}"; do
-    h=$(bsdtar -xOf "$f" 2>/dev/null | grep -aoE '/home/[A-Za-z0-9_.-]+' | sort -u | grep -vxE "/home/(builder|runner|aspsk)" || true)
-    [ -z "$h" ] || { echo "${f##*/} names $h" >&2; exit 1; }
+    h=$(bsdtar -xOf "$f" .BUILDINFO .PKGINFO 2>/dev/null | grep -oE '/home/[A-Za-z0-9_.-]+' | sort -u | grep -vx /home/builder || true)
+    [ -z "$h" ] || { echo "${f##*/}: build metadata names $h" >&2; exit 1; }
 done
