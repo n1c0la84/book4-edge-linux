@@ -304,7 +304,8 @@ used for the 4.5 upgrade covers that need for now.
    subvolumes, give sda4 to the ESP or Arch. Frees about 25 GB.
 4. Disk space: shrink Windows from Windows (354 GB) and add the space to
    btrfs as a second device, or as a data partition. Back up home first.
-5. **Optional, later: Limine** as Omarchy installs it (UKI per kernel,
+5. **Optional, later: Limine** (plan: [plan-limine.md](plan-limine.md), 22 Nov:
+   split sda4 into ext4 + FAT32, Limine after the EL2 chain, GRUB kept) as Omarchy installs it (UKI per kernel,
    snapper entries), if boot-menu snapshots become worth the change; same
    rules (second firmware entry first, GRUB kept as fallback).
 
