@@ -33,7 +33,7 @@ for p in /sys/class/power_supply/*; do
 done
 ls /sys/class/typec 2>&1
 sec "network"
-ip -br link; rfkill list 2>&1; nmcli -t device 2>&1 | head; iwctl station list 2>&1 | head
+ip -br link; rfkill list 2>&1; nmcli -t device 2>&1 | head   # not iwctl: it D-Bus-activates iwd next to NetworkManager (23 Nov)
 sec "bluetooth"
 bluetoothctl show 2>&1 | head -8
 sec "camera, fingerprint, input"
