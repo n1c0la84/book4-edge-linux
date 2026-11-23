@@ -9,6 +9,7 @@
 #   bash install/arch/omarchy-kernel-test.sh remove        take it all out again
 #   OMARCHY_TEST_DTB=ours bash ... setup --yes   same, with linux-book4's DTB
 #   OMARCHY_TEST_DISABLE="usb_2 usb_2_hsphy" ...  with those DT nodes disabled
+#   OMARCHY_TEST_DEBUG=1 ...                       EL1 entries print an oops whole
 #
 # setup:
 #   - pacman -U from https://pkgs.omarchy.org/edge/aarch64 (signed with
@@ -166,6 +167,10 @@ done
 # 0.96 s while the initramfs was still unpacking (23 Nov).
 stock="initramfs_async=0 systemd.tty.term.console=dumb"
 cmd1="$cmd1 $stock"; cmdel1="$cmdel1 $stock"
+# OMARCHY_TEST_DEBUG=1: the boot console writes straight into the firmware's
+# framebuffer (earlycon=efifb, kept), synchronously, so an oops is printed
+# whole (fbcon stopped mid-oops every time, 23 Nov); EL1 entries only.
+[ -z "${OMARCHY_TEST_DEBUG:-}" ] || { cmdel1="$cmdel1 earlycon=efifb keep_bootcon ignore_loglevel"; echo "   debug console: earlycon=efifb keep_bootcon"; }
 echo "   EL1 stock command line: $cmdel1"
 sudo cp /boot/vmlinuz-linux-omarchy /boot/initramfs-linux-omarchy.img "$w/"; sudo chown "$(id -u)" "$w"/vmlinuz-* "$w"/initramfs-*
 for el in el2 el1; do
