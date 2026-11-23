@@ -1,0 +1,15 @@
+# book4-edge-linux (userspace/boot/arch): keep Limine on the second ESP
+# (/boot, BOOK4ESP) current when Limine itself or systemd-stub changes.
+# Kernel and initramfs changes reach Limine through 91-book4-boot.hook.
+# Does nothing until Limine is set up (install/arch/limine-test.sh setup).
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/share/limine/BOOTAA64.EFI
+Target = usr/lib/systemd/boot/efi/linuxaa64.efi.stub
+
+[Action]
+Description = Book4: Limine and its UKIs on the second ESP...
+When = PostTransaction
+Exec = /usr/bin/book4-boot limine

@@ -26,6 +26,9 @@
 # protocol), 3 EL1 kernel + dtb_path, 4 Arch GRUB. Command line: exactly the
 # one book4-boot gives the default GRUB entry. No cutmem (Limine has none):
 # testing whether 7.3 still needs it is part of this step.
+# Since book4-edge-boot with the Limine side (plan step 4), book4-boot keeps
+# the kernel files, UKIs and limine.conf current; setup stays the way to make
+# the firmware entry and the Shell folder on a fresh install.
 # Undo: efibootmgr -b XXXX -B (the entry); remove /boot/EFI/limine,
 # /boot/limine.conf, /boot/book4, /boot/EFI/Linux; \EFI\book4-el2-limine\ on
 # sda1 may stay.

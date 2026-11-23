@@ -170,6 +170,22 @@ All from the running system, sda4 unmounted, as root (one user-run script,
 
 ### 4. Generate Limine's config from book4-boot
 
+**Written 23 November** (book4-edge-boot): `book4-boot` gained a Limine side
+(`limine_safe` after every GRUB menu write; `book4-boot limine [--print]`
+alone). When /boot is BOOK4ESP with Limine on it: an EL2 UKI per kernel the
+GRUB menu boots (`/EFI/Linux/book4-REL-el2.efi`, rebuilt only when kernel,
+initramfs, EL2 DTB, systemd-stub or command line change; checksum in
+`/book4/.uki-REL.sum`), the default kernel's files in `/book4/REL/` for the
+EL1 entry, `/limine.conf` (default UKI, verbose = same UKI with a longer
+`cmdline`, EL1, other kernels, Arch GRUB; previous copy `.prev`), pruning of
+its own UKIs and folders, Limine's `BOOTAA64.EFI` kept equal to the
+package's. New hook `92-book4-limine.hook` (limine or systemd-stub
+updates). A Limine failure is logged and never stops the GRUB side.
+Tested as a user in a sandbox (`BOOK4_TESTBOOT`, `BOOK4_TESTESP`): build,
+no rebuild on rerun, rebuild on a changed initramfs, prune of a removed
+kernel, inert without Limine. `test-entry.sh` test entries are not carried
+over to Limine yet.
+
 - `book4-boot` gets a Limine output next to GRUB's: for each Book4 kernel it
   already handles, copy vmlinuz, initramfs and both DTBs to the FAT
   partition and write `limine.conf` (EL2 and EL1 entries, default

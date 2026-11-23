@@ -11,11 +11,13 @@
 pkgname=book4-edge-boot
 pkgver=r566.cb92be3
 pkgrel=1
-pkgdesc='Galaxy Book4 Edge 14": kernels, device trees and the Arch GRUB menu on /boot, from pacman hooks'
+pkgdesc='Galaxy Book4 Edge 14": kernels, device trees, the Arch GRUB menu and the Limine menu with EL2 UKIs, from pacman hooks'
 arch=(any)
 url='https://github.com/n1c0la84/book4-edge-linux'
 license=(GPL-2.0-only)
 depends=(bash dtc mkinitcpio grub util-linux pacman)
+optdepends=('limine: the Limine menu on the second ESP (docs/plan-limine.md)'
+            'systemd-ukify: EL2 UKIs for Limine')
 
 _repo() { cd "$startdir/../.." && pwd; }
 
@@ -29,6 +31,7 @@ package() {
   install -Dm755 "$r/userspace/boot/arch/book4-boot"                 "$pkgdir/usr/bin/book4-boot"
   install -Dm644 "$r/userspace/boot/arch/91-book4-boot.hook"         "$pkgdir/usr/share/libalpm/hooks/91-book4-boot.hook"
   install -Dm644 "$r/userspace/boot/arch/61-book4-boot-remove.hook"  "$pkgdir/usr/share/libalpm/hooks/61-book4-boot-remove.hook"
+  install -Dm644 "$r/userspace/boot/arch/92-book4-limine.hook"       "$pkgdir/usr/share/libalpm/hooks/92-book4-limine.hook"
   install -Dm644 "$r/dts/src/x1-el2-book4.dtso"                      "$pkgdir/usr/share/book4/x1-el2-book4.dtso"
   install -Dm644 "$r/userspace/boot/arch/boot.conf.example"          "$pkgdir/usr/share/book4/boot.conf.example"
 }
