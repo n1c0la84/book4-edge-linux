@@ -109,6 +109,32 @@ All from the running system, sda4 unmounted, as root (one user-run script,
 
 ### 3. Limine by hand, second firmware entry
 
+**Prepared 23 November:** `install/arch/limine-test.sh` (`setup` dry run,
+`setup --yes`, `next` for a one-time BootNext, `status`) and
+`install/limine/startup.nsh`. Findings that shaped it:
+- Limine 12.11 (extra; the local package database of 19 Nov still named
+  12.10, gone from the mirror: run `book4-update` first). Config keys
+  checked in its CONFIG.md: `protocol: linux|efi`, `path`, `module_path`,
+  `dtb_path`, `cmdline`, `boot():` (the volume with the config) and
+  `guid(<partition GUID>):`. Config search on the volume of the Limine
+  binary: `<app dir>/limine.conf`, then `/boot/limine/limine.conf`,
+  `/boot/limine.conf`, `/limine/limine.conf`, `/limine.conf`; stock Omarchy
+  uses `/boot/limine.conf` with the ESP at /boot, i.e. `\limine.conf` on
+  the ESP, as here.
+- **The DTB must reach the EFI configuration table**, where slbounce and
+  qebspil read it at ExitBootServices. A UKI does that (systemd-stub installs
+  its `.dtb`), so entry 1 is a UKI with only our EL2 DTB (ukify
+  `--devicetree`), protocol `efi`. Whether Limine's own `linux` protocol with
+  `dtb_path` does it is not documented: entry 2 tests it.
+- Omarchy's Qualcomm UKIs list every x1/hamoa DTB for `DeviceTreeAuto` but
+  skip `*-el2.dtb` (`install/hardware/qualcomm/dtb-uki.sh`): stock picks the
+  EL1 tree, so for EL2 the UKI must be ours.
+- `limine-mkinitcpio-hook` (Omarchy's repo, 1.40) replaces the mkinitcpio
+  pacman hook (`/etc/pacman.d/hooks/90-mkinitcpio-install.hook`), adds a
+  `/usr/local/bin/mkinitcpio` wrapper and may change BootOrder through
+  efibootmgr (`UEFI_BOOT_ORDER`): not installed in step 3, only `limine` and
+  `systemd-ukify`. Step 6 decides about it.
+
 - `pacman -S limine` (extra, 12.x on 22 November). Read
   `/usr/share/doc/limine/CONFIG.md` for the installed version: path syntax
   (`boot()`, `guid()`/`uuid()`), the `cmdline` key and `dtb_path`; the plan
