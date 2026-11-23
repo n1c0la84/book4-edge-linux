@@ -1,0 +1,4 @@
+# The ADSP sensors firmware reads /vendor/etc/sensors/sns_reg_config (a fixed
+# path). See book4-sensors-setup.
+d /var/lib/book4/vendor 0755 root root -
+L /vendor - - - - /var/lib/book4/vendor

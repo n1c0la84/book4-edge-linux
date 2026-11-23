@@ -1,0 +1,17 @@
+# Ambient light sensor: the ADSP sensors domain's file service (registry,
+# config) through adsprpcd. docs/sensors.md. EL1 only until tested at EL2:
+# at EL2 a crashed ADSP stays down until reboot (no kernel restart).
+[Unit]
+Description=Book4: ADSP sensors domain file service (ambient light sensor)
+ConditionPathExists=/usr/share/book4/sensors/sns_reg_config
+ConditionPathExists=!/dev/kvm
+
+[Service]
+ExecStartPre=/usr/lib/book4/book4-sensors-setup
+ExecStartPre=/bin/sh -c 'for i in $(seq 60); do [ -e /dev/fastrpc-adsp ] && exit 0; sleep 1; done; exit 1'
+ExecStart=/usr/bin/adsprpcd sensorspd adsp
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

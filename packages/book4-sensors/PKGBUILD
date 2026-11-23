@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# book4-sensors: the Galaxy Book4 Edge 14"'s ambient light sensor (VEML3328
+# behind the ADSP's Qualcomm Sensor Core): setup script, adsprpcd service,
+# /vendor link, udev rule and iio-sensor-proxy drop-in (userspace/sensors).
+# The sensor config and registry are in book4-edge-firmware (local only).
+# Experimental: nothing is enabled on install, and the service and rule stay
+# off at EL2 (/dev/kvm present) until tested there. docs/sensors.md.
+#
+#   cd packages/book4-sensors && makepkg -f
+pkgname=book4-sensors
+pkgver=r0
+pkgrel=1
+pkgdesc='Galaxy Book4 Edge 14": ambient light sensor through the ADSP (experimental, EL1 only for now)'
+arch=(any)
+url='https://github.com/n1c0la84/book4-edge-linux'
+license=(GPL-2.0-only)
+depends=(fastrpc libssc-book4 iio-sensor-proxy-book4 book4-edge-firmware)
+
+_repo() { cd "$startdir/../.." && pwd; }
+
+pkgver() {
+  local repo; repo=$(_repo)
+  printf 'r%s.%s' "$(git -C "$repo" rev-list --count HEAD)" "$(git -C "$repo" rev-parse --short HEAD)"
+}
+
+package() {
+  local u; u=$(_repo)/userspace/sensors
+  install -Dm755 "$u/book4-sensors-setup"         "$pkgdir/usr/lib/book4/book4-sensors-setup"
+  install -Dm644 "$u/book4-sensors.service"       "$pkgdir/usr/lib/systemd/system/book4-sensors.service"
+  install -Dm644 "$u/book4-sensors.tmpfiles"      "$pkgdir/usr/lib/tmpfiles.d/book4-sensors.conf"
+  install -Dm644 "$u/81-book4-ssc-light.rules"    "$pkgdir/usr/lib/udev/rules.d/81-book4-ssc-light.rules"
+  install -Dm644 "$u/iio-sensor-proxy-book4.conf" "$pkgdir/usr/lib/systemd/system/iio-sensor-proxy.service.d/book4.conf"
+}

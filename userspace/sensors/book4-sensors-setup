@@ -1,0 +1,43 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# Prepares what the ADSP's sensors domain (Qualcomm Sensor Core) reads and
+# writes through `adsprpcd sensorspd` (book4-sensors.service), from the files
+# book4-edge-firmware stages from this laptop's Windows (/usr/share/book4/sensors).
+# After Rafael Meneses' sb4edge-sensors-setup (github.com/rafaelmnz/SB4-Edge-Linux,
+# GPL-2.0), adapted to the 14" and to Arch. docs/sensors.md.
+#
+# The firmware asks for /vendor/etc/sensors/sns_reg_config (a fixed path);
+# /vendor is a symlink to /var/lib/book4/vendor (book4-sensors.tmpfiles).
+# Read-only data is refreshed at every start; the registry is writable (the
+# firmware writes to it, and asserts, taking the ADSP down, if it cannot) and
+# seeded once from the registry Windows generated, so the firmware's own
+# updates survive reboots.
+set -eu
+SRC=/usr/share/book4/sensors
+V=/var/lib/book4/vendor
+E=$V/etc/sensors
+REG=$V/persist/sensors/registry/registry
+# The registry records each config file's mtime; Windows' copies of the 14"'s
+# config (qcsensorsconfigcrd8380) all carry this one. A mismatch makes the
+# firmware rebuild the whole registry at every start.
+MTIME=1719257058
+
+[ -r "$SRC/sns_reg_config" ] || { echo "book4-sensors-setup: $SRC missing (book4-edge-firmware)" >&2; exit 1; }
+mkdir -p "$E" "$REG"
+rm -rf "$E/config.new" "$E/socinfo.new"
+cp -a "$SRC/config" "$E/config.new"
+cp -a "$SRC/socinfo" "$E/socinfo.new"
+rm -rf "$E/config" "$E/socinfo"
+mv "$E/config.new" "$E/config"
+mv "$E/socinfo.new" "$E/socinfo"
+find "$E/config" -type f -exec touch -d "@$MTIME" {} +
+# The firmware keeps a trailing CR (Windows line endings) as part of a path:
+# write Unix line endings, and point it at our copies.
+sed -e 's/\r$//' \
+    -e "s|=/sys/devices/soc0/|=/vendor/etc/sensors/socinfo/|" \
+    -e "s|^file=output=.*|file=output=/vendor/persist/sensors/registry/registry|" \
+    -e "s|^file=config=.*|file=config=/vendor/etc/sensors/config|" \
+    "$SRC/sns_reg_config" > "$E/sns_reg_config"
+if [ -z "$(ls -A "$REG")" ]; then
+    cp -a "$SRC/registry/." "$REG/"
+fi
