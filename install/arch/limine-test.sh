@@ -44,7 +44,9 @@ die() { echo "error: $*" >&2; exit 1; }
 [ "$(id -u)" != 0 ] || die "run as your user (sudo is used inside)"
 
 entry() {  # Boot#### of our loader path
-    efibootmgr | awk -v l="$(tr 'A-Z' 'a-z' <<<")/$LOADER")" '
+    # Through the environment: awk -v would treat the backslashes as escapes.
+    efibootmgr | L=$(tr 'A-Z' 'a-z' <<<")/$LOADER") awk '
+        BEGIN { l = ENVIRON["L"] }
         /^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ { if (!f && index(tolower($0), l)) { print substr($0, 5, 4); f = 1 } }'
 }
 
