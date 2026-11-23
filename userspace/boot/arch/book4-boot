@@ -278,6 +278,10 @@ lgen() {   # limine.conf for kernels REL... (default first)
 # \\EFI\\book4-el2-limine\\ on sda1 after qebspil and slbounce.
 timeout: 5
 default_entry: 1
+# The UEFI Shell before Limine leaves the GOP at 1024x768, and the EL2 DTB's
+# boot framebuffer (x1-el2-book4.dtso) says 1024x768: Limine must not switch
+# the mode for its menu, or the kernel console comes out as stripes.
+interface_resolution: 1024x768
 interface_branding: Omarchy Bootloader
 interface_branding_color: 9ece6a
 term_background: 1a1b26
