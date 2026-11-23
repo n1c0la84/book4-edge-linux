@@ -7,6 +7,7 @@
 #   bash install/arch/omarchy-kernel-test.sh setup         dry run
 #   bash install/arch/omarchy-kernel-test.sh setup --yes   install and add the entries
 #   bash install/arch/omarchy-kernel-test.sh remove        take it all out again
+#   OMARCHY_TEST_DTB=ours bash ... setup --yes   same, with linux-book4's DTB
 #
 # setup:
 #   - pacman -U from https://pkgs.omarchy.org/edge/aarch64 (signed with
@@ -117,7 +118,18 @@ done
 echo "   pinctrl-x1e80100, qnoc-x1e80100, ufs-qcom, i2c-qcom-geni in the initramfs"
 
 echo "== 3. device trees"
-sudo cp "/boot/dtbs/linux-omarchy/qcom/$DTB" "$w/el1.dtb"; sudo chown "$(id -u)" "$w/el1.dtb"
+# OMARCHY_TEST_DTB=ours: linux-book4's 14" DTB instead of Omarchy's, to tell
+# a device-tree cause from a kernel one (23 Nov: 7.3-78 oopses during the
+# initramfs with Omarchy's DTB; that DTB also enables i2c3/i2c7 with the
+# PS8830 retimers, which ours does not).
+if [ "${OMARCHY_TEST_DTB:-omarchy}" = ours ]; then
+    brel=$(pacman -Ql linux-book4 | sed -n 's|^linux-book4 /usr/lib/modules/\([^/]*\)/vmlinuz$|\1|p' | head -1)
+    cp "/usr/lib/modules/$brel/dtb/qcom/$DTB" "$w/el1.dtb"
+    echo "   DTB: linux-book4 $brel's (OMARCHY_TEST_DTB=ours)"
+else
+    sudo cp "/boot/dtbs/linux-omarchy/qcom/$DTB" "$w/el1.dtb"; sudo chown "$(id -u)" "$w/el1.dtb"
+    echo "   DTB: Omarchy's"
+fi
 dtc -q -@ -I dts -O dtb -o "$w/el2.dtbo" "$OVERLAY"
 fdtoverlay -i "$w/el1.dtb" -o "$w/el2.dtb" "$w/el2.dtbo"
 [ "$(fdtget -ts "$w/el2.dtb" /soc@0/gpu@3d00000/zap-shader status)" = disabled ] ||
