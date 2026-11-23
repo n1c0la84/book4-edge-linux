@@ -259,6 +259,9 @@ kfiles() {   # REL: kernel, initramfs and both DTBs for the linux-protocol entri
 
 lentry() {   # title protocol path [cmdline] [linux: dir el1|el2]
     printf '\n/%s\n    protocol: %s\n' "$1" "$2"
+    # Per entry too: without it Limine picks a mode for the booted program
+    # (interface_resolution covers only its menu); see interface_resolution.
+    printf '    resolution: 1024x768\n'
     if [ "$2" = efi ]; then
         printf '    path: %s\n' "$3"
         [ -z "${4:-}" ] || printf '    cmdline: %s\n' "$4"

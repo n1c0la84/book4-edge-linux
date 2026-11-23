@@ -107,11 +107,11 @@ echo "== 4. Limine entries"
 # boot that stops early prints its kernel messages on screen.
 v="earlycon keep_bootcon ignore_loglevel"
 printf '%s\n' "# install/arch/omarchy-kernel-test.sh (birkskyum/arewearmyet#10): linux-omarchy $rel" \
-    "/Omarchy kernel $rel - EL2 (test)" "    protocol: efi" "    path: boot():/EFI/Linux/omarchy-kernel-test-el2.efi" "" \
-    "/Omarchy kernel $rel - EL2, verbose (test)" "    protocol: efi" "    path: boot():/EFI/Linux/omarchy-kernel-test-el2.efi" \
+    "/Omarchy kernel $rel - EL2 (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el2.efi" "" \
+    "/Omarchy kernel $rel - EL2, verbose (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el2.efi" \
     "    cmdline: $cmd1 id_aa64mmfr0.ecv=1 $v" "" \
-    "/Omarchy kernel $rel - EL1, stock DTB (test)" "    protocol: efi" "    path: boot():/EFI/Linux/omarchy-kernel-test-el1.efi" "" \
-    "/Omarchy kernel $rel - EL1, stock DTB, verbose (test)" "    protocol: efi" "    path: boot():/EFI/Linux/omarchy-kernel-test-el1.efi" \
+    "/Omarchy kernel $rel - EL1, stock DTB (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el1.efi" "" \
+    "/Omarchy kernel $rel - EL1, stock DTB, verbose (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el1.efi" \
     "    cmdline: $cmd1 $v" |
     sudo tee "$EXTRA" >/dev/null
 sudo book4-boot menu
