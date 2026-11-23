@@ -360,6 +360,19 @@ the end.
       sleep holds (141 s suspend: `cxsd`/`ddr` 98 %). Speaker limiter +6 ->
       +9 dB. Seen twice on 28 Oct: `SWR bus clsh detected` on 6b10000 when
       playback starts; recovers by itself.
+- [ ] **SoundWire clash at the first playback leaves the left amps in Alert**
+      (23 November, 7.3.4-3 with f354813695b4, Limine/UKI boot): at 53 s,
+      ~4 s after the first playback started, `Bus clash detected` / `Reached
+      MAX_RETRY` / parity errors on `sdw:1:0:0217:0202:00:{1,2}` and `SWR
+      bus clsh` on 6ab0000 and 6ad0000; both amps stay `Alert`
+      (/sys/bus/soundwire/devices/*/status), PipeWire's speaker crossover
+      stays `[init]`, a PipeWire restart does not help, a reboot does.
+      Earlier clashes: 28 Oct (6b10000, recovered by itself), 20 Oct (after
+      resume, power.md), 23 Nov 11:25 GRUB boot (2, recovered). Next: count
+      per boot over a week (`journalctl -k -b N | grep -c "Bus clash"`),
+      check whether a delay before the first playback avoids it, and whether
+      unbinding/rebinding the two wsa883x devices recovers without a reboot
+      (not lpasscc: that reset the machine).
 - [x] **Hardware video decoding at EL2** (25 October): Moonlight found no
       V4L2 decoder because there was none: the video clock controller driver
       was never built (`CONFIG_SM_VIDEOCC_8550`) and the EL2 overlay disabled
