@@ -60,6 +60,13 @@ nothing on the ESP is deleted.
 
 ### 1. Clean sda4 (with the Fedora deletion, ROADMAP "Fedora deletion")
 
+Script: `install/arch/fedora-delete.sh` (dry run by default, `--yes` to act;
+also does step 0's backup and deletes the subvolumes `root`, `home` and
+`arch`). **Keep `/vmlinuz-7.2.7-book4`:** Fedora's GRUB (`\EFI\fedora\grub.cfg`,
+the fallback) finds /boot with `search --file /vmlinuz-7.2.7-book4`; without
+that file the fallback has no menu. After the deletion its only working entry
+is the sourced `book4-extra.cfg` test entry on arch-45.
+
 - Delete the Fedora rescue files, the `fc45` kernel set and the leftovers
   above, after checking that `book4-boot menu --print` and
   `test-entry.sh list` reference none of them.

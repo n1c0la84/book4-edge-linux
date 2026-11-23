@@ -8,7 +8,9 @@ It still boots: as "Fedora Linux (Fedora's GRUB menu)" in the Arch GRUB menu,
 and through the firmware entries "Omarchy (EL2, Fedora GRUB, fallback)" and
 "Fedora GRUB (EL1)".
 
-What deleting it will mean later (not done, needs the owner's go): the
+Deletion approved by the owner 23 November 2026, together with the pre-4.5
+Arch copy (`arch`): `install/arch/fedora-delete.sh` (dry run first, then
+`--yes`). What deleting it will mean later (not done, needs the owner's go): the
 `root` and `home` btrfs subvolumes (~25 GB, minus what the archive's reflinks
 keep), Fedora's kernels, initramfs and BLS entries on sda4 (`/grub2`,
 `/loader`), the Fedora GRUB menu entry and, if wanted, firmware entry

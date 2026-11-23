@@ -87,13 +87,13 @@ sudo paccache -rk2 || warn "Could not prune the package cache."
 if ((snapshot)); then
     say "Snapshot of the arch subvolume"
     bash "$REPO/tools/backup/snapshot-arch.sh" pre-update
-    # Keep the newest KEEP_SNAPSHOTS arch-pre-update-*; other snapshots
+    # Keep the newest KEEP_SNAPSHOTS arch*-pre-update-* (arch-45-pre-update-* now); other snapshots
     # (arch-pre-omarchy-*, hand-made labels) are never touched.
     top=$(sudo mktemp -d /run/book4-update.XXXXXX)
     cleanup() { sudo umount "$top" 2>/dev/null || true; sudo rmdir "$top" 2>/dev/null || true; }
     trap cleanup EXIT
     sudo mount -o subvolid=5 "UUID=$(findmnt -no UUID /)" "$top"
-    mapfile -t old < <(sudo find "$top" -mindepth 1 -maxdepth 1 -name 'arch-pre-update-*' -printf '%f\n' |
+    mapfile -t old < <(sudo find "$top" -mindepth 1 -maxdepth 1 -name 'arch*-pre-update-*' -printf '%f\n' |
         sort | head -n -"$KEEP_SNAPSHOTS")
     for o in "${old[@]}"; do
         sudo btrfs subvolume delete "$top/$o"
