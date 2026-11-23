@@ -26,7 +26,8 @@
 # line of its GRUB entry, so systemd-stub installs the DTB slbounce and
 # qebspil read), the default kernel also its files for the EL1 entry
 # (/book4/REL/), and /limine.conf is regenerated: default (UKI), verbose,
-# EL1, other kernels, Arch GRUB. A failure there is reported but never stops
+# EL1, other kernels, test entries from /etc/book4/limine-extra.conf, Arch
+# GRUB. A failure there is reported but never stops
 # the GRUB side. book4-boot limine [--print] runs only this part.
 # Settings: /etc/book4/boot.conf (CMDLINE, NAME, DEFAULT_PKG, LEGACY_DTB).
 set -euo pipefail
@@ -40,6 +41,7 @@ MARK=.book4-boot   # in /dtb-REL/: made by this script, so it may prune it
 LESP=${BOOK4_TESTESP:-/boot}                   # the second ESP (Limine's)
 STUB=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
 LIMINE_EFI=/usr/share/limine/BOOTAA64.EFI
+LEXTRA=${BOOK4_LEXTRA:-/etc/book4/limine-extra.conf}   # test entries appended to limine.conf
 
 CMDLINE= NAME=Omarchy DEFAULT_PKG=linux-book4 LEGACY_DTB=()
 [ -r "$CONF" ] || { echo "book4-boot: $CONF missing (install/arch/book4-boot-setup.sh)" >&2; exit 1; }
@@ -286,6 +288,11 @@ EOF
     lentry "$NAME ($def) - verbose" efi "boot():/EFI/Linux/book4-$def-el2.efi" "$(kcmd " id_aa64mmfr0.ecv=1 earlycon keep_bootcon ignore_loglevel")"
     [ ! -e "$LESP/book4/$def/el1.dtb" ] || lentry "$NAME ($def) - EL1" linux "$def" "$(kcmd "")" el1
     for r in "${@:2}"; do lentry "$NAME ($r)" efi "boot():/EFI/Linux/book4-$r-el2.efi"; done
+    # Test entries (e.g. install/arch/omarchy-kernel-test.sh), Limine syntax,
+    # copied as they are; the counterpart of GRUB's book4-extra.cfg.
+    if [ -r "$LEXTRA" ] && grep -q '^/' "$LEXTRA"; then
+        printf '\n# --- %s ---\n' "$LEXTRA"; grep -v '^[[:space:]]*#' "$LEXTRA" | sed '/^[[:space:]]*$/d; s/^\//\n\//'
+    fi
     [ -z "$espguid" ] || lentry "Arch GRUB" efi "guid($espguid):/EFI/arch/grubaa64.efi"
 }
 
