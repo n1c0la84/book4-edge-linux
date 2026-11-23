@@ -13,10 +13,13 @@
 # tcblaunch.exe (build 10.0.26100.9616, the tested one; Windows Update has
 # moved System32 on to 9882) goes to /usr/lib/book4/; book4-el2
 # (book4-edge-el2) copies it and the ADSP/CDSP images to the ESP.
+# The ambient light sensor's Qualcomm Sensor Core config (qcsensorsconfigcrd8380:
+# JSON, sns_reg_config, socinfo) and the registry Windows generated from it
+# go to /usr/share/book4/sensors/ (docs/sensors.md; book4-sensors-setup).
 pkgname=book4-edge-firmware
-pkgver=2026.11.19
-pkgrel=2
-pkgdesc='Galaxy Book4 Edge 14": ADSP/CDSP/GPU firmware and tcblaunch.exe from its own Windows, Wi-Fi c5-00302, audio topology alias (local only)'
+pkgver=2026.11.23
+pkgrel=1
+pkgdesc='Galaxy Book4 Edge 14": ADSP/CDSP/GPU firmware and tcblaunch.exe from its own Windows, Wi-Fi c5-00302, audio topology alias, ambient light sensor config and registry (local only)'
 arch=(any)
 license=(LicenseRef-proprietary)
 depends=(linux-firmware-qcom)
