@@ -132,6 +132,7 @@ update)
 status)
     E=$(esp) || die "the ESP is not mounted"
     for f in "${FILES[@]}"; do
+        [ "$f" != startup-limine.nsh ] || continue   # the Limine chain's, listed below
         printf '   %-18s %s\n' "$f" "$(cmp -s "$SRC/$f" "$E/$DIR/$f" 2>/dev/null && echo current || echo DIFFERS/missing)"
     done
     printf '   %-18s %s\n' tcblaunch.exe "$(cmp -s "$TCB" "$E/$DIR/tcblaunch.exe" 2>/dev/null && echo current || echo DIFFERS/missing)"
