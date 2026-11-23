@@ -8,6 +8,7 @@
 #   bash install/arch/omarchy-kernel-test.sh setup --yes   install and add the entries
 #   bash install/arch/omarchy-kernel-test.sh remove        take it all out again
 #   OMARCHY_TEST_DTB=ours bash ... setup --yes   same, with linux-book4's DTB
+#   OMARCHY_TEST_DISABLE="usb_2 usb_2_hsphy" ...  with those DT nodes disabled
 #
 # setup:
 #   - pacman -U from https://pkgs.omarchy.org/edge/aarch64 (signed with
@@ -130,6 +131,13 @@ else
     sudo cp "/boot/dtbs/linux-omarchy/qcom/$DTB" "$w/el1.dtb"; sudo chown "$(id -u)" "$w/el1.dtb"
     echo "   DTB: Omarchy's"
 fi
+# OMARCHY_TEST_DISABLE="label ...": switch those nodes off (labels from the
+# DTB's __symbols__), to bisect which device the 7.3-78 oops comes from.
+for l in ${OMARCHY_TEST_DISABLE:-}; do
+    path=$(fdtget -ts "$w/el1.dtb" /__symbols__ "$l") || die "no label $l in the DTB"
+    fdtput -ts "$w/el1.dtb" "$path" status disabled
+    echo "   disabled $l ($path)"
+done
 dtc -q -@ -I dts -O dtb -o "$w/el2.dtbo" "$OVERLAY"
 fdtoverlay -i "$w/el1.dtb" -o "$w/el2.dtb" "$w/el2.dtbo"
 [ "$(fdtget -ts "$w/el2.dtb" /soc@0/gpu@3d00000/zap-shader status)" = disabled ] ||
