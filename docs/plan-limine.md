@@ -78,6 +78,11 @@ is the sourced `book4-extra.cfg` test entry on arch-45.
 
 ### 2. Split sda4: 512 MiB ext4 + ~1.5 GiB FAT32
 
+**Step 1 done 23 November** (fedora-delete.sh: /boot at 222 MB). Script for
+this step: `install/arch/boot-split.sh` (dry run by default, `--yes`).
+Geometry (4096-byte sectors): sda4 start 92844544, 524288 -> 131072
+sectors; sda7 start 92975616, 393216 sectors, ends at sda5's start 93368832.
+
 All from the running system, sda4 unmounted, as root (one user-run script,
 `install/arch/boot-split.sh`, to be written; `--dry-run` first):
 
