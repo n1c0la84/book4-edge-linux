@@ -182,6 +182,9 @@ All from the running system, sda4 unmounted, as root (one user-run script,
 
 ### 5. Make Limine the default
 
+**Done 23 November by the owner's choice, before step 4** (BootOrder
+0001,0004,0003,0000,0002). Step 4 is now urgent: kernel updates reach only GRUB.
+
 After a few days on the Limine entry: BootOrder Limine first, Arch GRUB
 second, Fedora GRUB third. `startup.nsh` of the Limine folder keeps falling
 back to Arch GRUB. Update docs/install.md, ROADMAP section 5 and STATE.md.
