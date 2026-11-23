@@ -158,6 +158,8 @@ All from the running system, sda4 unmounted, as root (one user-run script,
 - Firmware entry "Omarchy (EL2, Limine)" with `efibootmgr --create`, not in
   front of BootOrder; test with `efibootmgr --bootnext`.
 - **Tests** (record each in STATE.md):
+  (23 Nov: test 1 boot part passed with the UKI entry: EL2, KVM, DSPs,
+  sound, no `cutmem`; suspend and the other entries still open)
   1. EL2 boot: `book4-el2 status`, KVM present, ADSP/CDSP attached, sound,
      sleep (`cxsd` like the GRUB boot), `BootCurrent` the new entry.
   2. `cutmem`: the boot works without it, then a day of normal use and a
