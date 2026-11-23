@@ -45,7 +45,7 @@ die() { echo "error: $*" >&2; exit 1; }
 
 entry() {  # Boot#### of our loader path
     efibootmgr | awk -v l="$(tr 'A-Z' 'a-z' <<<")/$LOADER")" '
-        /^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ { if (index(tolower($0), l)) { print substr($0, 5, 4); exit } }'
+        /^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ { if (!f && index(tolower($0), l)) { print substr($0, 5, 4); f = 1 } }'
 }
 
 cmd=${1:-}; yes=; [ "${2:-}" = --yes ] && yes=1
@@ -77,7 +77,9 @@ sudo -v
 rel=$(pacman -Ql linux-book4 | sed -n 's|^linux-book4 /usr/lib/modules/\([^/]*\)/vmlinuz$|\1|p' | head -1)
 [ -n "$rel" ] || die "no linux-book4 kernel"
 # The default GRUB entry's command line, as book4-boot writes it.
-line=$(sudo book4-boot menu --print | awk '/--id book4-default \{/ { on = 1 } on && /^[[:space:]]*linux[[:space:]]/ { print; exit }')
+# Read the whole menu first: awk exiting early would break book4-boot's pipe.
+menu=$(sudo book4-boot menu --print)
+line=$(awk '/--id book4-default \{/ { on = 1 } on && /^[[:space:]]*linux[[:space:]]/ { print; exit }' <<<"$menu")
 cmdline=$(sed -E 's/^[[:space:]]*linux[[:space:]]+\S+[[:space:]]+//' <<<"$line")
 [[ $cmdline == *root=UUID=* && $cmdline == *rootflags=subvol=* ]] || die "could not read the default entry's command line: $line"
 el1cmd=${cmdline/ id_aa64mmfr0.ecv=1/}
