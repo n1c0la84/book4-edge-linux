@@ -127,9 +127,21 @@ echo "== 4. UKIs"
 CMDLINE=; . /etc/book4/boot.conf
 sub=$(findmnt -rn -o FSROOT /); sub=${sub#/}
 cmd1="root=UUID=$(findmnt -rn -o UUID /) $CMDLINE rootflags=subvol=$sub"
+# The EL1 stock entry boots with Omarchy's own Snapdragon parameters too
+# (install/hardware/qualcomm/kernel-params.sh: clk_ignore_unused
+# pd_ignore_unused ... iommu.passthrough=0), added where ours lack them.
+# Without them its boot stopped at 0.7 s once the platform modules loaded
+# (23 Nov); stock Omarchy always has them.
+kp=/usr/share/omarchy/install/hardware/qualcomm/kernel-params.sh
+cmdel1=$cmd1
+for a in $(grep -o '+=" [^"]*"' "$kp" | sed 's/^+=" //; s/"$//'); do
+    [[ " $cmdel1 " == *" $a "* ]] || cmdel1="$cmdel1 $a"
+done
+[[ $cmdel1 == *clk_ignore_unused* ]] || die "could not take Omarchy's kernel parameters from $kp"
+echo "   EL1 stock command line: $cmdel1"
 sudo cp /boot/vmlinuz-linux-omarchy /boot/initramfs-linux-omarchy.img "$w/"; sudo chown "$(id -u)" "$w"/vmlinuz-* "$w"/initramfs-*
 for el in el2 el1; do
-    c=$cmd1; [ $el = el1 ] || c="$c id_aa64mmfr0.ecv=1"
+    if [ $el = el1 ]; then c=$cmdel1; else c="$cmd1 id_aa64mmfr0.ecv=1"; fi
     ukify build --linux "$w/vmlinuz-linux-omarchy" --initrd "$w/initramfs-linux-omarchy.img" \
         --devicetree "$w/$el.dtb" --cmdline "$c" --stub "$STUB" --uname "$rel" --output "$w/$el.efi" >/dev/null
     sudo install -m644 "$w/$el.efi" "/boot/EFI/Linux/omarchy-kernel-test-$el.efi"
@@ -147,7 +159,7 @@ printf '%s\n' "# install/arch/omarchy-kernel-test.sh (birkskyum/arewearmyet#10):
     "    cmdline: $cmd1 id_aa64mmfr0.ecv=1 $v" "" \
     "/Omarchy kernel $rel - EL1, stock DTB (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el1.efi" "" \
     "/Omarchy kernel $rel - EL1, stock DTB, verbose (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el1.efi" \
-    "    cmdline: $cmd1 $v" |
+    "    cmdline: $cmdel1 $v" |
     sudo tee "$EXTRA" >/dev/null
 sudo book4-boot menu
 sudo grep '^/' /boot/limine.conf | sed 's/^/   /'
