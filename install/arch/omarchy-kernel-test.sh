@@ -105,9 +105,15 @@ qsrc=/usr/share/omarchy/install/hardware/qualcomm/initramfs.sh
   cat /etc/mkinitcpio.conf
   for f in /etc/mkinitcpio.conf.d/*.conf; do [ -r "$f" ] && { echo "# --- $f"; cat "$f"; }; done
   echo "# --- $qsrc"
-  sed -n "/^MODULES+=(/,/)\$/p" "$qsrc"
+  # Without qcom_tsens: its ops->init functions (init_common, init_tsens_v2_
+  # no_rpm, ...) are __init, freed once the module has loaded; from the
+  # initramfs its probe is deferred and the retry calls freed memory (oops in
+  # tsens_probe+0x170, 23 Nov). Loaded later from the root filesystem it
+  # probes at once, as on linux-book4 and the nightly ISO.
+  sed -n "/^MODULES+=(/,/)\$/p" "$qsrc" | sed 's/ qcom_tsens?//'
 } > "$w/mkinitcpio-omarchy.conf"
 grep -q 'pinctrl-x1e80100' "$w/mkinitcpio-omarchy.conf" || die "could not take the module list from $qsrc"
+! grep -q 'qcom_tsens' "$w/mkinitcpio-omarchy.conf" || die "qcom_tsens still in the module list"
 sudo install -m644 "$w/mkinitcpio-omarchy.conf" "$OCONF"
 preset=/etc/mkinitcpio.d/linux-omarchy.preset
 sudo sed -i -E "s|^#?default_config=.*|default_config=\"$OCONF\"|" "$preset"
