@@ -63,7 +63,7 @@ Problems from these steps:
    sudo. Enroll fingers only in Windows from now on.
 2. **First Linux boot with root on two partitions** (sda5 + sda6): comes
    with the Windows round trip.
-3. **7.3 at EL1**: Arch GRUB entry "Omarchy (7.3.4-book4) - EL1", once.
+3. **7.3 at EL1**: done 23 November through Limine's EL1 entry (boots, DSPs, sound, GPU, charging; sleep at EL1 still to try).
 4. **Wake on plug-in**: lid closed on battery, plug the charger in; it should
    wake briefly to negotiate, then sleep again (`samsung-emuec ... wake=1`).
 5. **Fedora deletion**, when the new boot has run a few days: the `root`
