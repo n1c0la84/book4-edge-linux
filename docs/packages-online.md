@@ -10,6 +10,9 @@ pacman repository in this repository's release
 | `book4-edge` | `userspace/`: audio, sleep, battery, keyboard, fingerprint import, ... |
 | `book4-edge-boot` | `book4-boot` and its pacman hooks: kernels and the GRUB menu on /boot |
 | `book4-edge-el2` | the EL2 chain (UEFI Shell, qebspil, slbounce) and `book4-el2` |
+| `fastrpc` | Qualcomm's FastRPC userspace (`adsprpcd`, ...) at a pinned commit, without upstream's auto-start rules |
+| `libssc-book4`, `iio-sensor-proxy-book4` | the ambient light sensor's reader, with Rafael Meneses' patches (replace Arch's `libssc`, `iio-sensor-proxy`) |
+| `book4-sensors` | the ambient light sensor's setup (`docs/sensors.md`); needs the locally built `book4-edge-firmware` |
 
 **`book4-edge-firmware` is not there and never will be**: it holds files
 from Windows (ADSP/CDSP/GPU firmware, tcblaunch.exe). Only its recipe is
@@ -47,7 +50,7 @@ GitHub Actions, workflow `packages` (`.github/workflows/packages.yml`),
 started by hand: Actions > packages > Run workflow, or
 
 ```sh
-gh workflow run packages                                   # all four
+gh workflow run packages                                   # all of them
 gh workflow run packages -f packages="book4-edge book4-edge-boot"
 ```
 

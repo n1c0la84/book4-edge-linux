@@ -6,14 +6,16 @@
 # current files, downloaded by the workflow). book4-edge-firmware is never
 # built here: it carries Windows/Qualcomm files and stays on the laptop.
 #
-#   build-packages.sh linux-book4 book4-edge book4-edge-boot book4-edge-el2
+#   build-packages.sh linux-book4 book4-edge book4-edge-boot book4-edge-el2 \
+#       fastrpc libssc-book4 iio-sensor-proxy-book4 book4-sensors
 #
 # Environment: BOOK4_SIGN_KEY (armored secret key), BOOK4_SIGN_FPR.
 set -euo pipefail
 W=/w OUT=/w/out
-[ $# -gt 0 ] || set -- linux-book4 book4-edge book4-edge-boot book4-edge-el2
+[ $# -gt 0 ] || set -- linux-book4 book4-edge book4-edge-boot book4-edge-el2 \
+    fastrpc libssc-book4 iio-sensor-proxy-book4 book4-sensors
 for p; do
-    case "$p" in linux-book4|book4-edge|book4-edge-boot|book4-edge-el2) ;;
+    case "$p" in linux-book4|book4-edge|book4-edge-boot|book4-edge-el2|fastrpc|libssc-book4|iio-sensor-proxy-book4|book4-sensors) ;;
     *) echo "refusing to build '$p' here" >&2; exit 1 ;; esac
 done
 
@@ -54,7 +56,13 @@ for p; do
         b /home/builder "git init -q $t && git -C $t remote add origin https://github.com/n1c0la84/linux-book4-edge.git \
             && git -C $t fetch -q --depth 1 origin $commit && git -C $t checkout -q FETCH_HEAD"
         b "$d" "BOOK4_TREE=$t makepkg -s --noconfirm --sign"
+    elif [ "$p" = book4-sensors ]; then
+        # nothing to compile; it depends on book4-edge-firmware, which is never
+        # built here (each laptop builds it from its own Windows)
+        b "$d" "makepkg -d --noconfirm --sign"
     else
+        # iio-sensor-proxy-book4 compiles against Arch's libssc (same API;
+        # libssc-book4's patch only changes which data type it looks up)
         b "$d" "makepkg -s --noconfirm --sign"
     fi
     for f in "$d"/*.pkg.tar.*; do

@@ -9,7 +9,7 @@ on:
     inputs:
       packages:
         description: "packages to build (space separated)"
-        default: "linux-book4 book4-edge book4-edge-boot book4-edge-el2"
+        default: "linux-book4 book4-edge book4-edge-boot book4-edge-el2 fastrpc libssc-book4 iio-sensor-proxy-book4 book4-sensors"
 permissions:
   contents: write
 concurrency: packages
