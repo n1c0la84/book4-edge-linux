@@ -15,6 +15,9 @@
 #     channel. Arch's mkinitcpio hook writes /boot/vmlinuz-linux-omarchy and
 #     /boot/initramfs-linux-omarchy.img (the second ESP, as on stock Omarchy);
 #     book4-boot ignores this kernel (no Book4 DTB under /usr/lib/modules).
+#   - its initramfs from /etc/book4/mkinitcpio-omarchy.conf (ours plus
+#     Omarchy's Qualcomm platform modules, as stock Omarchy has them; the
+#     linux-omarchy preset points there, linux-book4's initramfs is untouched)
 #   - two UKIs on /boot from Omarchy's own 14" DTB:
 #       EFI/Linux/omarchy-kernel-test-el2.efi  DTB + our EL2 overlay (as daily)
 #       EFI/Linux/omarchy-kernel-test-el1.efi  the DTB as Omarchy ships it
@@ -41,6 +44,7 @@ if [ "$cmd" = remove ]; then
     sudo -v
     sudo rm -f /boot/EFI/Linux/omarchy-kernel-test-el1.efi /boot/EFI/Linux/omarchy-kernel-test-el2.efi
     [ ! -e "$EXTRA" ] || sudo rm -f "$EXTRA"
+    sudo rm -f /etc/book4/mkinitcpio-omarchy.conf
     pacman -Q "${PKGS[@]}" >/dev/null 2>&1 && sudo pacman -R linux-omarchy-dtbs linux-omarchy systemd-stub-omarchy
     sudo book4-boot menu
     echo "Removed. /etc/mkinitcpio.d/linux-omarchy.preset.pacsave may remain (harmless)."
@@ -81,14 +85,45 @@ for f in /boot/vmlinuz-linux-omarchy /boot/initramfs-linux-omarchy.img "/boot/dt
     sudo test -e "$f" || die "$f missing after the install"
 done
 
-echo "== 2. device trees"
+echo "== 2. initramfs with Omarchy's Qualcomm platform modules"
+# Omarchy's kernel builds pin control, interconnect, PMIC and I2C drivers as
+# modules; stock Omarchy names them in /etc/mkinitcpio.conf.d/qualcomm-
+# platform.conf (install/hardware/qualcomm/initramfs.sh). Without them the
+# UFS controller waits forever for its pinctrl and interconnect suppliers and
+# the keyboard stays dead (first test, 23 Nov: root device timeout, emergency
+# mode). Only this kernel's preset uses the list, so linux-book4's initramfs
+# is unchanged: a config of its own (its drop-in directory would be
+# <config>.d, which does not exist).
+OCONF=/etc/book4/mkinitcpio-omarchy.conf
+qsrc=/usr/share/omarchy/install/hardware/qualcomm/initramfs.sh
+[ -r "$qsrc" ] || die "no $qsrc (omarchy package)"
+{ echo "# install/arch/omarchy-kernel-test.sh: /etc/mkinitcpio.conf + /etc/mkinitcpio.conf.d/*.conf"
+  echo "# + Omarchy's Qualcomm platform modules ($qsrc), for linux-omarchy only."
+  cat /etc/mkinitcpio.conf
+  for f in /etc/mkinitcpio.conf.d/*.conf; do [ -r "$f" ] && { echo "# --- $f"; cat "$f"; }; done
+  echo "# --- $qsrc"
+  sed -n "/^MODULES+=(/,/)\$/p" "$qsrc"
+} > "$w/mkinitcpio-omarchy.conf"
+grep -q 'pinctrl-x1e80100' "$w/mkinitcpio-omarchy.conf" || die "could not take the module list from $qsrc"
+sudo install -m644 "$w/mkinitcpio-omarchy.conf" "$OCONF"
+preset=/etc/mkinitcpio.d/linux-omarchy.preset
+sudo sed -i -E "s|^#?default_config=.*|default_config=\"$OCONF\"|" "$preset"
+grep -q "^default_config=\"$OCONF\"" "$preset" || die "$preset: default_config not set"
+sudo mkinitcpio -p linux-omarchy
+list=$(sudo lsinitcpio /boot/initramfs-linux-omarchy.img)   # whole listing: grep -q would cut the pipe
+for m in pinctrl-x1e80100 qnoc-x1e80100 ufs-qcom i2c-qcom-geni; do
+    grep -q "/$m\.ko" <<<"$list" || die "$m missing from the new initramfs"
+done
+echo "   pinctrl-x1e80100, qnoc-x1e80100, ufs-qcom, i2c-qcom-geni in the initramfs"
+
+echo "== 3. device trees"
 sudo cp "/boot/dtbs/linux-omarchy/qcom/$DTB" "$w/el1.dtb"; sudo chown "$(id -u)" "$w/el1.dtb"
 dtc -q -@ -I dts -O dtb -o "$w/el2.dtbo" "$OVERLAY"
 fdtoverlay -i "$w/el1.dtb" -o "$w/el2.dtb" "$w/el2.dtbo"
 [ "$(fdtget -ts "$w/el2.dtb" /soc@0/gpu@3d00000/zap-shader status)" = disabled ] ||
     die "EL2 DTB: zap shader not disabled, slbounce would not switch"
 
-echo "== 3. UKIs"
+echo "== 4. UKIs"
 CMDLINE=; . /etc/book4/boot.conf
 sub=$(findmnt -rn -o FSROOT /); sub=${sub#/}
 cmd1="root=UUID=$(findmnt -rn -o UUID /) $CMDLINE rootflags=subvol=$sub"
@@ -101,7 +136,7 @@ for el in el2 el1; do
     echo "   /boot/EFI/Linux/omarchy-kernel-test-$el.efi"
 done
 
-echo "== 4. Limine entries"
+echo "== 5. Limine entries"
 # Verbose variants: the same UKIs with a longer command line (systemd-stub
 # takes Limine's cmdline over its own .cmdline without Secure Boot), so a
 # boot that stops early prints its kernel messages on screen.
