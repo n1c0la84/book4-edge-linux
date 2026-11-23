@@ -86,7 +86,7 @@ firmware's and Windows' ESP and keeps the UEFI Shell chain (`book4-el2` no
 longer falls back to a `/boot` labelled BOOK4ESP). The old `/boot` folder of
 the root filesystem (one stray initramfs from October) moves to ~/backup.
 
-**Step 1 done 23 November** (fedora-delete.sh: /boot at 222 MB). Script for
+**Step 1 done 23 November** (fedora-delete.sh: /boot at 222 MB). **Step 2 done 23 November 11:38**: sda4 512 MiB (180 MB free), sda7 `BOOK4ESP` UUID 7A97-F511 at /boot. Script for
 this step: `install/arch/boot-split.sh` (dry run by default, `--yes`).
 Geometry (4096-byte sectors): sda4 start 92844544, 524288 -> 131072
 sectors; sda7 start 92975616, 393216 sectors, ends at sda5's start 93368832.
