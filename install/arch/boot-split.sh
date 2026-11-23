@@ -35,6 +35,8 @@ CONF=/etc/book4/boot.conf
 yes=; [ "${1:-}" = --yes ] && yes=1
 
 die() { echo "error: $*" >&2; exit 1; }
+# e2fsck -p: 0 clean, 1 errors fixed (fine), anything else stops the script
+fsck4() { local rc=0; sudo e2fsck -f -p $P4 || rc=$?; [ $rc -le 1 ] || die "e2fsck -f -p $P4 exited $rc; run it by hand"; [ $rc = 0 ] || echo "   e2fsck fixed something (exit 1); fine"; }
 [ -e /etc/arch-release ] || die "run this on Arch"
 [ "$(id -u)" != 0 ] || die "run as your user (sudo is used inside)"
 sudo -v
@@ -62,7 +64,7 @@ echo "         $P7 start $P7_START, $P7_SIZE sectors (1.5 GiB), EFI System, FAT3
 if [ -z "$yes" ]; then echo; echo "Dry run: nothing changed. Run again with --yes."; exit 0; fi
 
 echo "== 1. shrink the filesystem below the new size"
-sudo e2fsck -f -p $P4
+fsck4
 sudo resize2fs $P4 480M
 
 echo "== 2. shrink partition 4, add partition 7"
@@ -78,7 +80,7 @@ udevadm settle
 
 echo "== 3. grow ext4 to the partition, format FAT32"
 sudo resize2fs $P4
-sudo e2fsck -f -p $P4
+fsck4
 sudo mkfs.fat -F 32 -n $LABEL $P7
 
 echo "== 4. mount the second ESP at /boot"
