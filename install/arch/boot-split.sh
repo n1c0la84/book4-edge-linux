@@ -37,7 +37,7 @@ echo "== checks"
 dump=$(sudo sfdisk -d $DISK)
 grep -q '^sector-size: 4096$' <<<"$dump" || die "sector size is not 4096"
 line=$(grep "^$P4 :" <<<"$dump") || die "no $P4"
-[[ $line == *"start=${P4_START}"*  ]] || die "$P4 does not start at $P4_START: $line"
+[[ $line =~ start=\ *${P4_START}, ]] || die "$P4 does not start at $P4_START: $line"
 [[ $line =~ size=\ *${P4_SIZE}, ]] || die "$P4 is not $P4_SIZE sectors (already split?): $line"
 grep -q "^$P5_START\$" < <(grep "^${DISK}5 :" <<<"$dump" | sed -E 's/.*start= *([0-9]+),.*/\1/') || die "${DISK}5 does not start at $P5_START"
 ! grep -q "^$P7 :" <<<"$dump" || die "$P7 exists already"
