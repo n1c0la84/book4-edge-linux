@@ -18,6 +18,11 @@ pacman repository in this repository's release
 from Windows (ADSP/CDSP/GPU firmware, tcblaunch.exe). Only its recipe is
 public (`packages/book4-edge-firmware`, `install/arch/firmware-stage.sh`,
 a checksum list); each laptop builds it from its own Windows partition.
+This laptop also keeps a copy in a private repository on the home server's
+share (`install/arch/book4-private.sh`: `publish` after a firmware build,
+`install` on a fresh system; `/mnt/storage/BACKUPS/book4-private`, never
+online, not in pacman.conf because an unreachable repository breaks
+`pacman -Syu` away from home).
 
 ## Using it on a fresh install
 
