@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# fastrpc: Qualcomm's FastRPC userspace (adsprpcd, cdsprpcd, libadsprpc ...)
+# for the ambient light sensor (adsprpcd sensorspd adsp, docs/sensors.md).
+# Pinned to the commit Rafael Meneses ships for the Galaxy Book4 Edge 16"
+# (github.com/rafaelmnz/SB4-Edge-Linux, build-fastrpc.sh).
+# Only the programs and libraries are packaged: upstream's udev rules and
+# systemd units start cdsprpcd by themselves, which crashed the CDSP on other
+# X1E laptops (jglathe/linux_ms_dev_kit#102). Nothing here starts on its own.
+#
+#   cd packages/fastrpc && makepkg -f
+pkgname=fastrpc
+_commit=89508eaeed55833bcb381fafa91e2224201f4ad7
+pkgver=r402.89508ea
+pkgrel=1
+pkgdesc='Qualcomm FastRPC userspace (adsprpcd, cdsprpcd and libraries), without auto-start rules'
+arch=(aarch64)
+url='https://github.com/quic/fastrpc'
+license=(BSD-3-Clause)
+depends=(glibc libyaml libbsd)
+makedepends=(git autoconf automake libtool pkgconf)
+source=("fastrpc::git+https://github.com/quic/fastrpc.git#commit=$_commit")
+sha256sums=(SKIP)
+
+pkgver() {
+  cd fastrpc
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+build() {
+  cd fastrpc
+  sh ./autogen.sh
+  ./configure --prefix=/usr --sbindir=/usr/bin --sysconfdir=/etc
+  make
+}
+
+package() {
+  cd fastrpc
+  make DESTDIR="$pkgdir" install
+  # No auto-start: drop upstream's udev rules and systemd units, if any.
+  rm -rf "$pkgdir"/usr/lib/udev "$pkgdir"/etc/udev "$pkgdir"/usr/lib/systemd "$pkgdir"/lib/systemd "$pkgdir"/etc/systemd
+  install -Dm644 LICENSE* -t "$pkgdir/usr/share/licenses/$pkgname/" 2>/dev/null || true
+}

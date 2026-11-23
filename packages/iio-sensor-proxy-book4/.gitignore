@@ -1,0 +1,7 @@
+src/
+pkg/
+*.pkg.tar.*
+*.log
+/fastrpc/
+/libssc/
+/iio-sensor-proxy/

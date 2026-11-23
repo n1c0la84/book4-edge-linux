@@ -1,0 +1,39 @@
+diff --git a/src/libssc-sensor-light.c b/src/libssc-sensor-light.c
+index e0bd99a..8403027 100644
+--- a/src/libssc-sensor-light.c
++++ b/src/libssc-sensor-light.c
+@@ -57,6 +57,15 @@ emit_signal (gpointer user_data) {
+ 	return G_SOURCE_REMOVE;
+ }
+ 
++/* The data type to look the light sensor up by: "ambient_light" unless LIBSSC_LIGHT_DATA_TYPE says otherwise (some
++ * devices only expose an RGB colour sensor, data type "rgb"). */
++static const gchar *
++light_data_type (void)
++{
++	const gchar *t = g_getenv ("LIBSSC_LIGHT_DATA_TYPE");
++	return (t && *t) ? t : "ambient_light";
++}
++
+ static void
+ report_received (SSCClient *self, guint32 msg_id, guint64 uid_high, guint64 uid_low, GArray *buf, gpointer user_data)
+ {
+@@ -80,6 +89,9 @@ report_received (SSCClient *self, guint32 msg_id, guint64 uid_high, guint64 uid_
+ 			return;
+ 		}
+ 
++		for (gsize i = 0; i < msg->n_intensity; i++)
++			g_debug ("light value[%" G_GSIZE_FORMAT "] = %f (accuracy %d)", i, msg->intensity[i], msg->accuracy);
++
+ 		/* Only report intensity in Lux, raw sensor values are ignored */
+ 		if (msg->n_intensity >= 1) {
+ 			intensity = msg->intensity[0];
+@@ -274,7 +286,7 @@ ssc_sensor_light_new (GCancellable *cancellable, GAsyncReadyCallback callback, g
+ 			cancellable,
+ 			callback,
+ 			user_data,
+-			SSC_SENSOR_DATA_TYPE, "ambient_light",
++			SSC_SENSOR_DATA_TYPE, light_data_type (),
+ 			NULL);
+ }
+ 

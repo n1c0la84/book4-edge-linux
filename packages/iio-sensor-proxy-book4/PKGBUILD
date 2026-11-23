@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# iio-sensor-proxy 3.9 (Arch's recipe, SSC support explicit) plus Rafael
+# Meneses' fix from github.com/rafaelmnz/SB4-Edge-Linux (GPL-2.0,
+# patches/iio-sensor-proxy): client_vanished_cb() no longer aborts the daemon
+# when a client leaves while a client table is gone (seen with the SSC light
+# sensor on the Galaxy Book4 Edge). Replaces Arch's iio-sensor-proxy.
+# docs/sensors.md.
+#
+#   cd packages/iio-sensor-proxy-book4 && makepkg -f
+pkgname=iio-sensor-proxy-book4
+pkgver=3.9
+pkgrel=1
+pkgdesc='IIO sensor proxy with Qualcomm SSC support and a client-vanished fix (Galaxy Book4 Edge)'
+arch=(aarch64)
+url='https://gitlab.freedesktop.org/hadess/iio-sensor-proxy/'
+license=(GPL-3.0-only)
+depends=(glib2 glibc libgcc libgudev libssc polkit)
+makedepends=(git meson)
+provides=("iio-sensor-proxy=$pkgver")
+conflicts=(iio-sensor-proxy)
+source=("iio-sensor-proxy::git+https://gitlab.freedesktop.org/hadess/iio-sensor-proxy#tag=$pkgver"
+        0001-client-vanished-skip-missing-client-table.patch)
+sha512sums=('6667d70fd01285f9b48fa2dfc829e3186773457c4430f8373a8e0b4e25b0f31ee2780a3766206a13bcfb2721ce10978713b8bf61c844da027c444a754f910473'
+            SKIP)
+
+prepare() {
+  cd iio-sensor-proxy
+  git apply "$srcdir/0001-client-vanished-skip-missing-client-table.patch"
+}
+
+build() {
+  arch-meson build iio-sensor-proxy \
+    -Dsystemdsystemunitdir=/usr/lib/systemd/system \
+    -Dudevrulesdir=/usr/lib/udev/rules.d \
+    -Dsysconfdir=/usr/share \
+    -Dssc-support=enabled \
+    -Dtests=false -Dgtk-tests=false
+  meson compile -C build
+}
+
+package() {
+  meson install -C build --destdir="$pkgdir"
+}

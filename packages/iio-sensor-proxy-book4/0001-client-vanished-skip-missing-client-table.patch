@@ -1,0 +1,26 @@
+From: SB4-Edge-Linux
+Subject: [PATCH] main: don't abort when a client vanishes while a client table is gone
+
+client_vanished_cb() asserts that every sensor type has a client table. The tables are freed when the
+daemon tears down its sensor data, and a client that disconnects at that moment (or any later name-owner
+change) then aborts the daemon with "client_vanished_cb: assertion failed: (ht)", which leaves automatic
+brightness off until the next boot. Seen twice on the Galaxy Book4 Edge (light sensor only, through SSC).
+Skip sensor types without a table instead.
+
+---
+ src/iio-sensor-proxy.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/iio-sensor-proxy.c b/src/iio-sensor-proxy.c
+--- a/src/iio-sensor-proxy.c
++++ b/src/iio-sensor-proxy.c
+@@ -449,7 +449,8 @@ client_vanished_cb (GDBusConnection *connection,
+ 		guint watch_id;
+ 
+ 		ht = data->clients[i];
+-		g_assert (ht);
++		if (ht == NULL)
++			continue;
+ 
+ 		watch_id = GPOINTER_TO_UINT (g_hash_table_lookup (ht, sender));
+ 		if (watch_id > 0)
