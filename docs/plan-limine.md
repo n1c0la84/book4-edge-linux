@@ -76,7 +76,15 @@ is the sourced `book4-extra.cfg` test entry on arch-45.
   Fedora GRUB fallback to prove both menus still work.
 - Expected use afterwards: ~300 MB.
 
-### 2. Split sda4: 512 MiB ext4 + ~1.5 GiB FAT32
+### 2. Split sda4: 512 MiB ext4 + 1.5 GiB second ESP
+
+**Decided 23 November (owner): sda7 is a second ESP** (type EFI System,
+FAT32 `BOOK4ESP`), mounted at `/boot` as on stock Omarchy, where the ESP is
+`/boot` and Limine, `limine.conf` and the UKIs live together; Omarchy's own
+Limine tools then have the best chance to work unchanged. sda1 stays the
+firmware's and Windows' ESP and keeps the UEFI Shell chain (`book4-el2` no
+longer falls back to a `/boot` labelled BOOK4ESP). The old `/boot` folder of
+the root filesystem (one stray initramfs from October) moves to ~/backup.
 
 **Step 1 done 23 November** (fedora-delete.sh: /boot at 222 MB). Script for
 this step: `install/arch/boot-split.sh` (dry run by default, `--yes`).
@@ -92,8 +100,8 @@ All from the running system, sda4 unmounted, as root (one user-run script,
    filesystem UUID and contents stay, so both GRUBs see no difference),
    then `resize2fs /dev/sda4` to fill it exactly.
 3. New partition 7 in the freed space (physically between sda4 and sda5),
-   type "Linux extended boot" (XBOOTLDR,
-   `bc13c2ff-59e6-4262-a352-b275fd6f7172`), `mkfs.fat -F 32 -n BOOK4BOOT`.
+   type EFI System (`c12a7328-f81f-11d2-ba4b-00a0c93ec93b`),
+   `mkfs.fat -F 32 -n BOOK4ESP`; fstab `/boot vfat umask=0077,nofail`.
 4. `partprobe`; record the new PARTUUID and filesystem UUID in
    `/etc/book4/boot.conf` (new `LIMINE_PART=`).
 5. Check: `book4-boot menu --print` unchanged, `e2fsck -f /dev/sda4`
@@ -105,13 +113,17 @@ All from the running system, sda4 unmounted, as root (one user-run script,
   `/usr/share/doc/limine/CONFIG.md` for the installed version: path syntax
   (`boot()`, `guid()`/`uuid()`), the `cmdline` key and `dtb_path`; the plan
   below assumes those names.
-- ESP: new folder `\EFI\book4-el2-limine\` with a copy of the UEFI Shell
-  (`Shellaa64.efi` from book4-edge-el2), `BOOTAA64.EFI` from the limine
-  package, `limine.conf`, and a `startup.nsh` like ours that loads
+- sda1 (firmware ESP): new folder `\EFI\book4-el2-limine\` with a copy of
+  the UEFI Shell (`Shellaa64.efi` from book4-edge-el2) and a `startup.nsh`
+  like ours that loads
   `\EFI\book4-el2-arch\qebspilaa64.efi` and `slbounce.efi` (slbounce looks
-  for tcblaunch.exe in `\EFI\book4-el2-arch\`) and then starts Limine, with
-  Arch GRUB as fallback if Limine is missing or returns. A few MB on the ESP.
-- Copy the daily kernel set to the FAT partition: `vmlinuz-7.3.4-book4`,
+  for tcblaunch.exe in `\EFI\book4-el2-arch\`) and then starts Limine
+  from the second ESP (the fs with Limine's binary, as the loop in our
+  startup.nsh finds files), with Arch GRUB as fallback if Limine is missing
+  or returns. A few MB on sda1.
+- sda7 (`/boot`): Limine's `BOOTAA64.EFI` and `limine.conf` where Omarchy
+  puts them (check its `omarchy-refresh-limine` / limine-entry-tool paths).
+- Copy the daily kernel set to `/boot`: `vmlinuz-7.3.4-book4`,
   `initramfs-7.3.4-book4-arch.img`, both DTBs from `dtb-7.3.4-book4/`.
 - `limine.conf`: one EL2 entry (EL2 DTB, the cmdline from
   `/etc/book4/boot.conf` plus `root=`, `rootflags=subvol=` and
@@ -148,7 +160,7 @@ back to Arch GRUB. Update docs/install.md, ROADMAP section 5 and STATE.md.
 
 ### 6. Later: Omarchy's way (UKIs, snapshots)
 
-- UKIs on the FAT partition built with only our EL2 DTB (ukify
+- UKIs on `/boot` (sda7) built with only our EL2 DTB (ukify
   `--devicetree`), so `DeviceTreeAuto` cannot pick the stock DTB.
 - Check whether Omarchy's `limine-mkinitcpio-hook` / `limine-entry-tool`
   can carry our DTB and the EL2 cmdline; if yes, drop our generator for
@@ -161,6 +173,6 @@ back to Arch GRUB. Update docs/install.md, ROADMAP section 5 and STATE.md.
 
 - Limine entry: `efibootmgr -b XXXX -B`; the `\EFI\book4-el2-limine\` folder
   can stay (never delete from the ESP without the owner).
-- Split: partition 7 can be deleted and partition 4 grown back
+- Split: remove the `/boot` line from fstab, then partition 7 can be deleted and partition 4 grown back
   (`sfdisk` + `resize2fs`); or restore the dd image.
 - Cleanup: the dd image from step 0 holds the deleted Fedora files.

@@ -33,7 +33,13 @@ die() { echo "book4-el2: error: $*" >&2; exit 1; }
 esp() {   # the mounted ESP (the /efi automount, or any vfat mount of the ESP partition)
     local m
     ls /efi/EFI >/dev/null 2>&1 && [ -d /efi/EFI ] && { echo /efi; return; }
-    for m in /boot/efi /boot; do [ -d "$m/EFI" ] && { echo "$m"; return; }; done
+    # Not /boot when it is the second ESP (label BOOK4ESP, Limine's;
+    # install/arch/boot-split.sh): the chain belongs on the firmware's ESP.
+    for m in /boot/efi /boot; do
+        [ -d "$m/EFI" ] || continue
+        [ "$(findmnt -rn -o LABEL --target "$m" 2>/dev/null)" != BOOK4ESP ] || continue
+        echo "$m"; return
+    done
     return 1
 }
 
