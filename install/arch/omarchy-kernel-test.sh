@@ -138,6 +138,14 @@ for a in $(grep -o '+=" [^"]*"' "$kp" | sed 's/^+=" //; s/"$//'); do
     [[ " $cmdel1 " == *" $a "* ]] || cmdel1="$cmdel1 $a"
 done
 [[ $cmdel1 == *clk_ignore_unused* ]] || die "could not take Omarchy's kernel parameters from $kp"
+# And omarchy-settings' /etc/limine-entry-tool.d/omarchy-defaults.conf (not
+# extracted here: NoExtract), without its quiet/splash/loglevel cosmetics:
+# initramfs_async=0 (since 7.1 the async unpack races early boot; the nightly
+# ISO had it, every stock install has it) and systemd.tty.term.console=dumb.
+# Both test entries get them: without initramfs_async=0, 7.3-77 oopsed at
+# 0.96 s while the initramfs was still unpacking (23 Nov).
+stock="initramfs_async=0 systemd.tty.term.console=dumb"
+cmd1="$cmd1 $stock"; cmdel1="$cmdel1 $stock"
 echo "   EL1 stock command line: $cmdel1"
 sudo cp /boot/vmlinuz-linux-omarchy /boot/initramfs-linux-omarchy.img "$w/"; sudo chown "$(id -u)" "$w"/vmlinuz-* "$w"/initramfs-*
 for el in el2 el1; do
