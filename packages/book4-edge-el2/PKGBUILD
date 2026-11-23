@@ -8,10 +8,11 @@
 #
 #   cd packages/book4-edge-el2 && makepkg -f
 #   sudo book4-el2 install          once, after the packages are installed
+#   sudo book4-el2 install-limine   once, for the Limine chain (docs/plan-limine.md)
 pkgname=book4-edge-el2
 pkgver=2026.11.19
-pkgrel=3
-pkgdesc='Galaxy Book4 Edge 14": EL2 boot chain (UEFI Shell, qebspil, slbounce) and book4-el2 to keep it on the ESP'
+pkgrel=4
+pkgdesc='Galaxy Book4 Edge 14": EL2 boot chain (UEFI Shell, qebspil, slbounce; Arch GRUB and Limine variants) and book4-el2 to keep it on the ESP'
 arch=(aarch64)
 url='https://github.com/n1c0la84/book4-edge-linux'
 license=(GPL-2.0-only BSD-3-Clause BSD-2-Clause)
@@ -65,6 +66,7 @@ package() {
   install -Dm644 "$srcdir/slbounce/out/slbounce.efi"     "$d/slbounce.efi"
   install -Dm644 "$r/userspace/el2/startup.nsh"          "$d/startup.nsh"
   install -Dm644 "$r/userspace/el2/windows.nsh"          "$d/windows.nsh"
+  install -Dm644 "$r/userspace/el2/startup-limine.nsh"   "$d/startup-limine.nsh"
   install -Dm755 "$r/userspace/el2/book4-el2"            "$pkgdir/usr/bin/book4-el2"
   install -Dm644 "$r/userspace/el2/95-book4-el2.hook"    "$pkgdir/usr/share/libalpm/hooks/95-book4-el2.hook"
   install -Dm644 "$srcdir/slbounce/LICENSE"              "$pkgdir/usr/share/licenses/$pkgname/LICENSE.slbounce"

@@ -17,11 +17,11 @@
 #     with only our EL2 DTB, so systemd-stub installs that DTB in the EFI
 #     configuration table, where slbounce and qebspil look at
 #     ExitBootServices)
-#   - firmware ESP (sda1): new folder \EFI\book4-el2-limine\ (UEFI Shell copy
-#     + install/limine/startup.nsh: qebspil, slbounce, then Limine; Arch GRUB
-#     if Limine is missing or returns). Nothing else on sda1 changes.
-#   - firmware entry "Omarchy (EL2, Limine)", created with --create-only
-#     (BootOrder unchanged)
+#   - firmware ESP (sda1) and firmware entry: `book4-el2 install-limine`
+#     (book4-edge-el2 >= 2026.11.19-4): folder \EFI\book4-el2-limine\ (UEFI
+#     Shell copy + startup-limine.nsh: qebspil, slbounce, then Limine; Arch
+#     GRUB if Limine is missing or returns) and entry "Omarchy (EL2, Limine)",
+#     not in BootOrder; its pacman hook keeps the folder current
 # Menu entries: 1 EL2 UKI (efi protocol), 2 EL2 kernel + dtb_path (linux
 # protocol), 3 EL1 kernel + dtb_path, 4 Arch GRUB. Command line: exactly the
 # one book4-boot gives the default GRUB entry. No cutmem (Limine has none):
@@ -136,7 +136,8 @@ echo "== plan"
 echo "   kernel $rel; command line (EL2): $cmdline"
 echo "   packages: limine systemd-ukify (--needed)"
 echo "   /boot (sda7): EFI/limine/BOOTAA64.EFI, limine.conf, book4/$rel/{vmlinuz,initramfs.img,el2.dtb,el1.dtb}, EFI/Linux/book4-$rel-el2.efi"
-echo "   $ESP (sda1): EFI/book4-el2-limine/{Shellaa64.efi,startup.nsh}"
+echo "   $ESP (sda1): EFI/book4-el2-limine/ through book4-el2 install-limine"
+grep -q install-limine /usr/bin/book4-el2 || die "book4-el2 lacks install-limine: install book4-edge-el2 2026.11.19-4 or newer"
 n=$(entry)
 echo "   firmware entry: $([ -n "$n" ] && echo "Boot$n present" || echo "\"$LABEL\" -> $LOADER, not in BootOrder")"
 echo "== limine.conf"; sed 's/^/   /' <<<"$conf"
@@ -170,19 +171,8 @@ sudo install -m644 /usr/share/limine/BOOTAA64.EFI /boot/EFI/limine/BOOTAA64.EFI
 [ ! -e /boot/limine.conf ] || sudo cp /boot/limine.conf /boot/limine.conf.old
 printf '%s\n' "$conf" | sudo tee /boot/limine.conf >/dev/null
 
-echo "== 5. UEFI Shell folder on sda1"
-sudo install -d "$ESP/EFI/book4-el2-limine"
-sudo install -m644 "$shell_src" "$ESP/EFI/book4-el2-limine/Shellaa64.efi"
-sudo install -m644 "$REPO/install/limine/startup.nsh" "$ESP/EFI/book4-el2-limine/startup.nsh"
-sync
-
-echo "== 6. firmware entry (not in BootOrder)"
-if [ -z "$(entry)" ]; then
-    before=$(efibootmgr | sed -n 's/^BootOrder: //p')
-    sudo efibootmgr -q --create-only --disk /dev/sda --part 1 --label "$LABEL" --loader "$LOADER" --unicode "$SHELLARGS"
-    after=$(efibootmgr | sed -n 's/^BootOrder: //p')
-    [ "$before" = "$after" ] || { sudo efibootmgr -q -o "$before"; echo "   BootOrder restored to $before"; }
-fi
+echo "== 5. Limine chain on sda1 and its firmware entry (book4-el2, not in BootOrder)"
+sudo book4-el2 install-limine
 n=$(entry); [ -n "$n" ] || die "firmware entry not created"
 efibootmgr | grep -E "^Boot($n|Order)"
 df -h /boot | tail -1

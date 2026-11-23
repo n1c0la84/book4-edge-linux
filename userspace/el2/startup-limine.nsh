@@ -1,7 +1,8 @@
 @echo -off
-# Galaxy Book4 Edge EL2 boot through Limine (docs/plan-limine.md step 3;
-# installed into \EFI\book4-el2-limine\ on the firmware ESP by
-# install/arch/limine-test.sh). Firmware entry "Omarchy (EL2, Limine)" starts
+# Galaxy Book4 Edge EL2 boot through Limine (docs/plan-limine.md; package
+# book4-edge-el2, installed as \EFI\book4-el2-limine\startup.nsh on the
+# firmware ESP by `book4-el2 install-limine`, kept current by its pacman
+# hook). Firmware entry "Omarchy (EL2, Limine)" starts
 # this UEFI Shell, which runs this script: load qebspil and slbounce from the
 # EL2 chain's folder (as \EFI\book4-el2-arch\startup.nsh does), then start
 # Limine from the second ESP (BOOK4ESP, /boot: \EFI\limine\BOOTAA64.EFI and

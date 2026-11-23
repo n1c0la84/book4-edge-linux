@@ -7,11 +7,17 @@
 #   book4-el2 install   copy everything to the ESP and create the firmware
 #                       entry "Omarchy (EL2, Arch GRUB)" if it is missing
 #                       (placed first in the boot order)
-#   book4-el2 update    copy what changed (the pacman hook runs this; it
-#                       does nothing until 'install' has run once)
+#   book4-el2 install-limine   the Limine chain's folder \EFI\book4-el2-limine\
+#                       (UEFI Shell + startup-limine.nsh: qebspil, slbounce,
+#                       then Limine on the second ESP) and its firmware entry
+#                       "Omarchy (EL2, Limine)" if missing, NOT added to the
+#                       boot order (efibootmgr -o puts it first when wanted)
+#   book4-el2 update    copy what changed (the pacman hook runs this; each
+#                       folder only once its install has run)
 #   book4-el2 status
 #
-# Writes only into its own folders: \EFI\book4-el2-arch\ and the qebspil
+# Writes only into its own folders: \EFI\book4-el2-arch\,
+# \EFI\book4-el2-limine\ and the qebspil
 # firmware folder \firmware\qcom\x1e80100\SAMSUNG\galaxy-book4-edge\; never
 # deletes anything on the ESP. \EFI\book4-el2\ (esp-install.sh, behind the
 # fallback entry) is left alone. Arch GRUB in \EFI\arch\ comes from
@@ -21,10 +27,15 @@ SRC=/usr/lib/book4/el2
 TCB=/usr/lib/book4/tcblaunch.exe
 FWSRC=/usr/lib/firmware/updates/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
 DIR=EFI/book4-el2-arch
+LDIR=EFI/book4-el2-limine
+ALOADER='\EFI\book4-el2-arch\Shellaa64.efi'     # firmware entries' loader paths
+LLOADER='\EFI\book4-el2-limine\Shellaa64.efi'
+LLABEL="Omarchy (EL2, Limine)"
+LFILES=(Shellaa64.efi:Shellaa64.efi startup-limine.nsh:startup.nsh)   # package file:ESP name
 FWDIR=firmware/qcom/x1e80100/SAMSUNG/galaxy-book4-edge
 LABEL="Omarchy (EL2, Arch GRUB)"
 SHELLARGS="Shellaa64.efi -delay 0"   # the Shell skips its first word as its own name
-FILES=(Shellaa64.efi qebspilaa64.efi slbounce.efi startup.nsh windows.nsh)
+FILES=(Shellaa64.efi qebspilaa64.efi slbounce.efi startup.nsh windows.nsh startup-limine.nsh)
 FWFILES=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf)
 
 die() { echo "book4-el2: error: $*" >&2; exit 1; }
@@ -58,15 +69,24 @@ sync_files() {
     need=$(( $(du -cb "${FILES[@]/#/$SRC/}" "$TCB" "${FWFILES[@]/#/$FWSRC/}" | tail -1 | cut -f1) / 1024 + 1024 ))
     [ "$(df --output=avail -k "$E" | tail -1)" -ge "$need" ] || die "not enough room on the ESP (${need} KiB needed at most)"
     mkdir -p "$E/$DIR" "$E/$FWDIR"
-    for f in "${FILES[@]}"; do copy "$SRC/$f" "$E/$DIR/$f"; done
+    for f in "${FILES[@]}"; do [ "$f" = startup-limine.nsh ] || copy "$SRC/$f" "$E/$DIR/$f"; done
     copy "$TCB" "$E/$DIR/tcblaunch.exe"
     for f in "${FWFILES[@]}"; do copy "$FWSRC/$f" "$E/$FWDIR/$f"; done
     sync -f "$E/$DIR/startup.nsh"
 }
 
-entry() {  # Boot#### of our loader path
-    efibootmgr | awk 'BEGIN { l = tolower(")/\\EFI\\book4-el2-arch\\Shellaa64.efi") }
-        /^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ { if (index(tolower($0), l)) { print substr($0, 5, 4); exit } }'
+sync_limine() {   # the Limine chain's folder: its own Shell copy and startup.nsh
+    local f
+    mkdir -p "$E/$LDIR"
+    for f in "${LFILES[@]}"; do copy "$SRC/${f%%:*}" "$E/$LDIR/${f#*:}"; done
+    sync -f "$E/$LDIR/startup.nsh"
+}
+
+entry() {  # [loader path]: Boot#### of the entry with that loader (default: the Arch GRUB chain's)
+    # Through the environment: awk -v would read the backslashes as escapes.
+    efibootmgr | L=$(tr 'A-Z' 'a-z' <<<")/${1:-$ALOADER}") awk '
+        BEGIN { l = ENVIRON["L"] }
+        /^Boot[0-9A-F][0-9A-F][0-9A-F][0-9A-F]/ { if (!f && index(tolower($0), l)) { print substr($0, 5, 4); f = 1 } }'
 }
 
 case "${1:-}" in
@@ -79,18 +99,36 @@ install)
         disk=/dev/$(lsblk -no PKNAME "$dev"); part=$(cat "/sys/class/block/${dev#/dev/}/partition")
         order=$(efibootmgr | sed -n 's/^BootOrder: //p')
         efibootmgr -q --create --disk "$disk" --part "$part" --label "$LABEL" \
-            --loader '\EFI\book4-el2-arch\Shellaa64.efi' --unicode "$SHELLARGS"
+            --loader "$ALOADER" --unicode "$SHELLARGS"
         n=$(entry); [ -n "$n" ] || die "firmware entry not created"
         efibootmgr -q -o "$n${order:+,$(tr ',' '\n' <<<"$order" | grep -vx "$n" | paste -sd, -)}"
         echo "book4-el2: firmware entry Boot$n \"$LABEL\", first in the boot order"
     else
         echo "book4-el2: firmware entry Boot$(entry) present (order unchanged)"
     fi ;;
+install-limine)
+    E=$(esp) || die "the ESP is not mounted (expected at /efi)"
+    [ -e "$E/$DIR/qebspilaa64.efi" ] || die "the EL2 chain is not on the ESP yet; run 'book4-el2 install' first"
+    echo "book4-el2: Limine chain on the ESP ($E)"
+    sync_limine
+    if [ -z "$(entry "$LLOADER")" ]; then
+        dev=$(findmnt -rn -o SOURCE --target "$E" | tail -1)
+        disk=/dev/$(lsblk -no PKNAME "$dev"); part=$(cat "/sys/class/block/${dev#/dev/}/partition")
+        order=$(efibootmgr | sed -n 's/^BootOrder: //p')
+        efibootmgr -q --create-only --disk "$disk" --part "$part" --label "$LLABEL" \
+            --loader "$LLOADER" --unicode "$SHELLARGS"
+        [ "$(efibootmgr | sed -n 's/^BootOrder: //p')" = "$order" ] || efibootmgr -q -o "$order"
+        n=$(entry "$LLOADER"); [ -n "$n" ] || die "firmware entry not created"
+        echo "book4-el2: firmware entry Boot$n \"$LLABEL\", not in the boot order (first: efibootmgr -o $n,$order)"
+    else
+        echo "book4-el2: firmware entry Boot$(entry "$LLOADER") present (order unchanged)"
+    fi ;;
 update)
     E=$(esp) || { echo "book4-el2: ESP not mounted; skipped (run 'book4-el2 update' later)"; exit 0; }
     [ -e "$E/$DIR/startup.nsh" ] || { echo "book4-el2: not installed on the ESP yet; 'book4-el2 install' does it"; exit 0; }
     echo "book4-el2: updating the ESP ($E)"
-    sync_files ;;
+    sync_files
+    [ ! -e "$E/$LDIR/startup.nsh" ] || sync_limine ;;
 status)
     E=$(esp) || die "the ESP is not mounted"
     for f in "${FILES[@]}"; do
@@ -100,7 +138,16 @@ status)
     for f in "${FWFILES[@]}"; do
         printf '   %-18s %s\n' "$f" "$(cmp -s "$FWSRC/$f" "$E/$FWDIR/$f" 2>/dev/null && echo current || echo DIFFERS/missing)"
     done
-    n=$(entry); echo "   firmware entry: $([ -n "$n" ] && echo "Boot$n" || echo none); $(efibootmgr | grep "^BootOrder")" ;;
+    n=$(entry); echo "   firmware entry: $([ -n "$n" ] && echo "Boot$n" || echo none); $(efibootmgr | grep "^BootOrder")"
+    if [ -e "$E/$LDIR/startup.nsh" ]; then
+        echo "   Limine chain (\\EFI\\book4-el2-limine\\):"
+        for f in "${LFILES[@]}"; do
+            printf '   %-18s %s\n' "${f#*:}" "$(cmp -s "$SRC/${f%%:*}" "$E/$LDIR/${f#*:}" 2>/dev/null && echo current || echo DIFFERS/missing)"
+        done
+        n=$(entry "$LLOADER"); echo "   firmware entry: $([ -n "$n" ] && echo "Boot$n" || echo none)"
+    else
+        echo "   Limine chain: not installed ('book4-el2 install-limine')"
+    fi ;;
 *)
     sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1 ;;
 esac

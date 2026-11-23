@@ -111,7 +111,7 @@ All from the running system, sda4 unmounted, as root (one user-run script,
 
 **Prepared 23 November:** `install/arch/limine-test.sh` (`setup` dry run,
 `setup --yes`, `next` for a one-time BootNext, `status`) and
-`install/limine/startup.nsh`. Findings that shaped it:
+`install/limine/startup.nsh` (since 23 Nov `userspace/el2/startup-limine.nsh` in book4-edge-el2, installed and kept current by `book4-el2 install-limine` / its hook). Findings that shaped it:
 - Limine 12.11 (extra; the local package database of 19 Nov still named
   12.10, gone from the mirror: run `book4-update` first). Config keys
   checked in its CONFIG.md: `protocol: linux|efi`, `path`, `module_path`,
