@@ -373,6 +373,11 @@ the end.
       check whether a delay before the first playback avoids it, and whether
       unbinding/rebinding the two wsa883x devices recovers without a reboot
       (not lpasscc: that reset the machine).
+      24 Nov (same 7.3.4 Limine boot, up ~23 h): clashes/parity errors at
+      15:38 (`sdw:4:…:{1,2}`), 15:44 (6ad0000), 16:14 (6b10000, 6ab0000);
+      WirePlumber `link failed` 6 times 15:32-15:49 and the YouTube Music
+      mpv ended up paused (silence). This time all four amps came back
+      `Attached` by themselves: unpausing played normally, no reboot.
 - [x] **Hardware video decoding at EL2** (25 October): Moonlight found no
       V4L2 decoder because there was none: the video clock controller driver
       was never built (`CONFIG_SM_VIDEOCC_8550`) and the EL2 overlay disabled

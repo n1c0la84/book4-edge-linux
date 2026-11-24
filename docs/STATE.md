@@ -5,6 +5,14 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**24 November 2026, afternoon: no sound, recovered without a reboot.** The
+SoundWire clash at playback (TODO.md, "SoundWire clash at the first playback")
+came back on the 23 Nov Limine boot after ~23 h: clashes 15:38-16:14, PipeWire
+links failed, the YouTube Music player stayed paused. Unlike 23 Nov, all four
+WSA amps returned to `Attached` on their own; unpausing played. Not fixed;
+check `cat /sys/bus/soundwire/devices/sdw:[14]*/status` first next time
+(`Alert` = the stuck case, reboot).
+
 **24 November 2026**: controlling the Mac mini from here: the Mac's own Screen
 Sharing (VNC on 5900; it offers Apple's login, type 30, which uses the macOS
 user and password) with `remmina` + `libvncserver` installed here. Profiles
