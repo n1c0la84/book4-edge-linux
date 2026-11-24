@@ -5,6 +5,17 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**24 November 2026**: controlling the Mac mini from here: the Mac's own Screen
+Sharing (VNC on 5900; it offers Apple's login, type 30, which uses the macOS
+user and password) with `remmina` + `libvncserver` installed here. Profiles
+`~/.local/share/remmina/macmini-lan.remmina` (192.168.178.7) and
+`macmini-ts.remmina` (`mac-mini-m4`, needs `tailscale up`); launcher entry
+`~/.local/share/applications/macmini-remote.desktop` ("Mac mini"). Remmina
+prefs: toolbar and single-tab strip hidden. Host key is Right Ctrl (alone:
+keyboard grab so Super reaches the Mac as Cmd; +F fullscreen; +T toolbar).
+Gliff (Omarchy's remote desktop, installed) is Hyprland-to-Hyprland only. If
+VNC is too choppy: Sunshine on the Mac + the moonlight-qt already here.
+
 **17 November 2026**: printing set up: HP ENVY Photo 6200 (192.168.178.9) as
 driverless IPP Everywhere queue `HP_ENVY_6200` (`lpadmin -m everywhere`, dnssd
 URI, A4, not shared), system default. Needs only cups + avahi + nss-mdns, all
