@@ -140,6 +140,9 @@ same patches reaches 0.15 W, so it is this board's devices. The sleep log
 tags each night.
 
 1. GPIO 49 (`HPDC`): `bash tools/power/hpdc-test.sh`, a night, then `undo`.
+   Superseded (25 Nov) by `tools/power/ec-standby-test.sh`: MODS + HPDC
+   together, as Windows does (RESP never reaches the EC). HPDC alone only
+   if the combined night saves something.
    The one step of Windows' standby sequence never tried.
 2. Airplane mode before closing the lid.
 3. Touchscreen rail: boot `el2-nomisc`.

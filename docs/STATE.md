@@ -5,6 +5,20 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**25 November 2026: EC standby test prepared (for tonight, not run).**
+`tools/power/ec-standby-test.sh` (run as the owner: `setup`, `status`,
+`undo`) gives the EC the Modern Standby inputs Windows' firmware gives it,
+together: GPIO 44 MODS low + GPIO 49 HPDC high while asleep (hook
+`book4-ec-standby`, values held by a daemonized gpioset through the sleep).
+Test UKI `/boot/EFI/Linux/book4-ecstandby-el2.efi` = the daily EL2 UKI with
+GPIO 44 freed (`<35 1>, <45 3>`), Limine entry "EC standby test, MODS +
+HPDC" through limine-extra.conf (daily stays default); the hook is inert on
+the daily DTB. Sleeps are logged `[el2-mods+hpdc]` (book4-sleep-log now also
+tags on /run/book4-ec-standby; setup installs the repo copy). LDOS is
+already 0 here. **RESP dropped:** EC2.sys's MCU1 handler only logs and
+stores it (0x140001f60, ctx+476, read nowhere; fedora-archive/home/book4-ec/
+EC2.ann:949), so it never reaches the EC. Baseline 0.70 W (el2-sleep).
+
 **25 November 2026: s2idle rails vs the Slim 5x (read-only check, nothing changed).**
 Slim 5x (jglathe/linux_ms_dev_kit PR #109) went 1.2 -> 0.244 W at EL2 mostly by
 dropping `regulator-always-on` from VREG_EDP_3P3 (~0.9 W). We already did the
