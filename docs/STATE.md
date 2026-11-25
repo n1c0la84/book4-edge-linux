@@ -14,8 +14,8 @@ boot (udev rule); adsprpcd sensorspd read the registry and the 14"'s
 tty or `-v`; piped it is buffered): ~91 lux every second, value[1] ~3955
 (probably colour temperature, K). iio-sensor-proxy: HasAmbientLight true,
 unit lux; `monitor-sensor --light` 91-93 lux (LightLevel reads 0 until a
-client claims the sensor). Next: cover/torch check of the response; then the
-same at EL2 (the units are guarded off at EL2: a crashed ADSP stays down
+client claims the sensor). Owner checked the response: 0 lux when covered, a
+jump with a phone torch. Next: the same at EL2 (the units are guarded off at EL2: a crashed ADSP stays down
 there until reboot); then auto-brightness.
 
 **25 November 2026: the tsens fix is ready to test on linux-omarchy 7.3-79.**
