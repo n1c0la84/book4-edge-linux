@@ -15,7 +15,7 @@ pkgdesc='Galaxy Book4 Edge 14": audio (UCM, PipeWire), sleep, battery, keyboard,
 arch=(aarch64)
 url='https://github.com/n1c0la84/book4-edge-linux'
 license=(GPL-2.0-only)
-depends=(bash systemd pipewire wireplumber alsa-ucm-conf upower python-gobject)
+depends=(bash systemd pipewire wireplumber rtkit alsa-ucm-conf upower python-gobject)
 optdepends=('keyd: Copilot key as Super'
             'libfprint-sdcp: the fingerprint reader (book4-fingerprint-import)'
             'linux-book4: the kernel whose extra modules book4-el2-sleep loads')
@@ -85,6 +85,7 @@ package() {
         "$ucm/conf.d/x1e80100/SAMSUNGELECTRONICSCO.LTD.-GalaxyBook4Edge-2.1-NP940XMA_KB1IT.conf"
   install -Dm644 "$u/audio/pipewire/book4-speakers.conf" "$pkgdir/usr/share/pipewire/pipewire.conf.d/book4-speakers.conf"
   install -Dm644 "$u/audio/pipewire/book4-mic-ns.conf"   "$pkgdir/usr/share/pipewire/pipewire.conf.d/book4-mic-ns.conf"
+  install -Dm644 "$u/audio/pipewire/book4-clock.conf"    "$pkgdir/usr/share/pipewire/pipewire.conf.d/book4-clock.conf"
   install -Dm644 "$u/audio/pipewire/book4-speakers-wireplumber.conf" \
                  "$pkgdir/usr/share/wireplumber/wireplumber.conf.d/book4-speakers.conf"
   install -Dm644 "$u/audio/pipewire/book4-software-volume-wireplumber.conf" \

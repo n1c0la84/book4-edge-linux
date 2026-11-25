@@ -96,6 +96,7 @@ retire "$HOME/.local/bin/book4-battery-warn" /usr/lib/book4/book4-battery-warn u
 retire "$HOME/.local/bin/book4-gpu-busy"     /usr/lib/book4/book4-gpu-busy user
 retire "$HOME/.config/pipewire/pipewire.conf.d/book4-speakers.conf" /usr/share/pipewire/pipewire.conf.d/book4-speakers.conf user
 retire "$HOME/.config/pipewire/pipewire.conf.d/book4-mic-ns.conf"   /usr/share/pipewire/pipewire.conf.d/book4-mic-ns.conf user
+retire "$HOME/.config/pipewire/pipewire.conf.d/book4-clock.conf"    /usr/share/pipewire/pipewire.conf.d/book4-clock.conf user
 retire "$HOME/.config/wireplumber/wireplumber.conf.d/book4-speakers.conf" /usr/share/wireplumber/wireplumber.conf.d/book4-speakers.conf user
 retire "$HOME/.config/wireplumber/wireplumber.conf.d/90-book4-software-volume.conf" \
        /usr/share/wireplumber/wireplumber.conf.d/90-book4-software-volume.conf user

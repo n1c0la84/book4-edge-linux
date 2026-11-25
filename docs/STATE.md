@@ -5,6 +5,20 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**25 November 2026, 11:00: "dirty" speaker sound fixed (PipeWire resyncs).**
+The speaker PCM followed the mic, which the echo canceller (book4-mic-ns.conf,
+16 Nov) joins to every playback, at quantum 256 (480 rounded down to a power
+of two); the DSP moves the speaker in fixed 480-frame periods, so its fill
+swung ~±485 and PipeWire logged `follower ... resync` every ~2 s with hundreds
+suppressed (199 lines in 22 min this boot). Fix: `book4-clock.conf` (min
+quantum 480, no power-of-two rounding) and `api.alsa.htimestamp = true` on the
+Speaker sink (book4-speakers-wireplumber.conf): 0 resyncs in 6 min, mic filter
+clean. Dead ends: the speaker as driver (priority.driver 2000) stalls, hw_ptr
+stays 0; period-size 240 is refused (stays 480); quantum 960 broke the echo
+canceller. Also: **rtkit was not installed**, PipeWire ran without realtime
+(threads SCHED_OTHER); installed, now RR 20, and book4-edge depends on it.
+Check: `journalctl --user -u pipewire | grep -c resync`.
+
 **25 November 2026, 10:20: automatic brightness on.** New user service
 `book4-autobrightness` in book4-sensors r666.9411678 (userspace/sensors;
 docs/sensors.md, "Automatic brightness"): claims the light sensor on
