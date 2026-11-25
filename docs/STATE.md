@@ -5,6 +5,19 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**25 November 2026, 10:00: ambient light sensor works at EL1** (Limine
+"Omarchy (7.3.4-book4) - EL1"). book4-sensors.service started by itself at
+boot (udev rule); adsprpcd sensorspd read the registry and the 14"'s
+`veml3328_0.json` from /vendor; only misses: `sns_tppe.so` and
+`c:/Data/test/cam_registry_dump.txt` (both optional). ADSP stayed running.
+`LIBSSC_LIGHT_DATA_TYPE=color ssccli --sensor light` (output only shows with a
+tty or `-v`; piped it is buffered): ~91 lux every second, value[1] ~3955
+(probably colour temperature, K). iio-sensor-proxy: HasAmbientLight true,
+unit lux; `monitor-sensor --light` 91-93 lux (LightLevel reads 0 until a
+client claims the sensor). Next: cover/torch check of the response; then the
+same at EL2 (the units are guarded off at EL2: a crashed ADSP stays down
+there until reboot); then auto-brightness.
+
 **25 November 2026: the tsens fix is ready to test on linux-omarchy 7.3-79.**
 birkskyum (arewearmyet#10) confirmed the `qcom_tsens` crash; Christian
 Schmidbauer's fix (lore 20261104145740.2623473-1-opensource@grische.xyz) is in
