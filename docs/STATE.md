@@ -29,8 +29,9 @@ Gmail, Message-ID 20261125084611.11437-1-nicola084@gmail.com; mail file
 `.git/upstream-mail/tsens-tested-by.eml`, not committed) and the result on #10
 (issuecomment-7157487373). git send-email is now set up for Gmail
 (sendemail.* in ~/.gitconfig, perl-authen-sasl + perl-io-socket-ssl; needs a
-Gmail app password at each send). Not yet seen on lore from here: its bot check
-blocks scripted fetches.
+Gmail app password at each send). On lore in the thread (5 messages), under
+the cover letter, at 08:46 UTC. Next: wait for Christian/Daniel; a v2 would
+need the Tested-by carried or re-given.
 
 **24 November 2026, afternoon: no sound, recovered without a reboot.** The
 SoundWire clash at playback (TODO.md, "SoundWire clash at the first playback")
