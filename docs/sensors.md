@@ -46,8 +46,9 @@ the 16" (github.com/rafaelmnz/SB4-Edge-Linux, `overlay/sensors`,
 ## Safety
 
 - At EL2 a crashed ADSP stays down until reboot (no PAS restart), and with it
-  sound. Until the chain has run at EL1, `book4-sensors.service` and the udev
-  rule do nothing when `/dev/kvm` exists (EL2).
+  sound. The chain was tested at EL1 and then at EL2 (25 Nov 2026: ~91-112
+  lux, 0 covered, jump with a torch, ADSP attached, audio unaffected), so the
+  `/dev/kvm` guard is gone: it runs at both.
 - `fastrpc` ships no udev rules or units: upstream's start `cdsprpcd` by
   themselves, which crashed the CDSP on other X1E laptops.
 - Nothing is enabled on install.

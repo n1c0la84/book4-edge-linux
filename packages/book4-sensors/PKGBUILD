@@ -3,14 +3,14 @@
 # behind the ADSP's Qualcomm Sensor Core): setup script, adsprpcd service,
 # /vendor link, udev rule and iio-sensor-proxy drop-in (userspace/sensors).
 # The sensor config and registry are in book4-edge-firmware (local only).
-# Experimental: nothing is enabled on install, and the service and rule stay
-# off at EL2 (/dev/kvm present) until tested there. docs/sensors.md.
+# Nothing is enabled on install: the udev rule starts iio-sensor-proxy, which
+# pulls in book4-sensors.service, at EL1 and EL2. docs/sensors.md.
 #
 #   cd packages/book4-sensors && makepkg -f
 pkgname=book4-sensors
 pkgver=r648.00f6e37
 pkgrel=1
-pkgdesc='Galaxy Book4 Edge 14": ambient light sensor through the ADSP (experimental, EL1 only for now)'
+pkgdesc='Galaxy Book4 Edge 14": ambient light sensor through the ADSP (experimental)'
 arch=(any)
 url='https://github.com/n1c0la84/book4-edge-linux'
 license=(GPL-2.0-only)
