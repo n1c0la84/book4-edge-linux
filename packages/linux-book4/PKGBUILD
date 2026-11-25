@@ -21,12 +21,12 @@ _suffix=${BOOK4_SUFFIX:--book4}
 _tree=${BOOK4_TREE:-$HOME/src/linux-book4}
 _repo() { cd "$startdir/../.." && pwd; }
 _dtb=x1e80100-samsung-galaxy-book4-edge-14.dtb
-_commit=f1ea704defc00eec405ca71893bc33f762eeafa9   # book4/7.3
+_commit=fabd94f467785046cdca1b4f11a7a4261081cf8f   # book4/7.3
 
 pkgbase=linux${_suffix}
 pkgname=("linux${_suffix}" "linux${_suffix}-headers")
 pkgver=7.3.4
-pkgrel=3
+pkgrel=4
 pkgdesc="Samsung Galaxy Book4 Edge kernel (Anatase 7.3 + book4 patches)"
 arch=(aarch64)
 url="https://github.com/n1c0la84/linux-book4-edge"

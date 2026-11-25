@@ -5,6 +5,24 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**25 November 2026, 15:00: slow charging on 7.3 fixed (kernel built, not installed).**
+Charging at 11 % was ~5 W (0.34 A at 14.9 V): the 65 W charger, plugged in
+while awake (14:46), was left at `PD contract 5000 mV 3000 mA (PDO 1)`.
+emuec had requested PDO 5 (RDO 0x53051545), the TX bit cleared, the active
+RDO stayed PDO 1, and the 7.3 driver's duplicate check never sent the
+request again (7.2 had `drivers/anatase/patches/0001`, the retry, which the
+7.3 port does not carry). The 29 October input-limit fix itself is in 7.3
+as antheas' version (0x90/0x91 from the AC supply's external_power_changed,
+silent on success), so the old patches-galaxybook-ec/0002 and patches/0005
+are not needed there. Fix: book4/7.3 fabd94f46778 "samsung-emuec: repeat a
+PD request the source did not take" (resend 1 s apart, up to 5 times,
+logged as `PD request … not taken … retry N`). Tested by loading the
+module by hand (14:52): 20 V / 3.25 A within 1 s, battery 1.48 A at 15.2 V
+(~22 W); the retry itself was not needed on that reprobe, so it is still to
+be seen on a real hot plug. linux-book4 7.3.4-4 built locally
+(PKGBUILD `_commit` bumped); install with
+`bash tools/kernel/install-book4-kernel.sh book4` (book4-boot's hook refreshes Limine), then reboot.
+
 **25 November 2026: EC standby test prepared (for tonight, not run).**
 `tools/power/ec-standby-test.sh` (run as the owner: `setup`, `status`,
 `undo`) gives the EC the Modern Standby inputs Windows' firmware gives it,
