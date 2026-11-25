@@ -14,8 +14,17 @@ qcom_tsens.ko (they were in `.init.text` in 7.3-78). `omarchy-kernel-test.sh`
 has a new switch `OMARCHY_TEST_TSENS=1` that keeps `qcom_tsens` in the
 initramfs, as stock Omarchy has it, and checks that it is there. To run:
 `OMARCHY_TEST_TSENS=1 OMARCHY_TEST_DEBUG=1 bash install/arch/omarchy-kernel-test.sh setup --yes`,
-then the EL1 stock DTB entry. If it boots: Tested-by on Christian's thread,
-then a reply on #10.
+then the EL1 stock DTB entry. **Result (25 Nov): it boots.** EL1 stock-DTB
+entry with earlycon: qcom_tsens.ko.zst in the initramfs, all four controllers
+(c271000-c274000) bound, every thermal zone reading 42-45 C, no oops, no
+WARNING/BUG. DT compatible `qcom,x1e80100-tsens`, `qcom,tsens-v2`, so this
+exercises patch 1 (`init_common`); patch 2's per-SoC callbacks are not used on
+X1E. Christian's cover letter listed `CONFIG_QCOM_TSENS=m` on hardware as
+untested. Side note: every `?`-marked module in Omarchy's Qualcomm list logs
+"Failed to find module 'x?'" from systemd-modules-load in the initramfs
+(mkinitcpio's systemd hook writes MODULES with the `?` into
+/etc/modules-load.d/MODULES.conf); harmless, udev loads them by modalias.
+Next: Tested-by on the lore thread, reply on #10.
 
 **24 November 2026, afternoon: no sound, recovered without a reboot.** The
 SoundWire clash at playback (TODO.md, "SoundWire clash at the first playback")
