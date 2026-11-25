@@ -25,9 +25,12 @@ the test units were stopped at 10:11:08 and at 10:11:09 the **CDSP** crashed
 (`fatal error received: sleep_statsi.c:537`), the first CDSP crash in the
 journal since 10 Nov; at EL2 it stays down until reboot. Sensor (115-120 lux),
 ADSP and audio unaffected; bus-4 amps showed UNATTACHED while idle and
-Attached during playback (idle state, not the stuck case). Next: reboot at EL2
-with only the boot-time units; if the CDSP stays up, keep the guard removal,
-otherwise restore it. Was: the same at EL2 (the units are guarded off at EL2: a crashed ADSP stays down
+Attached during playback (idle state, not the stuck case). **Reboot at EL2 (10:14): clean.** The units
+started at boot (udev rule), no listener retry loop, ADSP and CDSP attached
+(no crash 48 s after the service started; the earlier one came after 15 s),
+monitor-sensor 134-135 lux, four amps Attached. Guard removal kept: the light
+sensor is on in daily use. The CDSP crash is put down to the two-daemon swap;
+watch for a repeat. Next: auto-brightness. Was: the same at EL2 (the units are guarded off at EL2: a crashed ADSP stays down
 there until reboot); then auto-brightness.
 
 **25 November 2026: the tsens fix is ready to test on linux-omarchy 7.3-79.**
