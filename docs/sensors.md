@@ -63,3 +63,25 @@ the 16" (github.com/rafaelmnz/SB4-Edge-Linux, `overlay/sensors`,
     journalctl -u book4-sensors -b; journalctl -k -b | grep -i -E "adsp|remoteproc"
     LIBSSC_LIGHT_DATA_TYPE=color ssccli --sensor light
     sudo systemctl restart iio-sensor-proxy.service; monitor-sensor --light
+
+## Automatic brightness
+
+`book4-autobrightness` (user service, in book4-sensors, not enabled on
+install) claims the light sensor on iio-sensor-proxy and sets the panel
+backlight (`dp_aux_backlight`) through logind's `Session.SetBrightness`, so it
+needs neither root nor the video group.
+
+- Curve: lux to percent, interpolated on log10(lux + 1): 0 lux 5 %, 10 lux
+  20 %, 100 lux 38 %, 1000 lux 70 %, 10000 lux 100 %. Readings are smoothed
+  (factor 0.3 per sample) and differences under 3 % are left alone; moves go
+  in 1 % steps every 40 ms (under a second for 20 %).
+- A brightness set by hand (keys, OSD, brightnessctl) is kept: the difference
+  to the curve becomes an offset (saved in
+  `~/.local/state/book4-autobrightness/offset`, limited to +-60 %). The
+  backlight is checked every second, since iio-sensor-proxy signals only a
+  changed value.
+- Nothing is written while the panel is off (Hyprland DPMS, lock).
+
+    systemctl --user enable --now book4-autobrightness     # on
+    systemctl --user disable --now book4-autobrightness    # off
+    journalctl --user -u book4-autobrightness              # what it did

@@ -1,0 +1,16 @@
+# Automatic screen brightness from the ambient light sensor (book4-sensors).
+# Per user, not enabled on install:
+#   systemctl --user enable --now book4-autobrightness
+#   systemctl --user disable --now book4-autobrightness
+[Unit]
+Description=Book4: automatic screen brightness from the ambient light sensor
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/lib/book4/book4-autobrightness
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

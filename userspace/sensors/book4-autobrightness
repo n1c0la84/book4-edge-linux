@@ -1,0 +1,197 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0-only
+# Automatic screen brightness for the Galaxy Book4 Edge 14" from its ambient
+# light sensor (book4-sensors, read through iio-sensor-proxy). docs/sensors.md.
+#
+# - Claims the light sensor on net.hadess.SensorProxy and follows LightLevel.
+# - Maps lux to a brightness on a log curve (CURVE), smoothed, and moves the
+#   backlight there in 1% steps through logind (Session.SetBrightness, so no
+#   root and no video group, as brightnessctl does it).
+# - A brightness set by hand (keys, OSD, brightnessctl) is kept: the difference
+#   to the curve becomes an offset that applies from then on, and is saved in
+#   $XDG_STATE_HOME/book4-autobrightness/offset.
+# - Leaves the panel alone while it is off (DPMS, lock).
+#
+# Run as a user service: systemctl --user enable --now book4-autobrightness
+# Turn off:              systemctl --user disable --now book4-autobrightness
+import json
+import math
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import gi
+gi.require_version("Gio", "2.0")
+from gi.repository import Gio, GLib  # noqa: E402
+
+DEVICE = "dp_aux_backlight"
+SYS = Path("/sys/class/backlight") / DEVICE
+# (lux, percent), interpolated on log10(lux + 1).
+CURVE = [(0, 5), (10, 20), (100, 38), (1000, 70), (10000, 100)]
+MIN_PCT, MAX_PCT = 1, 100
+ALPHA = 0.3          # smoothing per sample (iio-sensor-proxy updates ~1/s)
+HYSTERESIS = 3       # percent: smaller differences are left alone
+STEP_MS = 40         # one 1% step this often while moving
+STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "book4-autobrightness"
+
+
+def log(msg):
+    print(msg, flush=True)
+
+
+def curve(lux):
+    x = math.log10(max(lux, 0) + 1)
+    pts = [(math.log10(lx + 1), p) for lx, p in CURVE]
+    if x <= pts[0][0]:
+        return pts[0][1]
+    for (x0, p0), (x1, p1) in zip(pts, pts[1:]):
+        if x <= x1:
+            return p0 + (p1 - p0) * (x - x0) / (x1 - x0)
+    return pts[-1][1]
+
+
+class AutoBrightness:
+    def __init__(self):
+        self.max = int((SYS / "max_brightness").read_text())
+        self.sys_bus = Gio.bus_get_sync(Gio.BusType.SYSTEM)
+        self.smooth = None       # smoothed log10(lux + 1)
+        self.lux_s = None        # the same, in lux
+        self.offset = self.load_offset()
+        self.target = None       # percent we are moving to
+        self.last_set = None     # raw value we wrote last
+        self.timer = 0
+        self.proxy = Gio.DBusProxy.new_sync(
+            self.sys_bus, Gio.DBusProxyFlags.NONE, None,
+            "net.hadess.SensorProxy", "/net/hadess/SensorProxy", "net.hadess.SensorProxy", None)
+        self.proxy.connect("g-properties-changed", self.on_props)
+        self.proxy.connect("notify::g-name-owner", self.on_owner)
+        self.claim()
+        # iio-sensor-proxy only signals a changed value, and in steady light
+        # that can take a while: look at the backlight every second anyway, so
+        # a change by hand is noticed (and kept) promptly.
+        GLib.timeout_add_seconds(1, self.tick)
+
+    # --- sensor ------------------------------------------------------------
+    def claim(self):
+        if not self.proxy.get_name_owner():
+            log("iio-sensor-proxy not running; waiting")
+            return
+        has = self.proxy.get_cached_property("HasAmbientLight")
+        if not (has and has.unpack()):
+            log("no ambient light sensor yet; waiting")
+            return
+        self.proxy.call_sync("ClaimLight", None, Gio.DBusCallFlags.NONE, -1, None)
+        log(f"light sensor claimed; offset {self.offset:+.0f}%")
+        lvl = self.proxy.get_cached_property("LightLevel")
+        if lvl is not None:
+            self.on_lux(lvl.unpack())
+
+    def on_owner(self, *_):
+        self.smooth = None
+        self.claim()
+
+    def on_props(self, _proxy, changed, _invalidated):
+        changed = changed.unpack()
+        if "HasAmbientLight" in changed:
+            self.claim()
+        if "LightLevel" in changed:
+            self.on_lux(changed["LightLevel"])
+
+    # --- brightness ----------------------------------------------------------
+    def current_raw(self):
+        return int((SYS / "brightness").read_text())
+
+    def pct(self, raw):
+        return 100 * raw / self.max
+
+    def set_raw(self, raw):
+        self.sys_bus.call_sync(
+            "org.freedesktop.login1", "/org/freedesktop/login1/session/auto",
+            "org.freedesktop.login1.Session", "SetBrightness",
+            GLib.Variant("(ssu)", ("backlight", DEVICE, raw)), None, Gio.DBusCallFlags.NONE, -1, None)
+        self.last_set = raw
+
+    def panel_on(self):
+        try:
+            out = subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True, timeout=2).stdout
+            mons = [m for m in json.loads(out) if m.get("name", "").startswith("eDP")]
+            return all(m.get("dpmsStatus", True) for m in mons)
+        except Exception:
+            return True
+
+    def manual_change(self, cur):
+        # Something other than us moved the backlight: keys, OSD, brightnessctl.
+        if self.last_set is None or self.timer:
+            return False
+        return abs(cur - self.last_set) > max(2, self.max // 200)
+
+    def on_lux(self, lux):
+        x = math.log10(max(lux, 0) + 1)
+        self.smooth = x if self.smooth is None else self.smooth + ALPHA * (x - self.smooth)
+        self.evaluate()
+
+    def tick(self):
+        if self.smooth is not None:
+            self.evaluate()
+        return True
+
+    def evaluate(self):
+        lux_s = 10 ** self.smooth - 1
+        cur = self.current_raw()
+        self.lux_s = lux_s
+        if self.manual_change(cur):
+            self.learn(cur)
+            return
+        if self.last_set is None:
+            self.last_set = cur
+        target = max(MIN_PCT, min(MAX_PCT, curve(lux_s) + self.offset))
+        if abs(target - self.pct(cur)) < HYSTERESIS or not self.panel_on():
+            return
+        self.target = target
+        if not self.timer:
+            self.timer = GLib.timeout_add(STEP_MS, self.step)
+
+    def step(self):
+        cur = self.current_raw()
+        if self.last_set is not None and abs(cur - self.last_set) > max(2, self.max // 200):
+            self.timer = 0          # changed by hand mid-ramp: stop and keep it
+            self.learn(cur)
+            return False
+        goal = round(self.target * self.max / 100)
+        one = max(1, self.max // 100)
+        if abs(goal - cur) <= one:
+            self.set_raw(goal)
+            self.timer = 0
+            return False
+        self.set_raw(cur + one if goal > cur else cur - one)
+        return True
+
+    # --- offset --------------------------------------------------------------
+    def learn(self, cur):
+        self.offset = max(-60, min(60, self.pct(cur) - curve(self.lux_s or 0)))
+        self.save_offset()
+        self.last_set = cur
+        log(f"manual brightness {self.pct(cur):.0f}% at {self.lux_s or 0:.0f} lux: offset now {self.offset:+.0f}%")
+
+    def load_offset(self):
+        try:
+            return float((STATE / "offset").read_text())
+        except (OSError, ValueError):
+            return 0.0
+
+    def save_offset(self):
+        STATE.mkdir(parents=True, exist_ok=True)
+        (STATE / "offset").write_text(f"{self.offset:.1f}\n")
+
+
+def main():
+    if not SYS.exists():
+        log(f"no {SYS}")
+        return 1
+    AutoBrightness()
+    GLib.MainLoop().run()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
