@@ -5,6 +5,20 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**25 November 2026, 10:20: automatic brightness on.** New user service
+`book4-autobrightness` in book4-sensors r666.9411678 (userspace/sensors;
+docs/sensors.md, "Automatic brightness"): claims the light sensor on
+iio-sensor-proxy, log curve lux->percent (0:5, 10:20, 100:38, 1000:70,
+10000:100), smoothing 0.3/sample, 3 % dead zone, 1 % steps every 40 ms via
+logind SetBrightness; a brightness set by hand becomes a saved offset
+(~/.local/state/book4-autobrightness/offset, now -2 %); skips while eDP DPMS
+is off. Needs a 1 s backlight check, since iio-sensor-proxy only signals
+changed values (first try missed manual changes). Tested: manual 60 %/40 %
+learned as +18/-2 %, ramp 40->63->41 % in under a second each. Enabled for
+the user (`systemctl --user enable --now book4-autobrightness`). Installing
+r666 with only the real units running: no adsprpcd retry, ADSP and CDSP
+attached.
+
 **25 November 2026, 10:00: ambient light sensor works at EL1** (Limine
 "Omarchy (7.3.4-book4) - EL1"). book4-sensors.service started by itself at
 boot (udev rule); adsprpcd sensorspd read the registry and the 14"'s

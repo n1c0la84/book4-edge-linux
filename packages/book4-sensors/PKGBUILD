@@ -9,7 +9,7 @@
 #
 #   cd packages/book4-sensors && makepkg -f
 pkgname=book4-sensors
-pkgver=r663.3a83ca6
+pkgver=r666.9411678
 pkgrel=1
 pkgdesc='Galaxy Book4 Edge 14": ambient light sensor through the ADSP (experimental)'
 arch=(any)
