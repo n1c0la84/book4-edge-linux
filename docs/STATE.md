@@ -5,6 +5,19 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**25 November 2026: s2idle rails vs the Slim 5x (read-only check, nothing changed).**
+Slim 5x (jglathe/linux_ms_dev_kit PR #109) went 1.2 -> 0.244 W at EL2 mostly by
+dropping `regulator-always-on` from VREG_EDP_3P3 (~0.9 W). We already did the
+same on 19 Oct (linux-book4 ec97fe5588ac, OCTA_VDD -> DISPLAY_VDD -> EDP_3P3
+chain; live DT confirms no always-on), so our ~0.7 W is after that fix.
+Always-on rails here vs Slim 5x: same MISC_3P3 (touchscreen), vph_pwr,
+l12b, l15b; extra here: VREG_WCN_3P3 (Slim 5x lets pwrseq switch it; Wi-Fi
+stays powered in s2idle anyway) and l7b_2p8 + l10b_1p8 in HPM, the ov02c10
+camera's avdd/dvdd/dovdd (upstream DT, be19068f31ec; few mW at most). Slim 5x
+has a switchable VREG_NVME_3P3 (GPIO 18); we have no NVMe rail in the DT.
+No big Linux-visible always-on rail left: the remaining excess is likely
+EC-controlled or a device in a higher state (NVMe, WCN, USB-C retimers).
+
 **25 November 2026, 11:00: "dirty" speaker sound fixed (PipeWire resyncs).**
 The speaker PCM followed the mic, which the echo canceller (book4-mic-ns.conf,
 16 Nov) joins to every playback, at quantum 256 (480 rounded down to a power
