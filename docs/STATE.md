@@ -5,6 +5,18 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**25 November 2026: the tsens fix is ready to test on linux-omarchy 7.3-79.**
+birkskyum (arewearmyet#10) confirmed the `qcom_tsens` crash; Christian
+Schmidbauer's fix (lore 20261104145740.2623473-1-opensource@grische.xyz) is in
+Omarchy's 7.3-79 on edge. Checked in the package: `init_common`,
+`init_tsens_v{1,2}_no_rpm` and the v0_1/v1 `init_*` are in `.text` in
+qcom_tsens.ko (they were in `.init.text` in 7.3-78). `omarchy-kernel-test.sh`
+has a new switch `OMARCHY_TEST_TSENS=1` that keeps `qcom_tsens` in the
+initramfs, as stock Omarchy has it, and checks that it is there. To run:
+`OMARCHY_TEST_TSENS=1 OMARCHY_TEST_DEBUG=1 bash install/arch/omarchy-kernel-test.sh setup --yes`,
+then the EL1 stock DTB entry. If it boots: Tested-by on Christian's thread,
+then a reply on #10.
+
 **24 November 2026, afternoon: no sound, recovered without a reboot.** The
 SoundWire clash at playback (TODO.md, "SoundWire clash at the first playback")
 came back on the 23 Nov Limine boot after ~23 h: clashes 15:38-16:14, PipeWire

@@ -10,6 +10,8 @@
 #   OMARCHY_TEST_DTB=ours bash ... setup --yes   same, with linux-book4's DTB
 #   OMARCHY_TEST_DISABLE="usb_2 usb_2_hsphy" ...  with those DT nodes disabled
 #   OMARCHY_TEST_DEBUG=1 ...                       EL1 entries print an oops whole
+#   OMARCHY_TEST_TSENS=1 ...                       keep qcom_tsens in the initramfs
+#                                                  (tests the tsens __init fix, 7.3-79+)
 #
 # setup:
 #   - pacman -U from https://pkgs.omarchy.org/edge/aarch64 (signed with
@@ -110,20 +112,34 @@ qsrc=/usr/share/omarchy/install/hardware/qualcomm/initramfs.sh
   # initramfs its probe is deferred and the retry calls freed memory (oops in
   # tsens_probe+0x170, 23 Nov). Loaded later from the root filesystem it
   # probes at once, as on linux-book4 and the nightly ISO.
-  sed -n "/^MODULES+=(/,/)\$/p" "$qsrc" | sed 's/ qcom_tsens?//'
+  # OMARCHY_TEST_TSENS=1 keeps it, as stock Omarchy has it: 7.3-79 carries
+  # Christian Schmidbauer's fix (the init functions no longer __init, lore
+  # 20261104145740.2623473-1-opensource@grische.xyz), to be tested this way.
+  if [ -n "${OMARCHY_TEST_TSENS:-}" ]; then
+      sed -n "/^MODULES+=(/,/)\$/p" "$qsrc"
+  else
+      sed -n "/^MODULES+=(/,/)\$/p" "$qsrc" | sed 's/ qcom_tsens?//'
+  fi
 } > "$w/mkinitcpio-omarchy.conf"
 grep -q 'pinctrl-x1e80100' "$w/mkinitcpio-omarchy.conf" || die "could not take the module list from $qsrc"
-! grep -q 'qcom_tsens' "$w/mkinitcpio-omarchy.conf" || die "qcom_tsens still in the module list"
+if [ -n "${OMARCHY_TEST_TSENS:-}" ]; then
+    grep -q 'qcom_tsens' "$w/mkinitcpio-omarchy.conf" || die "qcom_tsens not in $qsrc's module list"
+    echo "   qcom_tsens kept in the initramfs (OMARCHY_TEST_TSENS=1)"
+else
+    ! grep -q 'qcom_tsens' "$w/mkinitcpio-omarchy.conf" || die "qcom_tsens still in the module list"
+fi
 sudo install -m644 "$w/mkinitcpio-omarchy.conf" "$OCONF"
 preset=/etc/mkinitcpio.d/linux-omarchy.preset
 sudo sed -i -E "s|^#?default_config=.*|default_config=\"$OCONF\"|" "$preset"
 grep -q "^default_config=\"$OCONF\"" "$preset" || die "$preset: default_config not set"
 sudo mkinitcpio -p linux-omarchy
 list=$(sudo lsinitcpio /boot/initramfs-linux-omarchy.img)   # whole listing: grep -q would cut the pipe
-for m in pinctrl-x1e80100 qnoc-x1e80100 ufs-qcom i2c-qcom-geni; do
+mods="pinctrl-x1e80100 qnoc-x1e80100 ufs-qcom i2c-qcom-geni"
+[ -z "${OMARCHY_TEST_TSENS:-}" ] || mods="$mods qcom_tsens"
+for m in $mods; do
     grep -q "/$m\.ko" <<<"$list" || die "$m missing from the new initramfs"
 done
-echo "   pinctrl-x1e80100, qnoc-x1e80100, ufs-qcom, i2c-qcom-geni in the initramfs"
+echo "   in the initramfs: $mods"
 
 echo "== 3. device trees"
 # OMARCHY_TEST_DTB=ours: linux-book4's 14" DTB instead of Omarchy's, to tell
