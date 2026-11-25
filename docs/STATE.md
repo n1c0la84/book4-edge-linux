@@ -15,7 +15,19 @@ tty or `-v`; piped it is buffered): ~91 lux every second, value[1] ~3955
 (probably colour temperature, K). iio-sensor-proxy: HasAmbientLight true,
 unit lux; `monitor-sensor --light` 91-93 lux (LightLevel reads 0 until a
 client claims the sensor). Owner checked the response: 0 lux when covered, a
-jump with a phone torch. Next: the same at EL2 (the units are guarded off at EL2: a crashed ADSP stays down
+jump with a phone torch. **EL2 test (10:08, transient units, guard
+bypassed): works** (ssccli ~106 lux, monitor-sensor 110-112 lux, ADSP attached,
+four amps Attached, owner confirmed audio). Guard removed (book4-sensors
+r663.3a83ca6). **But:** installing it reloaded udev and started the real units
+while the test units still ran: the second adsprpcd sensorspd failed ~37 times
+(listener register error, a session opened and closed each time) for 14 s;
+the test units were stopped at 10:11:08 and at 10:11:09 the **CDSP** crashed
+(`fatal error received: sleep_statsi.c:537`), the first CDSP crash in the
+journal since 10 Nov; at EL2 it stays down until reboot. Sensor (115-120 lux),
+ADSP and audio unaffected; bus-4 amps showed UNATTACHED while idle and
+Attached during playback (idle state, not the stuck case). Next: reboot at EL2
+with only the boot-time units; if the CDSP stays up, keep the guard removal,
+otherwise restore it. Was: the same at EL2 (the units are guarded off at EL2: a crashed ADSP stays down
 there until reboot); then auto-brightness.
 
 **25 November 2026: the tsens fix is ready to test on linux-omarchy 7.3-79.**
