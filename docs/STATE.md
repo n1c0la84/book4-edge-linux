@@ -24,7 +24,13 @@ untested. Side note: every `?`-marked module in Omarchy's Qualcomm list logs
 "Failed to find module 'x?'" from systemd-modules-load in the initramfs
 (mkinitcpio's systemd hook writes MODULES with the `?` into
 /etc/modules-load.d/MODULES.conf); harmless, udev loads them by modalias.
-Next: Tested-by on the lore thread, reply on #10.
+**Sent 25 Nov:** Tested-by as a reply to the cover letter (git send-email via
+Gmail, Message-ID 20261125084611.11437-1-nicola084@gmail.com; mail file
+`.git/upstream-mail/tsens-tested-by.eml`, not committed) and the result on #10
+(issuecomment-7157487373). git send-email is now set up for Gmail
+(sendemail.* in ~/.gitconfig, perl-authen-sasl + perl-io-socket-ssl; needs a
+Gmail app password at each send). Not yet seen on lore from here: its bot check
+blocks scripted fetches.
 
 **24 November 2026, afternoon: no sound, recovered without a reboot.** The
 SoundWire clash at playback (TODO.md, "SoundWire clash at the first playback")
