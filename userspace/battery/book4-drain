@@ -39,11 +39,24 @@ def rd(path, default=""):
         return default
 
 
-def watts():
+def rd_int(path, default=None):
     try:
-        return abs(int(rd(f"{BAT}/current_now"))) * int(rd(f"{BAT}/voltage_now")) / 1e12
+        return int(rd(path))
     except ValueError:
+        return default
+
+
+def first_glob(pattern):
+    matches = glob.glob(pattern)
+    return matches[0] if matches else ""
+
+
+def watts():
+    cur = rd_int(f"{BAT}/current_now")
+    vol = rd_int(f"{BAT}/voltage_now")
+    if cur is None or vol is None:
         return None
+    return abs(cur) * vol / 1e12
 
 
 def cpu_total():  # (busy, all) jiffies over all CPUs
@@ -68,22 +81,24 @@ def procs():  # {pid: (comm, utime+stime)}
 
 
 def brightness():
-    if not BL:
+    bl = BL[0] if BL else first_glob("/sys/class/backlight/*")
+    if not bl:
         return ""
-    cur, mx = rd(f"{BL[0]}/brightness", "0"), rd(f"{BL[0]}/max_brightness", "1")
-    return round(100 * int(cur) / max(int(mx), 1))
+    cur, mx = rd_int(f"{bl}/brightness", 0), rd_int(f"{bl}/max_brightness", 1)
+    return round(100 * cur / max(mx, 1))
 
 
 def minute(seconds=60):
     """Sample for `seconds`, return one row (dict)."""
     p0, c0, t0, w0 = procs(), cpu_total(), time.monotonic(), time.time()
-    ws, fr, gp = [], [], []
+    ws, fr, gp, statuses = [], [], [], set()
     end = t0 + seconds
     while True:
+        statuses.add(rd(f"{BAT}/status", "Unknown"))
         w = watts()
         if w is not None:
             ws.append(w)
-        f = [int(rd(x, "0")) for x in CPUF]
+        f = [v for v in (rd_int(x) for x in CPUF) if v is not None]
         if f:
             fr.append(sum(f) / len(f) / 1000)
         g = rd(GPU)
@@ -106,18 +121,23 @@ def minute(seconds=60):
     busy, total = c1[0] - c0[0], c1[1] - c0[1]
     ncpu = os.cpu_count() or 1
     avg = lambda v, n=1: round(sum(v) / len(v), n) if v else ""
+    avg_int = lambda v: round(sum(v) / len(v)) if v else ""
+    status = next(iter(statuses)) if len(statuses) == 1 else "Mixed"
+    edp = EDP[0] if EDP else first_glob("/sys/class/drm/card*-eDP-*/dpms")
+    wlan = WLAN[0] if WLAN else first_glob("/sys/class/net/wl*/operstate")
+    clean = lambda c: c.replace("|", "_").replace(":", "_")
     return {
         "time": dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-        "status": rd(f"{BAT}/status", "Unknown"),
+        "status": status,
         "w_avg": avg(ws, 2), "w_min": round(min(ws), 2) if ws else "",
         "w_max": round(max(ws), 2) if ws else "",
         "capacity": rd(f"{BAT}/capacity"),
         "brightness_pct": brightness(), "kbd": rd(KBD),
-        "display": rd(EDP[0]) if EDP else "",
+        "display": rd(edp) if edp else "",
         "cpu_pct": round(100 * busy / total * ncpu) if total else "",  # % of one core, like top
-        "cpu_mhz": avg(fr, 0), "gpu_pct": avg(gp, 0),
-        "wifi": rd(WLAN[0]) if WLAN else "",
-        "top": "|".join(f"{c}:{round(100 * t / HZ / el)}" for c, t in top if t > 0),
+        "cpu_mhz": avg_int(fr), "gpu_pct": avg_int(gp),
+        "wifi": rd(wlan) if wlan else "",
+        "top": "|".join(f"{clean(c)}:{round(100 * t / HZ / el)}" for c, t in top if t > 0),
     }
 
 
@@ -126,13 +146,21 @@ def log():
     # align to the minute so rows are comparable
     time.sleep(60 - time.time() % 60)
     while True:
-        row = minute(60 - time.time() % 60 if time.time() % 60 > 1 else 60)
+        rem = 60 - time.time() % 60
+        # After a dropped suspend minute, wait for the next clean minute boundary
+        # instead of writing a short partial sample as a full minute.
+        if rem < 50:
+            time.sleep(rem)
+            rem = 60
+        elif rem > 59:
+            rem = 60
+        row = minute(rem)
         if row is None:
             continue
         path = os.path.join(DIR, f"drain-{row['time'][:7]}.csv")
         new = not os.path.exists(path)
         with open(path, "a", newline="") as f:
-            w = csv.DictWriter(f, FIELDS)
+            w = csv.DictWriter(f, FIELDS, lineterminator="\n")
             if new:
                 w.writeheader()
             w.writerow(row)
@@ -152,10 +180,14 @@ def report(days):
     if not rs:
         print(f"No minutes on battery in the last {days} days (log: {DIR}).")
         return
-    full = int(rd(f"{BAT}/charge_full", "0")) * int(rd(f"{BAT}/voltage_now", "0")) / 1e12 or 50
+    c_full = rd_int(f"{BAT}/charge_full", 0)
+    v_nom = rd_int(f"{BAT}/voltage_min_design") or rd_int(f"{BAT}/voltage_now", 0)
+    full = c_full * v_nom / 1e12 or 50
     W = lambda sel: sum(float(r["w_avg"]) for r in sel) / len(sel)
-    print(f"Last {days} days on battery: {len(rs) / 60:.1f} h logged, average {W(rs):.2f} W "
-          f"-> {full / W(rs):.1f} h from a full battery ({full:.0f} Wh)\n")
+    w_all = W(rs)
+    hrs = f"{full / w_all:.1f} h" if w_all > 0 else "n/a"
+    print(f"Last {days} days on battery: {len(rs) / 60:.1f} h logged, average {w_all:.2f} W "
+          f"-> {hrs} from a full battery ({full:.0f} Wh)\n")
 
     def table(title, key, order=None):
         groups = defaultdict(list)
@@ -165,7 +197,9 @@ def report(days):
         for k in (order or sorted(groups)):
             if k in groups:
                 g = groups[k]
-                print(f"  {k:<22} {len(g) / 60:6.1f} h  {W(g):6.2f} W  -> {full / W(g):5.1f} h")
+                wg = W(g)
+                hg = f"{full / wg:5.1f} h" if wg > 0 else "  n/a"
+                print(f"  {k:<22} {len(g) / 60:6.1f} h  {wg:6.2f} W  -> {hg}")
         print()
 
     def bright(r):
@@ -183,8 +217,13 @@ def report(days):
     cpu = defaultdict(float)
     for r in rs:
         for item in filter(None, r["top"].split("|")):
-            c, _, p = item.rpartition(":")
-            cpu[c] += float(p)
+            c, sep, p = item.rpartition(":")
+            if not sep:
+                continue
+            try:
+                cpu[c] += float(p)
+            except ValueError:
+                continue
     print("Most CPU on battery (core-hours, top 3 of each minute)")
     for c, p in sorted(cpu.items(), key=lambda kv: -kv[1])[:10]:
         print(f"  {c:<22} {p / 100 / 60:6.2f}")

@@ -54,7 +54,7 @@ log() { echo "book4-boot: $*"; }
 die() { echo "book4-boot: error: $*" >&2; exit 1; }
 
 # --- /boot ------------------------------------------------------------------
-b= own=
+b= own= worktmp=
 mountboot() {   # $1 = ro|rw
     [ -z "${BOOK4_TESTBOOT:-}" ] || { b=$BOOK4_TESTBOOT; return; }   # self-test: a plain directory
     local m; m=$(findmnt -rn -o TARGET -S "$BOOTDEV" | head -1) || true
@@ -66,27 +66,31 @@ mountboot() {   # $1 = ro|rw
         mount -o "$1" "$BOOTDEV" "$b"
     fi
 }
-umountboot() { [ -z "$own" ] || { sync; umount "$b"; rmdir "$b"; own=; }; }
+umountboot() {
+    [ -z "$worktmp" ] || { rm -rf "$worktmp"; worktmp=; }
+    [ -z "$own" ] || { sync; umount "$b"; rmdir "$b"; own=; }
+}
 trap 'umountboot 2>/dev/null || true' EXIT
 
 ours() { [ -e "/usr/lib/modules/$1/dtb/qcom/$DTB" ] && [ -e "/usr/lib/modules/$1/vmlinuz" ]; }
 our_kernels() { local d; for d in /usr/lib/modules/*/; do d=${d%/}; d=${d##*/}; ! ours "$d" || echo "$d"; done; }
 put() { install -m 644 "$1" "$2.new" && mv "$2.new" "$2"; }   # atomic on /boot
+rootflags() { [ -n "$SUBVOL" ] && printf ' rootflags=subvol=%s' "$SUBVOL" || true; }
 
 kernel() {   # REL; /boot mounted rw
     local rel=$1 mod=/usr/lib/modules/$1 w
     ours "$rel" || die "$rel is not a Book4 package kernel (no $mod/dtb/qcom/$DTB)"
-    w=$(mktemp -d); depmod "$rel"
+    w=$(mktemp -d); worktmp=$w; depmod "$rel"
     mkinitcpio -k "$rel" -g "$w/initramfs.img" >"$w/mkinitcpio.log" 2>&1 ||
-        { tail -5 "$w/mkinitcpio.log" >&2; rm -rf "$w"; die "mkinitcpio failed for $rel"; }
-    lsinitcpio "$w/initramfs.img" | grep -qE '/ufs-qcom\.ko' || { rm -rf "$w"; die "ufs-qcom.ko missing from the $rel initramfs"; }
+        { tail -5 "$w/mkinitcpio.log" >&2; die "mkinitcpio failed for $rel"; }
+    lsinitcpio "$w/initramfs.img" | grep -qE '/ufs-qcom\.ko' || die "ufs-qcom.ko missing from the $rel initramfs"
     # GRUB needs slack in the blob to write /chosen; kernel-built DTBs have none.
     dtc -q -I dtb -O dtb -p 8192 -o "$w/el1.dtb" "$mod/dtb/qcom/$DTB"
     dtc -q -@ -I dts -O dtb -o "$w/el2.dtbo" "$OVERLAY"
     fdtoverlay -i "$mod/dtb/qcom/$DTB" -o "$w/merged.dtb" "$w/el2.dtbo"
     dtc -q -I dtb -O dtb -p 8192 -o "$w/el2.dtb" "$w/merged.dtb"
     [ "$(fdtget -ts "$w/el2.dtb" /soc@0/gpu@3d00000/zap-shader status)" = disabled ] ||
-        { rm -rf "$w"; die "EL2 DTB: zap shader not disabled, slbounce would not switch"; }
+        die "EL2 DTB: zap shader not disabled, slbounce would not switch"
     install -d "$b/dtb-$rel"; : > "$b/dtb-$rel/$MARK"
     put "$w/el1.dtb" "$b/dtb-$rel/$DTB"
     put "$w/el2.dtb" "$b/dtb-$rel/$DTB_EL2"
@@ -98,7 +102,7 @@ kernel() {   # REL; /boot mounted rw
         [ ! -e "$b/dtb-test/book4-73.dtb" ] || put "$mod/dtb/qcom/$DTB" "$b/dtb-test/book4-73.dtb"
         [ ! -e "$b/dtb-test/book4-73-el2.dtb" ] || put "$w/el2.dtb" "$b/dtb-test/book4-73-el2.dtb"
     fi
-    rm -rf "$w"
+    rm -rf "$w"; worktmp=
     log "/boot: $rel (vmlinuz, initramfs, EL1 and EL2 DTB)"
 }
 
@@ -119,7 +123,7 @@ prune() {   # kernels kernel() made whose modules are gone (an upgrade to a new 
     done
 }
 
-pkgrel() { pacman -Ql "$1" 2>/dev/null | awk -F/ '$4=="modules" && $5!="" {print $5; exit}'; }
+pkgrel() { { pacman -Ql "$1" 2>/dev/null || true; } | awk -F/ '$4=="modules" && $5!="" {print $5; exit}'; }
 
 # --- menu -------------------------------------------------------------------
 el2dtb() {   # REL -> EL2 DTB path under /boot, or nothing
@@ -137,16 +141,16 @@ entry() {   # title id rel dtb extra-args
 
 menuentry "$1" --id $2 {
     devicetree (\$bootdev)$4
-    linux  (\$bootdev)/vmlinuz-$3 root=UUID=$ROOTUUID $CMDLINE rootflags=subvol=$SUBVOL$5
+    linux  (\$bootdev)/vmlinuz-$3 root=UUID=$ROOTUUID $CMDLINE$(rootflags)$5
     initrd (\$bootdev)/initramfs-$3-arch.img
 }
 EOF
 }
 
-gen() {   # [REL to leave out]
-    local skip=${1:-} rels=() r def bootuuid
+gen() {   # [space-separated RELs to leave out]
+    local skip=" ${1:-} " rels=() r def bootuuid
     while read -r r; do
-        [ "$r" != "$skip" ] && bootable "$r" && rels+=("$r")
+        [[ "$skip" != *" $r "* ]] && bootable "$r" && rels+=("$r")
     done < <(ls /usr/lib/modules | sort -rV)
     [ ${#rels[@]} -gt 0 ] || return 1
     def=$(pkgrel "$DEFAULT_PKG")
@@ -230,12 +234,13 @@ limine_on() {   # Limine set up on the second ESP?
     [ "$(findmnt -rn -o LABEL --target "$LESP" 2>/dev/null)" = BOOK4ESP ] &&
         [ "$(findmnt -rn -o TARGET --target "$LESP")" = "$LESP" ] && [ -e "$LESP/EFI/limine/BOOTAA64.EFI" ]
 }
-kcmd() { echo "root=UUID=$ROOTUUID $CMDLINE rootflags=subvol=$SUBVOL$1"; }   # extra args -> command line
+kcmd() { echo "root=UUID=$ROOTUUID $CMDLINE$(rootflags)$1"; }   # extra args -> command line
 
 uki() {   # REL: (re)build its EL2 UKI when an input or the command line changed
     local rel=$1 dtb out sum w
     dtb=$b$(el2dtb "$rel"); out=$LESP/EFI/Linux/book4-$rel-el2.efi
-    sum=$( { cat "$b/vmlinuz-$rel" "$b/initramfs-$rel-arch.img" "$dtb" "$STUB" 2>/dev/null; kcmd " id_aa64mmfr0.ecv=1"; } | sha256sum | cut -d' ' -f1)
+    [ -e "$STUB" ] || { log "Limine: missing $STUB (systemd)"; return 1; }
+    sum=$( { cat "$b/vmlinuz-$rel" "$b/initramfs-$rel-arch.img" "$dtb" "$STUB"; kcmd " id_aa64mmfr0.ecv=1"; } | sha256sum | cut -d' ' -f1)
     [ -e "$out" ] && [ "$(cat "$LESP/book4/.uki-$rel.sum" 2>/dev/null)" = "$sum" ] && return 0
     command -v ukify >/dev/null || { log "Limine: no ukify (systemd-ukify), no UKI for $rel"; return 1; }
     w=$(mktemp -d)
@@ -303,17 +308,18 @@ EOF
     [ -z "$espguid" ] || lentry "Arch GRUB" efi "guid($espguid):/EFI/arch/grubaa64.efi"
 }
 
-limine() {   # [REL to leave out] [--print]; /boot (sda4) mounted
-    local skip=${1:-} print=${2:-} rels=() ok=() r def f
+limine() {   # [space-separated RELs to leave out] [--print]; /boot (sda4) mounted
+    local skip=" ${1:-} " print=${2:-} rels=() ok=() others=() r def f
     limine_on || { [ -z "$print" ] || die "Limine is not set up on $LESP"; return 0; }
     while read -r r; do
-        [ "$r" != "$skip" ] && bootable "$r" && rels+=("$r")
+        [[ "$skip" != *" $r "* ]] && bootable "$r" && rels+=("$r")
     done < <(ls /usr/lib/modules | sort -rV)
     [ ${#rels[@]} -gt 0 ] || { log "Limine: no bootable kernel, $LESP/limine.conf left as it is"; return 0; }
     def=$(pkgrel "$DEFAULT_PKG")
     [[ " ${rels[*]} " == *" $def "* ]] || def=${rels[0]}
     if [ -n "$print" ]; then
-        lgen "$def" $(for r in "${rels[@]}"; do [ "$r" = "$def" ] || echo "$r"; done); return 0
+        for r in "${rels[@]}"; do [ "$r" = "$def" ] || others+=("$r"); done
+        lgen "$def" "${others[@]}"; return 0
     fi
     # Limine itself, current with the limine package
     [ ! -e "$LIMINE_EFI" ] || cmp -s "$LIMINE_EFI" "$LESP/EFI/limine/BOOTAA64.EFI" ||
@@ -333,8 +339,10 @@ limine() {   # [REL to leave out] [--print]; /boot (sda4) mounted
         [ "$r" = "$def" ] || { rm -rf "${LESP:?}/book4/$r"; log "Limine: removed files of $r"; }
     done
     f=$(mktemp)
-    lgen "$def" $(for r in "${ok[@]}"; do [ "$r" = "$def" ] || echo "$r"; done) > "$f"
-    grep -q "^/$NAME ($def)$" "$f" && grep -q "book4-$def-el2.efi" "$f" ||
+    others=()
+    for r in "${ok[@]}"; do [ "$r" = "$def" ] || others+=("$r"); done
+    lgen "$def" "${others[@]}" > "$f"
+    grep -qxF "/$NAME ($def)" "$f" && grep -qF "book4-$def-el2.efi" "$f" ||
         { rm -f "$f"; log "Limine: error: the generated limine.conf failed its checks, left as it is"; return 1; }
     [ ! -e "$LESP/limine.conf" ] || cp -p "$LESP/limine.conf" "$LESP/limine.conf.prev"
     put "$f" "$LESP/limine.conf"; rm -f "$f"
@@ -370,7 +378,9 @@ hook-remove)
     while read -r t; do [[ $t =~ ^usr/lib/modules/([^/]+)/vmlinuz$ ]] && rels+=("${BASH_REMATCH[1]}"); done
     [ ${#rels[@]} -gt 0 ] || exit 0
     mountboot rw
-    for r in "${rels[@]}"; do unkernel "$r"; menu "$r"; limine_safe "$r"; done ;;
+    for r in "${rels[@]}"; do unkernel "$r"; done
+    menu "${rels[*]}"
+    limine_safe "${rels[*]}" ;;
 *)
     sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 1 ;;
 esac

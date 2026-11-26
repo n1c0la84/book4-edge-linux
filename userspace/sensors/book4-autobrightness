@@ -14,10 +14,9 @@
 #
 # Run as a user service: systemctl --user enable --now book4-autobrightness
 # Turn off:              systemctl --user disable --now book4-autobrightness
-import json
+import glob
 import math
 import os
-import subprocess
 import sys
 from pathlib import Path
 
@@ -81,11 +80,19 @@ class AutoBrightness:
         if not (has and has.unpack()):
             log("no ambient light sensor yet; waiting")
             return
-        self.proxy.call_sync("ClaimLight", None, Gio.DBusCallFlags.NONE, -1, None)
+        try:
+            self.proxy.call_sync("ClaimLight", None, Gio.DBusCallFlags.NONE, -1, None)
+        except GLib.Error as e:
+            log(f"ClaimLight failed: {e}")
+            return
         log(f"light sensor claimed; offset {self.offset:+.0f}%")
         lvl = self.proxy.get_cached_property("LightLevel")
         if lvl is not None:
-            self.on_lux(lvl.unpack())
+            val = lvl.unpack()
+            # Before the first PropertiesChanged signal, iio-sensor-proxy reports
+            # a cached 0.0 placeholder; wait for the real reading instead of dipping.
+            if val > 0:
+                self.on_lux(val)
 
     def on_owner(self, *_):
         self.smooth = None
@@ -113,11 +120,12 @@ class AutoBrightness:
         self.last_set = raw
 
     def panel_on(self):
+        dpms_files = glob.glob("/sys/class/drm/card*-eDP-*/dpms")
+        if not dpms_files:
+            return True
         try:
-            out = subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True, timeout=2).stdout
-            mons = [m for m in json.loads(out) if m.get("name", "").startswith("eDP")]
-            return all(m.get("dpmsStatus", True) for m in mons)
-        except Exception:
+            return all(Path(p).read_text().strip() == "On" for p in dpms_files)
+        except OSError:
             return True
 
     def manual_change(self, cur):
@@ -138,7 +146,10 @@ class AutoBrightness:
 
     def evaluate(self):
         lux_s = 10 ** self.smooth - 1
-        cur = self.current_raw()
+        try:
+            cur = self.current_raw()
+        except (OSError, ValueError):
+            return
         self.lux_s = lux_s
         if self.manual_change(cur):
             self.learn(cur)
@@ -153,19 +164,27 @@ class AutoBrightness:
             self.timer = GLib.timeout_add(STEP_MS, self.step)
 
     def step(self):
-        cur = self.current_raw()
-        if self.last_set is not None and abs(cur - self.last_set) > max(2, self.max // 200):
-            self.timer = 0          # changed by hand mid-ramp: stop and keep it
-            self.learn(cur)
-            return False
-        goal = round(self.target * self.max / 100)
-        one = max(1, self.max // 100)
-        if abs(goal - cur) <= one:
-            self.set_raw(goal)
+        if not self.panel_on():
             self.timer = 0
             return False
-        self.set_raw(cur + one if goal > cur else cur - one)
-        return True
+        try:
+            cur = self.current_raw()
+            if self.last_set is not None and abs(cur - self.last_set) > max(2, self.max // 200):
+                self.timer = 0          # changed by hand mid-ramp: stop and keep it
+                self.learn(cur)
+                return False
+            goal = round(self.target * self.max / 100)
+            one = max(1, self.max // 100)
+            if abs(goal - cur) <= one:
+                self.set_raw(goal)
+                self.timer = 0
+                return False
+            self.set_raw(cur + one if goal > cur else cur - one)
+            return True
+        except (GLib.Error, OSError, ValueError) as e:
+            log(f"backlight step skipped: {e}")
+            self.timer = 0
+            return False
 
     # --- offset --------------------------------------------------------------
     def learn(self, cur):

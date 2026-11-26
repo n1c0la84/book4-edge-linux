@@ -1,31 +1,29 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
-# book4-update: this machine's `omarchy update`. Omarchy's own updater assumes
-# its x86_64 package repository, snapper and Limine; here Omarchy is a local
-# build on IgnorePkg, packages come from Arch Linux ARM, and / is the `arch`
-# subvolume of a btrfs shared with Fedora. Steps:
+# book4-update: Arch Linux ARM + Omarchy 4.5 updater with pre-update btrfs
+# snapshots of the running root subvolume (e.g. arch-45). Steps:
 #   1. show what is pending (pacman, AUR, mise, flea) and ask
 #   2. prune the pacman cache to 2 versions (before the snapshot, which would
 #      otherwise pin what it deletes)
-#   3. read-only snapshot of the `arch` subvolume with
-#      tools/backup/snapshot-arch.sh (top level of sda5, arch-pre-update-<date>,
-#      next to arch-pre-omarchy-*); keeps the newest 2 arch-pre-update-*,
-#      never deletes any other snapshot
-#   4. pacman -Syu (interactive), yay -Sua, mise up
+#   3. read-only snapshot of the running subvolume with
+#      tools/backup/snapshot-arch.sh (top level of the root btrfs,
+#      <subvol>-pre-update-<date>); keeps the newest 2 *-pre-update-* by
+#      timestamp, never deletes any other snapshot
+#   4. pacman -Syu (with OMARCHY_ALLOW_DIRECT_PACMAN=1), yay -Sua, mise up;
+#      pacman hooks keep /boot (Limine UKIs + fallback GRUB) and /efi in sync
 #   5. after: Hyprland --verify-config on our config, relogin hint, new
 #      .pacnew files, orphans, pending Omarchy migrations (never run here:
 #      review them against the hard rules in docs/STATE.md first)
-# Nothing here touches /boot, the ESP or the kernel (sync-kernel.sh owns those).
 #
 # Usage:  book4-update           update (asks before changing anything)
 #         book4-update --check   only show what is pending, no root needed
 #         book4-update --no-snapshot
 #
-# Rollback from a snapshot (Arch broken; boot Fedora, or a TTY as root):
+# Rollback from a snapshot (from a live medium or TTY as root):
 #   mount -o subvolid=5 UUID=<root uuid> /mnt
-#   mv /mnt/arch /mnt/arch.broken
-#   btrfs subvolume snapshot /mnt/arch-pre-update-<date> /mnt/arch
-#   reboot; once fine: btrfs subvolume delete /mnt/arch.broken
+#   mv /mnt/<subvol> /mnt/<subvol>.broken
+#   btrfs subvolume snapshot /mnt/<subvol>-pre-update-<date> /mnt/<subvol>
+#   reboot; once fine: btrfs subvolume delete /mnt/<subvol>.broken
 # Rollback of single packages: pacman -U /var/cache/pacman/pkg/<old>.pkg.tar.*
 set -euo pipefail
 
@@ -60,8 +58,14 @@ flea_latest() {
 }
 
 show_pending() {
+    local rc=0
     say "Pending: repositories"
-    checkupdates 2>/dev/null || echo "(none)"
+    checkupdates || rc=$?
+    if ((rc == 2)); then
+        echo "(none)"
+    elif ((rc != 0)); then
+        warn "checkupdates failed (exit $rc)"
+    fi
     say "Pending: AUR"
     yay -Qua 2>/dev/null || echo "(none)"
     say "Pending: mise"
@@ -94,7 +98,8 @@ if ((snapshot)); then
     trap cleanup EXIT
     sudo mount -o subvolid=5 "UUID=$(findmnt -no UUID /)" "$top"
     mapfile -t old < <(sudo find "$top" -mindepth 1 -maxdepth 1 -name 'arch*-pre-update-*' -printf '%f\n' |
-        sort | head -n -"$KEEP_SNAPSHOTS")
+        awk '{ t=$0; sub(/^.*-pre-update-/, "", t); print t "\t" $0 }' |
+        sort | cut -f2- | head -n -"$KEEP_SNAPSHOTS")
     for o in "${old[@]}"; do
         sudo btrfs subvolume delete "$top/$o"
     done

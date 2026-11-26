@@ -25,7 +25,6 @@
 #          (anything journalctl --since takes) as the resume time.
 set -u
 self=$(readlink -f "$0")
-run=/run/book4-resume-check
 ctl=a200000.usb
 drv=/sys/bus/platform/drivers/dwc3-qcom
 dry=0
@@ -41,7 +40,16 @@ notify() {  # HEADLINE BODY: an Omarchy notification in every logged-in user's s
     done
 }
 
-reader_present() { grep -qx 1c7a /sys/bus/usb/devices/*/idVendor 2>/dev/null; }
+reader_present() {
+    local d
+    for d in /sys/bus/usb/devices/*; do
+        [ -f "$d/idVendor" ] && [ -f "$d/idProduct" ] || continue
+        if [ "$(cat "$d/idVendor" 2>/dev/null)" = 1c7a ] && [ "$(cat "$d/idProduct" 2>/dev/null)" = 05a1 ]; then
+            return 0
+        fi
+    done
+    return 1
+}
 
 check_reader() {  # echoes what it did, if anything
     [ -e "$drv/$ctl" ] || [ -e "/sys/devices/platform/soc@0/$ctl" ] || return 0   # not this machine's layout
@@ -57,13 +65,17 @@ check_reader() {  # echoes what it did, if anything
 }
 
 check_fprintd() {  # $1 = since; $2 = 1 when the reader was just rebound
-    local hit
+    local hit i
     hit=$(journalctl -q -u fprintd --since "$1" -o cat --no-pager 2>/dev/null |
           grep -m1 -E "assertion .* failed|already claimed|Failed to claim|Device reported an error")
     [ -n "$hit" ] || [ "${2:-0}" = 1 ] || return 0
     systemctl -q is-active fprintd 2>/dev/null || [ -n "$hit" ] || return 0
     if [ $dry = 1 ]; then echo "fprintd: would restart (${hit:-reader rebound})"; return 0; fi
     systemctl kill -s KILL fprintd.service 2>/dev/null
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        systemctl -q is-active fprintd.service 2>/dev/null || break
+        sleep 0.2
+    done
     systemctl reset-failed fprintd.service 2>/dev/null
     systemctl restart fprintd.service 2>/dev/null
     echo "fprintd restarted (${hit:-reader rebound})"
@@ -74,30 +86,43 @@ check_adsprpcd() {  # $1 = since
     local n
     n=$(journalctl -q -t adsprpcd --since "$1" -o cat --no-pager 2>/dev/null | grep -c 'will restart after')
     [ "$n" -ge 20 ] || return 0
-    if [ $dry = 1 ]; then echo "adsprpcd: $n retries, would stop book4-sensors"; return 0; fi
+    if [ $dry = 1 ]; then echo "adsprpcd: $n retries, would stop and runtime-mask book4-sensors"; return 0; fi
     systemctl stop book4-sensors.service 2>/dev/null
-    echo "adsprpcd looping ($n retries): book4-sensors stopped, reboot to restore it"
+    # Runtime-mask until reboot so iio-sensor-proxy's Wants= cannot restart the ENOSPC loop.
+    mkdir -p /run/systemd/system
+    ln -sf /dev/null /run/systemd/system/book4-sensors.service
+    systemctl daemon-reload 2>/dev/null
+    echo "adsprpcd looping ($n retries): book4-sensors stopped until reboot"
 }
 
 check() {  # $1 = since (resume time)
-    local since=$1 done=() r f rebound=0
-    r=$(check_reader); [ -n "$r" ] && { done+=("$r"); case $r in *rebound*) rebound=1 ;; esac; }
+    local since=$1 done=() r f rebound=0 attention=0
+    r=$(check_reader)
+    if [ -n "$r" ]; then
+        done+=("$r")
+        case $r in
+            *"reader back"*) rebound=1 ;;
+            *"still missing"*) attention=1 ;;
+        esac
+    fi
     f=$(check_fprintd "$since" $rebound); [ -n "$f" ] && done+=("$f")
-    r=$(check_adsprpcd "$since"); [ -n "$r" ] && done+=("$r")
+    r=$(check_adsprpcd "$since"); [ -n "$r" ] && { done+=("$r"); attention=1; }
     if [ ${#done[@]} = 0 ]; then
         log "ok (reader present, fprintd and adsprpcd quiet since $since)"
     else
-        local m; m=$(printf '%s; ' "${done[@]}"); m=${m%; }
+        local m title
+        m=$(printf '%s; ' "${done[@]}"); m=${m%; }
+        title="Fixed after resume"
+        [ $attention = 1 ] && title="Needs attention after resume"
         log "$m"
-        notify "Fixed after resume" "$m"
+        notify "$title" "$m"
     fi
 }
 
 case "${1:-}" in
 post)
-    mkdir -p "$run"
     t=$(date '+%Y-%m-%d %H:%M:%S')
-    systemd-run --quiet --on-active=15 --unit="book4-resume-check-$(date +%s)" \
+    systemd-run --quiet --collect --on-active=15 --unit="book4-resume-check-$(date +%s)-$$" \
         "$self" check "$t" >/dev/null 2>&1 || true
     ;;
 check)

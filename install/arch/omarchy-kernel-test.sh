@@ -38,7 +38,25 @@ DTB=x1e80100-samsung-galaxy-book4-edge-14.dtb
 OVERLAY=/usr/share/book4/x1-el2-book4.dtso
 STUB=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
 EXTRA=/etc/book4/limine-extra.conf
+BEGIN="# --- begin omarchy-kernel-test ---"
+END="# --- end omarchy-kernel-test ---"
 PKGS=(linux-omarchy linux-omarchy-dtbs systemd-stub-omarchy)
+
+drop_extra() {
+    [ -e "$EXTRA" ] || return 0
+    local tmp; tmp=$(mktemp)
+    awk -v b="$BEGIN" -v e="$END" '
+        index($0, b) == 1 { skip = 1; next }
+        index($0, e) == 1 { skip = 0; next }
+        !skip { print }
+    ' "$EXTRA" > "$tmp"
+    if [ -s "$tmp" ]; then
+        sudo install -m644 "$tmp" "$EXTRA"
+    else
+        sudo rm -f "$EXTRA"
+    fi
+    rm -f "$tmp"
+}
 
 die() { echo "error: $*" >&2; exit 1; }
 [ -e /etc/arch-release ] || die "run this on Arch"
@@ -48,9 +66,13 @@ cmd=${1:-}; yes=; [ "${2:-}" = --yes ] && yes=1
 if [ "$cmd" = remove ]; then
     sudo -v
     sudo rm -f /boot/EFI/Linux/omarchy-kernel-test-el1.efi /boot/EFI/Linux/omarchy-kernel-test-el2.efi
-    [ ! -e "$EXTRA" ] || sudo rm -f "$EXTRA"
+    drop_extra
     sudo rm -f /etc/book4/mkinitcpio-omarchy.conf
-    pacman -Q "${PKGS[@]}" >/dev/null 2>&1 && sudo pacman -R linux-omarchy-dtbs linux-omarchy systemd-stub-omarchy
+    installed=()
+    for p in linux-omarchy-dtbs linux-omarchy systemd-stub-omarchy; do
+        pacman -Q "$p" >/dev/null 2>&1 && installed+=("$p")
+    done
+    [ ${#installed[@]} -eq 0 ] || sudo pacman -R "${installed[@]}"
     sudo book4-boot menu
     echo "Removed. /etc/mkinitcpio.d/linux-omarchy.preset.pacsave may remain (harmless)."
     exit 0
@@ -208,14 +230,16 @@ echo "== 5. Limine entries"
 # takes Limine's cmdline over its own .cmdline without Secure Boot), so a
 # boot that stops early prints its kernel messages on screen.
 v="earlycon keep_bootcon ignore_loglevel"
-printf '%s\n' "# install/arch/omarchy-kernel-test.sh (birkskyum/arewearmyet#10): linux-omarchy $rel" \
+drop_extra
+printf '%s\n' "$BEGIN (birkskyum/arewearmyet#10: linux-omarchy $rel)" \
     "/Omarchy kernel $rel - EL2 (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el2.efi" "" \
     "/Omarchy kernel $rel - EL2, verbose (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el2.efi" \
     "    cmdline: $cmd1 id_aa64mmfr0.ecv=1 $v" "" \
     "/Omarchy kernel $rel - EL1, stock DTB (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el1.efi" "" \
     "/Omarchy kernel $rel - EL1, stock DTB, verbose (test)" "    protocol: efi" "    resolution: 1024x768" "    path: boot():/EFI/Linux/omarchy-kernel-test-el1.efi" \
-    "    cmdline: $cmdel1 $v" |
-    sudo tee "$EXTRA" >/dev/null
+    "    cmdline: $cmdel1 $v" \
+    "$END" |
+    sudo tee -a "$EXTRA" >/dev/null
 sudo book4-boot menu
 sudo grep '^/' /boot/limine.conf | sed 's/^/   /'
 sudo df -h /boot | tail -1

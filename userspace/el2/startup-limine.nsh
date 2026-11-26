@@ -10,13 +10,15 @@
 # EL2 entry would.
 for %i run (0 63)
   if exist fs%i:\EFI\book4-el2-arch\qebspilaa64.efi then
-    if exist fs%i:\EFI\arch\grubaa64.efi then
-      set esp fs%i
-      goto ESP
+    if exist fs%i:\EFI\book4-el2-arch\slbounce.efi then
+      if exist fs%i:\EFI\book4-el2-arch\tcblaunch.exe then
+        set esp fs%i
+        goto ESP
+      endif
     endif
   endif
 endfor
-echo "book4-el2-limine: no fs0-fs63 has \EFI\book4-el2-arch\qebspilaa64.efi and \EFI\arch\grubaa64.efi"
+echo "book4-el2-limine: no fs0-fs63 has \EFI\book4-el2-arch\{qebspilaa64.efi,slbounce.efi,tcblaunch.exe}"
 goto END
 :ESP
 %esp%:
@@ -36,7 +38,9 @@ goto GRUB
 %lim%:
 %lim%:\EFI\limine\BOOTAA64.EFI
 :GRUB
-# Limine missing or returned: Arch GRUB (slbounce and qebspil stay loaded).
+# Limine missing or returned: Arch GRUB if present (slbounce and qebspil stay loaded).
 %esp%:
-%esp%:\EFI\arch\grubaa64.efi
+if exist %esp%:\EFI\arch\grubaa64.efi then
+  %esp%:\EFI\arch\grubaa64.efi
+endif
 :END

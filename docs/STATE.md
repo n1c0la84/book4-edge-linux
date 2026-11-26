@@ -5,6 +5,38 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 15:35: active userspace/boot bug fixes and `hangover.sh` kept.**
+Fixed daily userspace and boot script bugs (repo copies; rebuild/reinstall
+packages to deploy): `book4-sleep-log` (normalize spaces in `"Not charging"` so
+`read -r` never shifts fields and drops CSV rows; skip awake-discharge adjustment
+when charging; omit wattage for sleeps `< 60 s`; `--collect` on transient
+timer), `book4-autobrightness` (guard `ClaimLight`/`SetBrightness`/sysfs calls
+so a `GLib.Error` cannot wedge `self.timer` permanently; ignore initial cached
+`0.0` lux placeholder; read eDP DPMS from sysfs instead of forking `hyprctl` at
+1 Hz), `book4-drain` (skip short post-resume partial minutes; tag AC-transition
+minutes as `Mixed`; use `voltage_min_design` for full Wh; guard `W == 0` and
+empty sysfs reads; integer `cpu_mhz`/`gpu_pct`; LF endings), `book4-resume-check`
++ `iio-sensor-proxy-book4.conf` (shorten `ExecStartPre` to 15 tries well under
+90 s timeout; runtime-mask `book4-sensors.service` in `/run` when stopping an
+`ENOSPC` loop so `iio-sensor-proxy` cannot restart it; match USB `1c7a:05a1`;
+wait for `fprintd` exit after `SIGKILL`; accurate notification titles;
+`--collect`), `book4-boot` (prevent `pkgrel()` `pipefail` abort when
+`DEFAULT_PKG` is absent; omit empty `rootflags=subvol=`; clean temp dir on
+failure; verify `$STUB`; `grep -qxF`; single menu pass on multi-kernel
+`hook-remove`), `startup-limine.nsh` (locate ESP via `book4-el2-arch` files
+instead of requiring Arch GRUB; guard GRUB fallback with `if exist`),
+`book4-el2` (verify `vfat` mount in `esp()`; compute delta/atomic-replace space
+for in-place updates), `book4-el2-sleep` (match `X1E80100-GalaxyBook4Edge` in
+`/proc/asound/cards`; tolerate restart after `dmesg` wrap; don't abort
+`state_synced` loop on one error; `.ko*` glob in unit), `book4-update` (sort
+snapshots by timestamp instead of name so `arch-45-pre-update-*` isn't pruned
+before older `arch-pre-update-*`; distinguish `checkupdates` exit 2 vs error),
+and `install/arch/omarchy-kernel-test.sh` (marker-delimited block in
+`/etc/book4/limine-extra.conf` so it doesn't clobber `ec-standby-test.sh`;
+remove any subset of installed test packages). Kept `install/arch/hangover.sh`
+from `worktree-hangover` and removed the three leftover `.claude/worktrees/*`
+worktrees and `worktree-*` branches.
+
 **26 November 2026, 15:25: documentation refresh, provenance update and lint CI.**
 Rewrote `README.md`, `docs/install.md`, `docs/updates.md` and the bottom
 summary of `docs/STATE.md` to match the current Arch/Omarchy 4.5 + Limine/UKI

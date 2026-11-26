@@ -43,11 +43,13 @@ die() { echo "book4-el2: error: $*" >&2; exit 1; }
 
 esp() {   # the mounted ESP (the /efi automount, or any vfat mount of the ESP partition)
     local m
-    ls /efi/EFI >/dev/null 2>&1 && [ -d /efi/EFI ] && { echo /efi; return; }
+    ls /efi/EFI >/dev/null 2>&1 && [ -d /efi/EFI ] &&
+        findmnt -rn -t vfat --target /efi >/dev/null 2>&1 && { echo /efi; return; }
     # Not /boot when it is the second ESP (label BOOK4ESP, Limine's;
     # install/arch/boot-split.sh): the chain belongs on the firmware's ESP.
     for m in /boot/efi /boot; do
         [ -d "$m/EFI" ] || continue
+        findmnt -rn -t vfat --target "$m" >/dev/null 2>&1 || continue
         [ "$(findmnt -rn -o LABEL --target "$m" 2>/dev/null)" != BOOK4ESP ] || continue
         echo "$m"; return
     done
@@ -62,12 +64,23 @@ copy() {  # src dst: copy when different; prints what it did
 }
 
 sync_files() {
-    local f need
+    local f src dst need=0 maxrep=0 sz
     for f in "${FILES[@]}"; do [ -e "$SRC/$f" ] || die "$SRC/$f missing (book4-edge-el2)"; done
     [ -e "$TCB" ] || die "$TCB missing (book4-edge-firmware, built from this laptop's Windows)"
     for f in "${FWFILES[@]}"; do [ -e "$FWSRC/$f" ] || die "$FWSRC/$f missing (book4-edge-firmware)"; done
-    need=$(( $(du -cb "${FILES[@]/#/$SRC/}" "$TCB" "${FWFILES[@]/#/$FWSRC/}" | tail -1 | cut -f1) / 1024 + 1024 ))
-    [ "$(df --output=avail -k "$E" | tail -1)" -ge "$need" ] || die "not enough room on the ESP (${need} KiB needed at most)"
+    _account() {
+        src=$1 dst=$2 sz=$(stat -c %s "$src")
+        if [ ! -e "$dst" ]; then
+            need=$((need + sz))
+        elif ! cmp -s "$src" "$dst" && [ "$sz" -gt "$maxrep" ]; then
+            maxrep=$sz
+        fi
+    }
+    for f in "${FILES[@]}"; do [ "$f" = startup-limine.nsh ] || _account "$SRC/$f" "$E/$DIR/$f"; done
+    _account "$TCB" "$E/$DIR/tcblaunch.exe"
+    for f in "${FWFILES[@]}"; do _account "$FWSRC/$f" "$E/$FWDIR/$f"; done
+    need=$(( (need + maxrep) / 1024 + 1024 ))
+    [ "$(df --output=avail -k "$E" | tail -1)" -ge "$need" ] || die "not enough room on the ESP (${need} KiB needed)"
     mkdir -p "$E/$DIR" "$E/$FWDIR"
     for f in "${FILES[@]}"; do [ "$f" = startup-limine.nsh ] || copy "$SRC/$f" "$E/$DIR/$f"; done
     copy "$TCB" "$E/$DIR/tcblaunch.exe"

@@ -5,14 +5,20 @@ modprobe el1tmr
 # memlat (sleep-backport 0029-0036): DDR/LLCC follow the CPUs' memory needs.
 # The SCMI vendor protocol does not autoload; optional, never fatal.
 modprobe -q qcom_generic_ext 2>/dev/null && modprobe -q scmi_qcom_memlat_devfreq 2>/dev/null || true
+already_held=0
+[ -d /sys/module/icc_hold ] && already_held=1
 modprobe icc_hold nodes=/soc@0/ufshc@1d84000 tag=3
 # Without a verified hold, releasing the boot votes breaks UFS on resume.
-dmesg | grep -q 'icc_hold: holding [1-9][0-9]* paths (tag 3)' ||
-    { echo "icc_hold holds no UFS path; boot votes NOT released" >&2; exit 1; }
-# Release the boot votes after audio has taken its own (ADSP attached, card up).
+if [ "$already_held" = 0 ] && ! dmesg | grep -q 'icc_hold: holding [1-9][0-9]* paths (tag 3)'; then
+    echo "icc_hold holds no UFS path; boot votes NOT released" >&2; exit 1
+fi
+# Release the boot votes after the internal audio card has bound (ADSP attached).
 i=0
-while [ $i -lt 90 ] && [ ! -e /proc/asound/card0 ]; do sleep 1; i=$((i + 1)); done
-[ -e /proc/asound/card0 ] || echo "no sound card after 90 s; releasing the boot votes anyway" >&2
+while [ $i -lt 90 ] && ! grep -q 'X1E80100-GalaxyBook4Edge' /proc/asound/cards 2>/dev/null; do
+    sleep 1; i=$((i + 1))
+done
+grep -q 'X1E80100-GalaxyBook4Edge' /proc/asound/cards 2>/dev/null ||
+    echo "no Book4 sound card after 90 s; releasing the boot votes anyway" >&2
 # No AOSD: the SoC hard-resets in it about hourly (sleep-setup.sh header).
 # It needs the AOSS QMP driver, which can still be probing (-EPROBE_DEFER,
 # 20 Oct): retry, and never let it stop the rest.
@@ -30,6 +36,12 @@ for r in /sys/class/remoteproc/remoteproc*; do
 done
 n=0
 for p in $(find /sys/devices -name state_synced); do
-    [ "$(cat "$p")" = 1 ] || { printf 1 > "$p"; n=$((n + 1)); }
+    [ "$(cat "$p" 2>/dev/null || echo 1)" = 1 ] || {
+        if printf 1 > "$p" 2>/dev/null; then
+            n=$((n + 1))
+        else
+            echo "book4-el2-sleep: could not sync $p" >&2
+        fi
+    }
 done
 echo "el1tmr loaded, AOSD $([ -d /sys/module/aoss_cxsd_only ] && echo off || echo allowed), UFS held, sync_state forced on $n provider(s)"

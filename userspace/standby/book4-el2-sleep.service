@@ -2,7 +2,7 @@
 [Unit]
 Description=Book4: EL2 deep-sleep setup (el1tmr, UFS hold, release boot votes)
 ConditionKernelCommandLine=id_aa64mmfr0.ecv=1
-ConditionPathExists=/usr/lib/modules/%v/extra/el1tmr.ko
+ConditionPathExistsGlob=/usr/lib/modules/%v/extra/el1tmr.ko*
 After=systemd-modules-load.service
 
 [Service]
