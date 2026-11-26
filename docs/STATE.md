@@ -5,6 +5,14 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 12:30: after a reboot (12:23) sleep works again.**
+Lid closed 12:25:20-12:29:34 on battery: one suspend (no retries), 253 s,
+cxsd 249 s (98.5 %), ddr 99.6 %, 7 CX entries; resume devices 1.3 s; the
+fingerprint reader (usb 1-1) survived, ADSP and CDSP attached, no
+adsprpcd loop. Charge unchanged over 4 min (EC step), so no wattage. Still
+`qcom-pcie 1c08000.pcie: Timeout waiting for L2 entry` (Wi-Fi) on resume,
+harmless here, also present before the xhci death.
+
 **26 November 2026: awake drain measured; sleep broken this boot (xhci).**
 UPower charge history, 19-26 Nov, awake on battery only (gaps > 15 min
 dropped): 27.5 h, 395 % of 49.7 Wh, **7.1 W average** (segments 5.5-11 W,
