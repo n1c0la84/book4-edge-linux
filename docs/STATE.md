@@ -6,8 +6,10 @@ top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
 **26 November 2026, 15:35: active userspace/boot bug fixes and `hangover.sh` kept.**
-Fixed daily userspace and boot script bugs (repo copies; rebuild/reinstall
-packages to deploy): `book4-sleep-log` (normalize spaces in `"Not charging"` so
+Fixed daily userspace and boot script bugs (installed live 15:45: `book4-edge`,
+`book4-edge-boot`, `book4-sensors` `r695.4d38d25-1`, `book4-edge-el2`
+`2026.11.19`, bumped to `pkgrel=6` for future repo/CI upgrades;
+`book4-autobrightness` and `book4-drain` restarted cleanly): `book4-sleep-log` (normalize spaces in `"Not charging"` so
 `read -r` never shifts fields and drops CSV rows; skip awake-discharge adjustment
 when charging; omit wattage for sleeps `< 60 s`; `--collect` on transient
 timer), `book4-autobrightness` (guard `ClaimLight`/`SetBrightness`/sysfs calls

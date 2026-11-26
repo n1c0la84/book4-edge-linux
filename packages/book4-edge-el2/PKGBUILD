@@ -11,7 +11,7 @@
 #   sudo book4-el2 install-limine   once, for the Limine chain (docs/plan-limine.md)
 pkgname=book4-edge-el2
 pkgver=2026.11.19
-pkgrel=5
+pkgrel=6
 pkgdesc='Galaxy Book4 Edge 14": EL2 boot chain (UEFI Shell, qebspil, slbounce; Arch GRUB and Limine variants) and book4-el2 to keep it on the ESP'
 arch=(aarch64)
 url='https://github.com/n1c0la84/book4-edge-linux'
