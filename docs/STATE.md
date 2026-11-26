@@ -32,12 +32,16 @@ log lines/s, 15 min CPU in 13.5 h). Cause: a side effect of the suspend
 storm, not of the sensor setup: at 23:00:40, in one of the failed suspends
 (user space frozen mid-call), the DSP call returned 0x8000042f, the
 listener thread exited, and adsprpcd's in-process restart (every 100 ms)
-cannot reattach because the old sensorspd session is still held by the
-same process (ENOSPC). Not seen on earlier boots. The sensor keeps working
+cannot reattach because the old sensorspd session is still held on the
+DSP/kernel side (ENOSPC). Not seen on earlier boots. The sensor keeps working
 (monitor-sensor 153 lux at 12:2x): the PD runs, only its file service is
 gone, so a registry write would now fail (the firmware asserts if it
-can't write, taking the ADSP and sound down). Fix: restart
-book4-sensors.service (the exit frees the session) or reboot; lasting fix
+can't write, taking the ADSP and sound down). A service
+restart (12:16) does NOT clear it: the new process loops the same way from
+its first try, so the session is not freed by the process exit; only a
+reboot. Also found: the CDSP crashed at 22:29:20 25 Nov
+(`sleep_statsi.c:537`, as on 25 Nov 10:11), during the first failed
+suspends, stays down at EL2 until reboot; lasting fix
 to do: make adsprpcd exit after N failed restarts so systemd restarts it
 cleanly.
 
