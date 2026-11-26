@@ -5,6 +5,19 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 12:48: fingerprint unavailable on the lock screen after
+a resume** (reader present on the bus). The fprintd-resume hook
+(`/usr/lib/systemd/system-sleep/fprintd-resume`, unowned, restarts fprintd
+after every resume) restarted it at 12:47:59; the lock screen's PAM claimed
+at 12:48:01.25 while the reader was being reset (`usb 1-1: reset` 12:48:00.1
+and 12:48:01.4); at 12:48:01.5 `fpi_sdcp_device_connect_complete: assertion
+'priv->host_private_key' failed` (libfprint-sdcp, MR !547), the claim
+hung (lock: `fingerprint-reach-timeout`) and later claims got `Device was
+already claimed`. First such assertion in the last four boots (the 12:29
+resume unlocked by finger). `systemctl restart fprintd` (12:5x) cleared it;
+the old one only died on the stop timeout. Suspect: the restart racing the
+lock screen's immediate claim and the reader's reset after resume.
+
 **26 November 2026, 12:30: after a reboot (12:23) sleep works again.**
 Lid closed 12:25:20-12:29:34 on battery: one suspend (no retries), 253 s,
 cxsd 249 s (98.5 %), ddr 99.6 %, 7 CX entries; resume devices 1.3 s; the
