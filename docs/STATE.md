@@ -24,6 +24,15 @@ Wi-Fi, top 3 processes by name); `book4-drain report [DAYS]` (battery
 only: by screen brightness band, by CPU use, top CPU users in core-hours),
 `book4-drain now` (10 s sample). First look, 12:57: 8.0 W at brightness
 38 %, CPU 47 % of one core, mean 975 MHz, GPU 10 %.
+First live resume check (13:02:11, lid 13:00:53-13:01:48): "ok". That
+resume took 2.4 s (resume devices): the USB-C port with the hub and USB stick
+(a600000.usb, QMP combo PHY fd5000) failed to resume (`phy initialization
+timed-out`, `dwc3_qcom_pm_resume returns -110`, clk WARNING
+`gcc_usb3_prim_phy_pipe_clk already disabled` in qmp_combo_usb_power_on);
+the stick (USB 2) re-enumerated and works. Owner saw the touchpad pointer
+frozen for a moment after opening; no i2c-hid or input error in the log.
+book4-drain r687: a minute that spans a suspend is dropped (wall clock vs
+monotonic gap > 5 s).
 
 **26 November 2026, 12:48: fingerprint unavailable on the lock screen after
 a resume** (reader present on the bus). The fprintd-resume hook
