@@ -5,6 +5,26 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 13:00: resume health check and drain logger installed**
+(book4-edge r685.8ed440e). `book4-resume-check` (system-sleep hook; runs
+15 s after every resume, also after a failed suspend, through a transient
+timer): fingerprint reader (1c7a) missing -> rebind a200000.usb; fprintd
+log since the resume shows an assertion / "already claimed" / claim
+failure (or the reader was rebound) -> kill and restart fprintd;
+adsprpcd >= 20 retries since the resume -> stop book4-sensors (a restart
+does not help; reboot restores it). One line per resume in
+`journalctl -t book4-resume-check`, a notification only when it repaired
+something. Dry runs on today's journal: flags the 12:48 fprintd wedge and
+the overnight adsprpcd loop, "ok" on a clean window. Not yet seen live.
+`book4-drain` (user service book4-drain, enabled): one CSV row a minute in
+~/.local/state/book4-drain/drain-YYYY-MM.csv (avg/min/max W from the EC's
+current x voltage sampled every 5 s, capacity, brightness, kbd backlight,
+eDP DPMS, CPU % of one core, mean CPU MHz, GPU % from book4-gpu-busy,
+Wi-Fi, top 3 processes by name); `book4-drain report [DAYS]` (battery
+only: by screen brightness band, by CPU use, top CPU users in core-hours),
+`book4-drain now` (10 s sample). First look, 12:57: 8.0 W at brightness
+38 %, CPU 47 % of one core, mean 975 MHz, GPU 10 %.
+
 **26 November 2026, 12:48: fingerprint unavailable on the lock screen after
 a resume** (reader present on the bus). The fprintd-resume hook
 (`/usr/lib/systemd/system-sleep/fprintd-resume`, unowned, restarts fprintd
