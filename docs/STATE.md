@@ -11,7 +11,13 @@ cxsd 249 s (98.5 %), ddr 99.6 %, 7 CX entries; resume devices 1.3 s; the
 fingerprint reader (usb 1-1) survived, ADSP and CDSP attached, no
 adsprpcd loop. Charge unchanged over 4 min (EC step), so no wattage. Still
 `qcom-pcie 1c08000.pcie: Timeout waiting for L2 entry` (Wi-Fi) on resume,
-harmless here, also present before the xhci death.
+harmless here, also present before the xhci death. Wi-Fi back 15.0 s after
+wake (12:29:35 -> CONNECTED_GLOBAL 12:29:50): ath12k reloads its firmware
+on resume and the driver hints regdomain US; 5.6 s later IT (from the AP);
+NM auto-activates only at +12.2 s (first scan with the new channel list,
+6 GHz enabled); auth+assoc 0.27 s, DHCP 2.2 s. Same on earlier real
+resumes: 12.7-14.9 s (23-25 Nov). This time it joined 2.4 GHz (ch 5,
+...a7) instead of the 5 GHz BSSID (...a8) used before.
 
 **26 November 2026: awake drain measured; sleep broken this boot (xhci).**
 UPower charge history, 19-26 Nov, awake on battery only (gaps > 15 min
