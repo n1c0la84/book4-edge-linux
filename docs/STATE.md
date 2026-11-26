@@ -21,7 +21,11 @@ reader, 1c7a:05a1) the reader normally drops and re-enumerates on every
 resume (24 and 25 Nov: `USB disconnect` then `new high-speed USB device`
 in the same second). At 22:28:38 (first resume, 25 s after boot, charger
 plugged in during it) it dropped and never came back; every suspend since
-fails on that controller. Not the SDDM greeter (its PAM has no fprintd;
+fails on that controller. Kernel log of that resume: `xhci-hcd.1.auto:
+Abort failed to stop command ring: -110`, `xHCI host controller not
+responding, assume dead`, `HC died`, resume took 15.75 s (suspend_test
+WARNING). The same resume had `qcom-pcie 1c08000.pcie: Timeout waiting for
+L2 entry` (Wi-Fi). Not the SDDM greeter (its PAM has no fprintd;
 fprintd was not running). Recovery, verified 12:13 26 Nov: rebind the controller,
 `echo a200000.usb > /sys/bus/platform/drivers/dwc3-qcom/unbind; sleep 1;
 echo a200000.usb > /sys/bus/platform/drivers/dwc3-qcom/bind` (root); the
@@ -32,8 +36,11 @@ log lines/s, 15 min CPU in 13.5 h). Cause: a side effect of the suspend
 storm, not of the sensor setup: at 23:00:40, in one of the failed suspends
 (user space frozen mid-call), the DSP call returned 0x8000042f, the
 listener thread exited, and adsprpcd's in-process restart (every 100 ms)
-cannot reattach because the old sensorspd session is still held on the
-DSP/kernel side (ENOSPC). Not seen on earlier boots. The sensor keeps working
+cannot reattach (ENOSPC). The daily kernel's fastrpc.c returns -ENOSPC
+only at probe ("too many sessions"), so at runtime it is most likely the
+ADSP's own answer passed through: its sensorspd is still running (the
+sensor reads) and still bound to the dead session, so a new attach is
+refused. Not seen on earlier boots. The sensor keeps working
 (monitor-sensor 153 lux at 12:2x): the PD runs, only its file service is
 gone, so a registry write would now fail (the firmware asserts if it
 can't write, taking the ADSP and sound down). A service
