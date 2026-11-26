@@ -35,7 +35,9 @@ book4-drain r687: a minute that spans a suspend is dropped (wall clock vs
 monotonic gap > 5 s).
 13:13: no sound: SoundWire clash at 13:02:21 after that resume, all four
 WSA amps UNATTACHED, playback fails -61. Amp rebind impossible (wsa883x
-has no bind/unbind), see TODO.md "SoundWire clash".
+has no bind/unbind), see TODO.md "SoundWire clash". Controller rebind
+(6ab0000, 6b10000) tried at the owner's request: removed the sound card,
+re-probe failed (IRQ type mismatch); reboot needed.
 
 **26 November 2026, 12:48: fingerprint unavailable on the lock screen after
 a resume** (reader present on the bus). The fprintd-resume hook

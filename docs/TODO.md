@@ -385,8 +385,17 @@ the end.
       6ab0000). **wsa883x cannot be rebound:** the driver has no
       bind/unbind files (suppress_bind_attrs); writing them fails with
       EACCES even as root. Next level that has them: the qcom-soundwire
-      controllers (6ab0000, 6ad0000, 6b10000, 6d30000), untested, likely
-      takes the sound card down with it.
+      controllers (6ab0000, 6ad0000, 6b10000, 6d30000). **Tried 13:16 (owner's
+      call): does not work, needs a reboot.** With PipeWire stopped,
+      unbinding 6ab0000 and 6b10000 removed the sound card (no soundcards);
+      during qcom_swrm_remove the IRQ handler was still enumerating
+      (qcom_swrm_irq_handler -> qcom_swrm_enumerate -> sdw_slave_add from
+      sdw_bus_master_delete: duplicate sysfs name sdw:1:…:2, -EEXIST), and
+      bind failed for both: `irq: type mismatch, failed to map hwirq-202`
+      (203) on interrupt-controller@17000000, `request_irq(0)` -EINVAL,
+      probe -22. Two kernel bugs: remove races its own IRQ, and re-probe
+      cannot map the IRQ again (type left set from the first probe). Do not
+      repeat; only a reboot recovers.
 - [x] **Hardware video decoding at EL2** (25 October): Moonlight found no
       V4L2 decoder because there was none: the video clock controller driver
       was never built (`CONFIG_SM_VIDEOCC_8550`) and the EL2 overlay disabled
