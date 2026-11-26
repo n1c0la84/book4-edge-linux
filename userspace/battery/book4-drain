@@ -76,7 +76,7 @@ def brightness():
 
 def minute(seconds=60):
     """Sample for `seconds`, return one row (dict)."""
-    p0, c0, t0 = procs(), cpu_total(), time.monotonic()
+    p0, c0, t0, w0 = procs(), cpu_total(), time.monotonic(), time.time()
     ws, fr, gp = [], [], []
     end = t0 + seconds
     while True:
@@ -94,6 +94,8 @@ def minute(seconds=60):
             break
         time.sleep(min(STEP, left))
     p1, c1, el = procs(), cpu_total(), time.monotonic() - t0
+    if time.time() - w0 - el > 5:  # slept inside this minute: a mixed row, drop it
+        return None
     use = defaultdict(int)
     for pid, (comm, t) in p1.items():
         if pid in p0 and p0[pid][0] == comm:
@@ -125,6 +127,8 @@ def log():
     time.sleep(60 - time.time() % 60)
     while True:
         row = minute(60 - time.time() % 60 if time.time() % 60 > 1 else 60)
+        if row is None:
+            continue
         path = os.path.join(DIR, f"drain-{row['time'][:7]}.csv")
         new = not os.path.exists(path)
         with open(path, "a", newline="") as f:
@@ -188,6 +192,8 @@ def report(days):
 
 def now():
     r = minute(10)
+    if r is None:
+        sys.exit("slept during the sample, try again")
     for k in FIELDS:
         print(f"{k:>15}: {r[k]}")
 
