@@ -1,0 +1,109 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# systemd-sleep hook: a health check after every resume (also after a
+# suspend that failed), for the hiccups seen on 25-26 November 2026
+# (docs/STATE.md):
+#   1. The fingerprint reader's USB controller (a200000.usb, usb_2) died on
+#      a resume ("HC died"), the reader (1c7a:05a1) vanished and every later
+#      suspend failed with -EINVAL, all night. Reader missing -> rebind the
+#      controller (dwc3-qcom unbind/bind), which brings it back in 1 s.
+#   2. fprintd wedged when its restart after resume (Omarchy's
+#      fprintd-resume hook) raced the lock screen's claim and the reader's
+#      reset: an SDCP assertion, then "Device was already claimed". Seen in
+#      fprintd's log since the resume -> kill and restart fprintd (a plain
+#      stop waits for the stop timeout); the lock screen retries by itself.
+#   3. adsprpcd (book4-sensors.service) lost its sensorspd listener in a
+#      suspend and retries every 100 ms for ever with ENOSPC; a restart does
+#      not clear it (the ADSP still holds the old session), only a reboot.
+#      Looping -> stop the service (the light sensor keeps reading) and say
+#      a reboot restores it.
+# post: a transient timer runs "check" 15 s later, outside the sleep path
+# (user.slice stays frozen until the post hooks return).
+# check:   do it; one line in the journal (journalctl -t book4-resume-check),
+#          a desktop notification only when something was repaired.
+# check --dry-run [SINCE]: say what it would do (no root needed), with SINCE
+#          (anything journalctl --since takes) as the resume time.
+set -u
+self=$(readlink -f "$0")
+run=/run/book4-resume-check
+ctl=a200000.usb
+drv=/sys/bus/platform/drivers/dwc3-qcom
+dry=0
+
+log() { if [ $dry = 1 ]; then echo "$*"; else logger -t book4-resume-check "$*"; fi; }
+
+notify() {  # HEADLINE BODY: an Omarchy notification in every logged-in user's session
+    [ $dry = 1 ] && return 0
+    local u
+    for u in $(loginctl list-users --no-legend 2>/dev/null | awk '$1 >= 1000 {print $2}'); do
+        systemd-run --quiet --user -M "$u@" --collect \
+            /usr/share/omarchy/bin/omarchy-notification-send -g 󰒲 -u low "$1" "$2" -t 15000 >/dev/null 2>&1 || true
+    done
+}
+
+reader_present() { grep -qx 1c7a /sys/bus/usb/devices/*/idVendor 2>/dev/null; }
+
+check_reader() {  # echoes what it did, if anything
+    [ -e "$drv/$ctl" ] || [ -e "/sys/devices/platform/soc@0/$ctl" ] || return 0   # not this machine's layout
+    reader_present && return 0
+    if [ $dry = 1 ]; then echo "reader missing: would rebind $ctl"; return 0; fi
+    [ -e "$drv/$ctl" ] && echo "$ctl" > "$drv/unbind" 2>/dev/null
+    sleep 1
+    echo "$ctl" > "$drv/bind" 2>/dev/null
+    local i
+    for i in 1 2 3 4 5; do reader_present && break; sleep 1; done
+    if reader_present; then echo "fingerprint reader was missing: $ctl rebound, reader back"
+    else echo "fingerprint reader missing: $ctl rebound, reader still missing"; fi
+}
+
+check_fprintd() {  # $1 = since; $2 = 1 when the reader was just rebound
+    local hit
+    hit=$(journalctl -q -u fprintd --since "$1" -o cat --no-pager 2>/dev/null |
+          grep -m1 -E "assertion .* failed|already claimed|Failed to claim|Device reported an error")
+    [ -n "$hit" ] || [ "${2:-0}" = 1 ] || return 0
+    systemctl -q is-active fprintd 2>/dev/null || [ -n "$hit" ] || return 0
+    if [ $dry = 1 ]; then echo "fprintd: would restart (${hit:-reader rebound})"; return 0; fi
+    systemctl kill -s KILL fprintd.service 2>/dev/null
+    systemctl reset-failed fprintd.service 2>/dev/null
+    systemctl restart fprintd.service 2>/dev/null
+    echo "fprintd restarted (${hit:-reader rebound})"
+}
+
+check_adsprpcd() {  # $1 = since
+    systemctl -q is-active book4-sensors.service 2>/dev/null || [ $dry = 1 ] || return 0
+    local n
+    n=$(journalctl -q -t adsprpcd --since "$1" -o cat --no-pager 2>/dev/null | grep -c 'will restart after')
+    [ "$n" -ge 20 ] || return 0
+    if [ $dry = 1 ]; then echo "adsprpcd: $n retries, would stop book4-sensors"; return 0; fi
+    systemctl stop book4-sensors.service 2>/dev/null
+    echo "adsprpcd looping ($n retries): book4-sensors stopped, reboot to restore it"
+}
+
+check() {  # $1 = since (resume time)
+    local since=$1 done=() r f rebound=0
+    r=$(check_reader); [ -n "$r" ] && { done+=("$r"); case $r in *rebound*) rebound=1 ;; esac; }
+    f=$(check_fprintd "$since" $rebound); [ -n "$f" ] && done+=("$f")
+    r=$(check_adsprpcd "$since"); [ -n "$r" ] && done+=("$r")
+    if [ ${#done[@]} = 0 ]; then
+        log "ok (reader present, fprintd and adsprpcd quiet since $since)"
+    else
+        local m; m=$(printf '%s; ' "${done[@]}"); m=${m%; }
+        log "$m"
+        notify "Fixed after resume" "$m"
+    fi
+}
+
+case "${1:-}" in
+post)
+    mkdir -p "$run"
+    t=$(date '+%Y-%m-%d %H:%M:%S')
+    systemd-run --quiet --on-active=15 --unit="book4-resume-check-$(date +%s)" \
+        "$self" check "$t" >/dev/null 2>&1 || true
+    ;;
+check)
+    shift
+    if [ "${1:-}" = --dry-run ]; then dry=1; shift; fi
+    check "${1:-$(date -d '-1 min' '+%Y-%m-%d %H:%M:%S')}"
+    ;;
+esac
+exit 0

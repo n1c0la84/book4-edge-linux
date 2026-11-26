@@ -62,6 +62,7 @@ package() {
     _unit "$u/$f" "$L/systemd/user"
   done
   install -Dm755 "$u/standby/book4-sleep-log"       "$L/systemd/system-sleep/book4-sleep-log"
+  install -Dm755 "$u/standby/book4-resume-check"   "$L/systemd/system-sleep/book4-resume-check"
   install -Dm644 "$u/crash-log/60-book4-sync.conf"  "$L/systemd/journald.conf.d/60-book4-sync.conf"
 
   # udev, modprobe, modules-load
