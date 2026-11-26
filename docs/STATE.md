@@ -22,7 +22,10 @@ resume (24 and 25 Nov: `USB disconnect` then `new high-speed USB device`
 in the same second). At 22:28:38 (first resume, 25 s after boot, charger
 plugged in during it) it dropped and never came back; every suspend since
 fails on that controller. Not the SDDM greeter (its PAM has no fprintd;
-fprintd was not running). Recovery: reboot or rebind the controller.
+fprintd was not running). Recovery, verified 12:13 26 Nov: rebind the controller,
+`echo a200000.usb > /sys/bus/platform/drivers/dwc3-qcom/unbind; sleep 1;
+echo a200000.usb > /sys/bus/platform/drivers/dwc3-qcom/bind` (root); the
+reader re-enumerates within 1 s.
 book4-ec-standby hook inert (daily DTB). Also `adsprpcd sensorspd adsp`
 restarts every 100 ms (`remote_init ... No space left on device`, ~10
 log lines/s, 15 min CPU in 13.5 h) since the light-sensor work: to fix.
