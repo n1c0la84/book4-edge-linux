@@ -15,8 +15,8 @@
 # The package installs everything under /usr/lib/modules/<rel>/ (vmlinuz,
 # modules, the 14" DTB, the out-of-tree sleep modules in extra/). It ships no
 # `pkgbase` file on purpose, so mkinitcpio's pacman hook leaves it alone:
-# tools/kernel/install-book4-kernel.sh puts kernel, initramfs and DTB on
-# /boot (sda4) and makes the GRUB entry, as build-73-kernel.sh does today.
+# book4-edge-boot's pacman hooks build the initramfs, EL2 DTB, GRUB menu on
+# sda4 and Limine EL2 UKIs on /boot (sda7).
 _suffix=${BOOK4_SUFFIX:--book4}
 _tree=${BOOK4_TREE:-$HOME/src/linux-book4}
 _repo() { cd "$startdir/../.." && pwd; }
@@ -31,7 +31,7 @@ pkgdesc="Samsung Galaxy Book4 Edge kernel (Anatase 7.3 + book4 patches)"
 arch=(aarch64)
 url="https://github.com/n1c0la84/linux-book4-edge"
 license=(GPL-2.0-only)
-makedepends=(bc cpio pahole python dtc kmod)
+makedepends=(bc cpio git pahole python dtc kmod)
 options=(!strip !debug !lto)
 
 _make() { make -C "$_tree" LOCALVERSION= "$@"; }
@@ -95,7 +95,10 @@ _package_headers() {
   local rel; rel=$(_make -s kernelrelease)
   local builddir="$pkgdir/usr/lib/modules/$rel/build"
   cd "$_tree"
-  install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map localversion.* version vmlinux 2>/dev/null || true
+  install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map vmlinux
+  for f in localversion.* version; do
+    [[ -f $f ]] && install -Dt "$builddir" -m644 "$f"
+  done
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/arm64" -m644 arch/arm64/Makefile
   cp -t "$builddir" -a scripts
@@ -103,7 +106,7 @@ _package_headers() {
   install -Dt "$builddir/arch/arm64/kernel" -m644 arch/arm64/kernel/asm-offsets.s
   cp -t "$builddir" -a include
   find . -name 'Kconfig*' -exec install -Dm644 {} "$builddir/{}" \;
-  find -L "$builddir" -type l -printf 'removing broken link %p\n' -delete 2>/dev/null | head -3 || true
+  find -L "$builddir" -type l -delete
   find "$builddir" -type f -name '*.o' -delete
   mkdir -p "$pkgdir/usr/src"; ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
 }

@@ -15,9 +15,9 @@ set -euo pipefail
 shopt -s nullglob
 W=/w OUT=/w/out
 [ $# -gt 0 ] || set -- linux-book4 book4-edge book4-edge-boot book4-edge-el2 \
-    fastrpc libssc-book4 iio-sensor-proxy-book4 book4-sensors
+    fastrpc libssc-book4 iio-sensor-proxy-book4 book4-sensors libfprint-sdcp
 for p; do
-    case "$p" in linux-book4|book4-edge|book4-edge-boot|book4-edge-el2|fastrpc|libssc-book4|iio-sensor-proxy-book4|book4-sensors) ;;
+    case "$p" in linux-book4|book4-edge|book4-edge-boot|book4-edge-el2|fastrpc|libssc-book4|iio-sensor-proxy-book4|book4-sensors|libfprint-sdcp) ;;
     *) echo "refusing to build '$p' here" >&2; exit 1 ;; esac
 done
 [ -n "${BOOK4_SIGN_FPR:-}" ] || { echo "BOOK4_SIGN_FPR is empty" >&2; exit 1; }

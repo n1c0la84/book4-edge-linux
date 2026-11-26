@@ -20,8 +20,8 @@ echo "== 1. packages"
 pkgs=()
 for p in book4-edge book4-edge-boot; do
     d=$repo/packages/$p
-    f=$(ls -t "$d"/$p-r*.pkg.tar.* 2>/dev/null | head -1 || true)
-    if [ -z "$f" ]; then (cd "$d" && makepkg -f --noconfirm >/dev/null); f=$(ls -t "$d"/$p-r*.pkg.tar.* | head -1); fi
+    f=$(ls -t "$d"/$p-r*.pkg.tar.* 2>/dev/null | grep -v '\.sig$' | head -1 || true)
+    if [ -z "$f" ]; then (cd "$d" && makepkg -f --noconfirm >/dev/null); f=$(ls -t "$d"/$p-r*.pkg.tar.* | grep -v '\.sig$' | head -1); fi
     echo "   $f"; pkgs+=("$f")
 done
 

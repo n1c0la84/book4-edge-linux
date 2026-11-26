@@ -17,7 +17,8 @@ url='https://github.com/n1c0la84/book4-edge-linux'
 license=(GPL-2.0-only)
 depends=(bash dtc mkinitcpio grub util-linux pacman)
 optdepends=('limine: the Limine menu on the second ESP (docs/plan-limine.md)'
-            'systemd-ukify: EL2 UKIs for Limine')
+            'systemd-ukify: EL2 UKIs for Limine'
+            'python-pefile: required by ukify to build EL2 UKIs')
 
 _repo() { cd "$startdir/../.." && pwd; }
 

@@ -1,0 +1,5 @@
+/src/
+/pkg/
+/libfprint/
+*.pkg.tar.*
+*.log

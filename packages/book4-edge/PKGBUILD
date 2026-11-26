@@ -12,11 +12,13 @@ pkgname=book4-edge
 pkgver=r687.81ee331
 pkgrel=1
 pkgdesc='Galaxy Book4 Edge 14": audio (UCM, PipeWire), sleep, battery, keyboard, fingerprint and boot-time services'
-arch=(aarch64)
+arch=(any)
 url='https://github.com/n1c0la84/book4-edge-linux'
 license=(GPL-2.0-only)
-depends=(bash systemd pipewire wireplumber rtkit alsa-ucm-conf upower python-gobject)
+depends=(bash systemd pipewire pipewire-audio wireplumber rtkit swh-plugins
+         alsa-ucm-conf upower bluez-utils kmod util-linux python python-gobject)
 optdepends=('keyd: Copilot key as Super'
+            'fprintd: fingerprint reader daemon (book4-fingerprint-import, book4-resume-check)'
             'libfprint-sdcp: the fingerprint reader (book4-fingerprint-import)'
             'linux-book4: the kernel whose extra modules book4-el2-sleep loads')
 backup=(etc/keyd/book4.conf
@@ -66,6 +68,7 @@ package() {
   install -Dm755 "$u/standby/book4-sleep-log"       "$L/systemd/system-sleep/book4-sleep-log"
   install -Dm755 "$u/standby/book4-resume-check"   "$L/systemd/system-sleep/book4-resume-check"
   install -Dm644 "$u/crash-log/60-book4-sync.conf"  "$L/systemd/journald.conf.d/60-book4-sync.conf"
+  install -Dm644 "$u/desktop/app-slice-oomd.conf"   "$L/systemd/user/app.slice.d/10-book4-oomd.conf"
 
   # udev, modprobe, modules-load
   install -Dm644 "$u/fingerprint/90-book4-fingerprint.rules" "$L/udev/rules.d/90-book4-fingerprint.rules"
@@ -77,9 +80,10 @@ package() {
   done
   install -Dm644 "$u/modules-load/book4-cpufreq.conf" "$L/modules-load.d/book4-cpufreq.conf"
 
-  # Audio: UCM (the conf.d name is this model's card long name) and the
-  # PipeWire/WirePlumber drop-ins, system-wide (a same-named copy in
-  # ~/.config still takes precedence).
+  # Audio: UCM (the conf.d symlink matches this SKU's card long name; other
+  # regional 14" SKUs need a matching symlink or an upstream regex in
+  # alsa-ucm-conf's Qualcomm/x1e80100/x1e80100.conf) and PipeWire/WirePlumber
+  # drop-ins, system-wide (a same-named copy in ~/.config still takes precedence).
   local ucm=$pkgdir/usr/share/alsa/ucm2
   install -Dm644 "$u/audio/ucm2/Samsung-GalaxyBook4Edge.conf"      "$ucm/Qualcomm/x1e80100/Samsung-GalaxyBook4Edge.conf"
   install -Dm644 "$u/audio/ucm2/Samsung-GalaxyBook4Edge-HiFi.conf" "$ucm/Qualcomm/x1e80100/Samsung-GalaxyBook4Edge-HiFi.conf"

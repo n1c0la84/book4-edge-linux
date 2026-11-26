@@ -21,10 +21,11 @@ conflicts=(iio-sensor-proxy)
 source=("iio-sensor-proxy::git+https://gitlab.freedesktop.org/hadess/iio-sensor-proxy#tag=$pkgver"
         0001-client-vanished-skip-missing-client-table.patch)
 sha512sums=('6667d70fd01285f9b48fa2dfc829e3186773457c4430f8373a8e0b4e25b0f31ee2780a3766206a13bcfb2721ce10978713b8bf61c844da027c444a754f910473'
-            SKIP)
+            '3467b96076fe783501da73f24f88a793cab68edaabb55b264246eaa5608779afc73d1c3e234c758b4acd25194af5ba6ff1a8eb4ea1959db0d48b3c4707d5ff78')
 
 prepare() {
   cd iio-sensor-proxy
+  git checkout -q -- . && git clean -q -fd
   git apply "$srcdir/0001-client-vanished-skip-missing-client-table.patch"
 }
 

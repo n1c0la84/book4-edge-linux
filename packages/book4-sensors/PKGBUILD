@@ -11,11 +11,12 @@
 pkgname=book4-sensors
 pkgver=r666.9411678
 pkgrel=1
-pkgdesc='Galaxy Book4 Edge 14": ambient light sensor through the ADSP (experimental)'
+pkgdesc='Galaxy Book4 Edge 14": ambient light sensor through the ADSP and automatic brightness'
 arch=(any)
 url='https://github.com/n1c0la84/book4-edge-linux'
 license=(GPL-2.0-only)
 depends=(fastrpc libssc-book4 iio-sensor-proxy-book4 book4-edge-firmware python-gobject)
+install=book4-sensors.install
 
 _repo() { cd "$startdir/../.." && pwd; }
 

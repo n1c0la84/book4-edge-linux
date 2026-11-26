@@ -1,9 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
 # libfprint from libfprint MR !547 "Implement SDCP v2 (including egismoc
 # implementation)", unmerged upstream: the EgisTec 1c7a:05a1 (Galaxy Book4
 # Edge, Book4 Pro) keeps enrolled prints only over SDCP.
 # Shaped after Arch's libfprint PKGBUILD; the same approach for the Book4 Pro
 # on x86_64: https://github.com/lanlanndn/galaxybook4-fingerprint
-# Built by install/arch/sync-fingerprint.sh.
+#
+#   cd packages/libfprint-sdcp && makepkg -f
 
 pkgname=libfprint-sdcp
 _commit=2d7c5277de08c6b29b3fac7447f17a516fbc4d1c

@@ -8,11 +8,12 @@ pacman repository in this repository's release
 |---|---|
 | `linux-book4`, `linux-book4-headers` | the kernel (n1c0la84/linux-book4-edge at the commit pinned as `_commit` in `packages/linux-book4/PKGBUILD`, config `packages/linux-book4/config`) |
 | `book4-edge` | `userspace/`: audio, sleep, battery, keyboard, fingerprint import, ... |
-| `book4-edge-boot` | `book4-boot` and its pacman hooks: kernels and the GRUB menu on /boot |
-| `book4-edge-el2` | the EL2 chain (UEFI Shell, qebspil, slbounce) and `book4-el2` |
+| `book4-edge-boot` | `book4-boot` and its pacman hooks: kernels, initramfs, EL2 DTBs, Limine EL2 UKIs (`/boot`, `sda7`) and fallback Arch GRUB (`sda4`) |
+| `book4-edge-el2` | the EL2 chain (UEFI Shell, qebspil, slbounce) and `book4-el2` (Limine and Arch GRUB chains) |
 | `fastrpc` | Qualcomm's FastRPC userspace (`adsprpcd`, ...) at a pinned commit, without upstream's auto-start rules |
 | `libssc-book4`, `iio-sensor-proxy-book4` | the ambient light sensor's reader, with Rafael Meneses' patches (replace Arch's `libssc`, `iio-sensor-proxy`) |
-| `book4-sensors` | the ambient light sensor's setup (`docs/sensors.md`); needs the locally built `book4-edge-firmware` |
+| `book4-sensors` | the ambient light sensor's setup and `book4-autobrightness` (`docs/sensors.md`); needs the locally built `book4-edge-firmware` |
+| `libfprint-sdcp` | `libfprint` with SDCP v2 (MR !547) for the EgisTec `1c7a:05a1` fingerprint reader (replaces Arch's `libfprint`) |
 
 **`book4-edge-firmware` is not there and never will be**: it holds files
 from Windows (ADSP/CDSP/GPU firmware, tcblaunch.exe). Only its recipe is
@@ -35,16 +36,22 @@ sudo pacman-key --lsign-key E75AAB6A080DCE59DC84259D595D834A7E98BBCE
 printf '[book4]\nSigLevel = Required\nServer = https://github.com/n1c0la84/book4-edge-linux/releases/download/repo\n' |
     sudo tee /etc/pacman.d/book4-repo.conf
 echo 'Include = /etc/pacman.d/book4-repo.conf' | sudo tee -a /etc/pacman.conf
-sudo pacman -Sy linux-book4 book4-edge book4-edge-boot book4-edge-el2
+sudo pacman -Syu
+sudo pacman -S linux-book4 book4-edge book4-edge-boot book4-edge-el2 libfprint-sdcp
 
-# the firmware, from this laptop's Windows partition
+# the firmware, from this laptop's Windows partition (set BOOK4_FW_LOCAL=<dir>
+# for the four ath12k c5-00302 Wi-Fi files on a fresh install; docs/firmware.md)
 git clone https://github.com/n1c0la84/book4-edge-linux && cd book4-edge-linux
 bash install/arch/firmware-stage.sh
-(cd packages/book4-edge-firmware && makepkg -f && sudo pacman -U book4-edge-firmware-*.pkg.tar.*)
+(cd packages/book4-edge-firmware && makepkg -f && sudo pacman -U --overwrite '/usr/lib/firmware/updates/*' book4-edge-firmware-*.pkg.tar.zst)
+
+# optional: ambient light sensor and automatic brightness
+sudo pacman -S book4-sensors
 ```
 
-Then `/etc/book4/boot.conf` (`install/arch/book4-boot-setup.sh`) and
-`sudo book4-el2 install`, as on the laptop today.
+Then `/etc/book4/boot.conf` (`install/arch/book4-boot-setup.sh`),
+`sudo book4-el2 install` and `sudo book4-el2 install-limine`, as on the laptop
+today.
 
 The laptop that made all this keeps its local `[book4]` (`install/arch/book4-repo.sh`)
 until it is reinstalled; nothing on it uses the online repository.
@@ -75,8 +82,8 @@ upstream developers' homes, so they are not scanned). The kernel took about
 
 Before a kernel build: bump `pkgver`/`pkgrel` and `_commit` in
 `packages/linux-book4/PKGBUILD`, push the kernel branch, and refresh
-`packages/linux-book4/config` if the config changed. `book4-edge` and
-`book4-edge-boot` take their version from the commit count.
+`packages/linux-book4/config` if the config changed. `book4-edge`,
+`book4-edge-boot` and `book4-sensors` take their version from the commit count.
 
 ## The signing key
 

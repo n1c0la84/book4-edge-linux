@@ -1,0 +1,5 @@
+post_install() {
+  echo ">>> book4-sensors: light sensor services start automatically via udev."
+  echo ">>> To enable automatic screen brightness:"
+  echo ">>>   systemctl --user enable --now book4-autobrightness"
+}

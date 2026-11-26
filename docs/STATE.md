@@ -5,6 +5,30 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 15:15: packaging and fresh-install fixes.**
+`packages/book4-edge`: added missing runtime `depends` (`swh-plugins`,
+`pipewire-audio`, `bluez-utils`, `kmod`, `util-linux`, `python`) and `fprintd`
+in `optdepends`, switched to `arch=(any)`, and packaged
+`app-slice-oomd.conf`. `packages/book4-edge-boot`: added `python-pefile` to
+`optdepends` and added `usr/share/book4/x1-el2-book4.dtso` and
+`etc/mkinitcpio.conf.d/*` triggers to `91-book4-boot.hook`.
+`packages/linux-book4`: added `git` to `makedepends`, fixed `_package_headers`
+so required files fail loudly if missing and broken-symlink cleanup is not
+cut short by `head -3`. `packages/libssc-book4`: added `gobject-introspection`
+and `protobuf` to `makedepends` (eliminates CI-vs-local `.gir`/`.typelib`
+drift), pinned patch sha256sum, made `prepare()` idempotent.
+`packages/iio-sensor-proxy-book4`: pinned patch sha512sum, made `prepare()`
+idempotent. `packages/book4-sensors`: dropped "(experimental)" and added a
+`post_install` hint for `book4-autobrightness`. Moved `libfprint-sdcp` from
+`userspace/fingerprint/arch/PKGBUILD` into `packages/libfprint-sdcp/` and
+added it to CI (`packages.yml`, `build-packages.sh`) and `book4-repo.sh`
+(along with the four sensor packages). `install/arch/firmware-stage.sh`:
+fixed `sudo sha256sum "$c"` redirection, `BOOK4_WIN_DEV`, trap ordering, and
+added `BOOK4_FW_LOCAL` + `/usr/lib/firmware/$path` fallback so `gen70500_sqe.fw`
+stages automatically on a fresh install and c5-00302 Wi-Fi files can be supplied
+from a backup dir. `book4-edge-migrate.sh`: filtered `.sig` files. Updated
+`docs/packages-online.md`.
+
 **26 November 2026, 15:00: CI signing/publish hardening and backup script updated.**
 `.github/scripts/build-packages.sh` now imports `BOOK4_SIGN_KEY` into a
 root-only keyring and unsets it before any `makepkg` build runs as `builder`

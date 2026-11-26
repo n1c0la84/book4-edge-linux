@@ -49,7 +49,7 @@ ns pacman -S --needed --noconfirm base-devel git meson glib2-devel gobject-intro
 echo "== 3. build libfprint-sdcp as $AUSER (a few minutes)"
 B=/home/$AUSER/.cache/book4-libfprint
 sudo install -d -o "${own%:*}" -g "${own#*:}" "$R$B"
-sudo install -m 644 -o "${own%:*}" -g "${own#*:}" "$REPO"/userspace/fingerprint/arch/PKGBUILD "$R$B/PKGBUILD"
+sudo install -m 644 -o "${own%:*}" -g "${own#*:}" "$REPO"/packages/libfprint-sdcp/PKGBUILD "$R$B/PKGBUILD"
 # makepkg names the file itself (PKGEXT, PKGDEST): ask it, build only if missing
 LIST=$(ns runuser -u "$AUSER" -- bash -c "cd $B && makepkg --packagelist" | tr -d '\r')
 PKG=$(grep -E '/libfprint-sdcp-[^/]*\.pkg\.tar' <<<"$LIST" | grep -v -- -debug- | head -1)

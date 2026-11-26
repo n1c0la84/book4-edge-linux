@@ -15,17 +15,17 @@ arch=(aarch64)
 url='https://libssc.dylanvanassche.be/'
 license=(GPL-3.0-or-later)
 depends=(glib2 glibc libgcc libqmi libqrtr-glib protobuf-c)
-makedepends=(git meson)
+makedepends=(git gobject-introspection meson protobuf)
 provides=("libssc=$pkgver")
 conflicts=(libssc)
-replaces=()
 source=("libssc::git+https://codeberg.org/DylanVanAssche/libssc#tag=v$pkgver"
         0001-light-data-type-override-and-value-debug.patch)
 sha256sums=('28d9063308f0ab480d2cb79bcfff9e5fc02f5e271f9774e9448ae86911ea5c7e'
-            SKIP)
+            'dee504f9bbb4e56ff168e4bae11aea77ad3bf8071da72967a62a678a5414dd1d')
 
 prepare() {
   cd libssc
+  git checkout -q -- . && git clean -q -fd
   git apply "$srcdir/0001-light-data-type-override-and-value-debug.patch"
 }
 
