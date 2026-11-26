@@ -16,3 +16,5 @@ modules.order
 *.ko.cmd
 __pycache__/
 *.pyc
+# local agent tooling / worktrees
+.claude/

@@ -1,7 +1,10 @@
 # Carrying this to Arch / Omarchy Dragon
 
-> **Started 2 October 2026; Omarchy 4.0.4 running since 3 October**: Arch Linux ARM runs next to Fedora on the
-> reference machine. Working log and next steps: [arch.md](arch.md).
+> **Historical note (updated 26 November 2026):** Written 1 October 2026 when
+> this repo was Fedora-only. Arch Linux ARM + Omarchy 4.5 is now the sole daily
+> Linux on this laptop, and Samsung 14" enablement is actively tracked with
+> Omarchy upstream (`omacom/omarchy#15860`, `birkskyum/arewearmyet#10`). See
+> [ROADMAP.md](ROADMAP.md) and [STATE.md](STATE.md).
 
 This repository is Fedora-only. The hardware knowledge in it is not, and the
 clearest unoccupied space for this machine right now is

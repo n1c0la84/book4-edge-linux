@@ -10,7 +10,7 @@ Arch on the same machine (14", NP940XMA).
   test captures for it (`tests/egismoc-05a1/`).
 - Bus: hub port 0 (`ACPI(_SB_)#ACPI(USB4)#ACPI(RHUB)#ACPI(PRT0)`) of the
   xHCI controller **`\_SB.USB4`** (`QCOM0D09`, `_UID` 4).
-- `\_SB.USB4._CRS` (DSDT from `C:\Users\nicol\Downloads\acpidump\dsdt.dat`):
+- `\_SB.USB4._CRS` (DSDT from `%USERPROFILE%\Downloads\acpidump\dsdt.dat`):
   - registers at **`0x0a200000`**, length 0x100000;
   - interrupts 272, 277, 556, 557 (GIC SPI 240, 245, 524, 525);
   - one `GpioIo` on `\_SB.GIO0` (TLMM), **pin 184**, output only, pull-up:

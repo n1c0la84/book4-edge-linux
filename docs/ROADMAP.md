@@ -1,4 +1,4 @@
-# Roadmap (updated 19 November 2026)
+# Roadmap (updated 26 November 2026)
 
 The single list of what to do on this laptop, in order, and where it is
 heading. It replaces `PLAN.md`. Evidence and history are in
@@ -9,17 +9,20 @@ delete from the ESP, ask before posting anywhere).
 ## Where it is heading
 
 **Stock Omarchy, plus a Book4 layer on top.** Stock means Omarchy's
-repositories, Omarchy's kernel (`linux-omarchy`), Arch's own GRUB (Limine optional, later),
+repositories, Omarchy's kernel (`linux-omarchy`), Limine + UKIs,
 Omarchy's updates and migrations. The layer is everything specific to this
-laptop that stock does not have, packaged so it installs on a stock system
-and survives its updates:
+laptop that stock does not have, packaged in `packages/` so it installs on a
+stock system and survives its updates:
 
-| Part of the layer | What | Lives today in |
+| Part of the layer | What | Lives in |
 |---|---|---|
-| `book4-edge` package | UCM and PipeWire audio (speakers, mic noise suppression), udev rules (keyboard, fingerprint, battery boost), modprobe (`qcom_adsp_pwr_lmts` and battmgr blacklists), sleep log, battery warnings, crash log, Bluetooth address, fingerprint import, kbd backlight, the hooks we keep | `userspace/` |
-| `book4-edge-firmware` (local only, never published) | ADSP/CDSP/GPU/Wi-Fi board/camera/sensor files from this laptop's own Windows partition | `install/arch/sync-*`, `firmware/` |
-| `book4-edge-dkms` (shrinks to nothing) | drivers until they are in `linux-omarchy`: `samsung-galaxybook-ec`, `samsung-emuec`, `aoss_cxsd_only` (until `prevent_aoss_sleep` is set by default) | `drivers/anatase/`, `tools/power/sleep-modules/` |
-| `book4-edge-el2` (optional) | the EL2 boot chain (UEFI Shell, qebspil, slbounce, `tcblaunch.exe` from Windows) as a boot entry: KVM and the 0.70 W sleep | `install/el2/` |
+| `linux-book4` (shrinks to nothing once `linux-omarchy` covers it) | 7.3 kernel with Samsung EC/emuec, 14" DT, sleep/memlat/EL2 patches and out-of-tree sleep modules | `packages/linux-book4/` |
+| `book4-edge` | UCM and PipeWire audio (speakers, mic noise suppression, clock fix), udev rules, modprobe blacklists, sleep log, resume check, drain logger, battery warnings, crash log, Bluetooth address, fingerprint import, oomd slice | `packages/book4-edge/`, `userspace/` |
+| `book4-edge-boot` | `book4-boot`, EL2 DTB overlay and pacman hooks for Limine EL2 UKIs (`/boot`, `sda7`) and fallback Arch GRUB (`sda4`) | `packages/book4-edge-boot/`, `userspace/boot/arch/` |
+| `book4-edge-el2` (optional) | EL2 boot chain (UEFI Shell, `qebspil`, `slbounce`, Limine and GRUB startup scripts) for KVM and EL2 sleep | `packages/book4-edge-el2/`, `userspace/el2/` |
+| `book4-sensors` + `fastrpc`, `libssc-book4`, `iio-sensor-proxy-book4` | ambient light sensor (VEML3328 via SSC) and `book4-autobrightness` | `packages/book4-sensors/`, `userspace/sensors/` |
+| `libfprint-sdcp` | `libfprint` MR !547 (SDCP v2) for the EgisTec `1c7a:05a1` fingerprint reader | `packages/libfprint-sdcp/` |
+| `book4-edge-firmware` (local only, never published) | ADSP/CDSP/GPU firmware, `tcblaunch.exe`, sensor config/registry from this laptop's Windows + Wi-Fi `c5-00302` | `packages/book4-edge-firmware/`, `install/arch/firmware-stage.sh` |
 
 A stock install on the 14" today: boots to the installer at EL1 and picks
 our tree by itself (17 November), but has no Wi-Fi, GPU, sound or CDSP
@@ -29,15 +32,17 @@ loads `qcom_adsp_pwr_lmts` (which crashes this ADSP). Each of those is a
 line in "Kernel and upstream" below; the layer covers them until upstream
 does.
 
-## Status (19 November 2026)
+## Status (26 November 2026)
 
 | Step | State |
 |---|---|
-| 1. Kernel 7.3 daily, 7.2 in GRUB as the fallback | **done**. Release name fixed; deep sleep (CTCU off) and audio (c663014e45 reverted) fixed; Iris patch ported and working; battery refresh tested; DSP signalling (dspsignal) ported, not yet exercised (only the NPU uses it). Package linux-book4 7.3.4-3 |
-| 2. Omarchy 4.5, its repositories, `omarchy-update` | **done** (btrfs copy `arch-45`, the default boot) |
-| 3. Kernel packaged on Arch, Arch's own GRUB | **done**: `packages/linux-book4`, `book4-boot` and its pacman hooks write `/boot` and the menu; firmware entry "Omarchy (EL2, Arch GRUB)" first, Fedora's GRUB as fallback. Limine postponed (see "Fresh install" below) |
-| 4. Retire Fedora | **done except the deletion** (archive in `~/fedora-archive`, [fedora-retired.md](fedora-retired.md)); Windows shrunk to 300 GB, root btrfs now sda5 + sda6, 196 GB |
-| 5. Omarchy's own kernel with our patches as the Book4 layer | later, once linux-omarchy covers enough (section 4) |
+| 1. Kernel 7.3 daily (`linux-book4`), 7.2 as fallback | **done** (`7.3.4-4`, PD retry + unplug quiesce + CTCU off + audioreach revert + Iris + memlat) |
+| 2. Omarchy 4.5, its repositories, `omarchy-update` | **done** (`arch-45` on two-device btrfs `sda5` + `sda6`, 196 GB) |
+| 3. Boot on Arch: Limine + EL2 UKIs default, Arch GRUB fallback | **done** (23 Nov: `sda4` split to 512 MiB ext4 + `sda7` 1.5 GiB `BOOK4ESP` `/boot`; `book4-edge-boot` + `book4-edge-el2` hooks manage Limine and GRUB; no `cutmem` needed on Limine) |
+| 4. Retire and delete Fedora | **done** (23 Nov: `root`, `home`, `arch` subvolumes and Fedora `/boot` files deleted; archive in `~/fedora-archive/`, [fedora-retired.md](fedora-retired.md)) |
+| 5. Book4 layer packaged and published online | **done** (10 packages in `packages/`; 9 public packages in signed online `[book4]`, `book4-edge-firmware` local-only; [packages-online.md](packages-online.md)) |
+| 6. Ambient light sensor + automatic brightness | **done** (25 Nov: works at EL1 and EL2 via `book4-sensors` + `book4-autobrightness`; [sensors.md](sensors.md)) |
+| 7. Omarchy's own kernel (`linux-omarchy`) with our layer | **in progress** (`qcom_tsens` initramfs crash verified fixed on 7.3-79, 25 Nov; waiting on EC/charging/AOSD/audio gaps) |
 
 Problems from these steps:
 
@@ -314,20 +319,17 @@ used for the 4.5 upgrade covers that need for now.
 
 ## 6. Features still to do
 
-- **Ambient light sensor** (VEML3328 behind the ADSP): Rafael's way
-  (SB4-Edge-Linux `overlay/sensors`, `build-ssc.sh`): `adsprpcd sensorspd`
-  with the sensor registry from the Windows driver files, libssc,
-  iio-sensor-proxy 3.9; then a small service for screen and keyboard
-  backlight (Omarchy has no automatic brightness). Try at EL1 first (his
-  notes: the ADSP asserts if it can't write its registry; at EL2 a crashed
-  DSP stays down until reboot).
+- ~~**Ambient light sensor**~~: **done (25 Nov)** — works at EL1 and EL2 via
+  `book4-sensors` + `book4-autobrightness` ([sensors.md](sensors.md));
+  automatic keyboard backlight remains optional.
 - **External monitor over USB-C** (AUX timeouts; Rafael has the same
   failure on the 16"; linux-omarchy has many DP/PHY fixes).
 - **Headset microphone** on the jack.
 - **NPU** (dspqueue hang; dspsignal written, untested).
 - **Speaker VI feedback** (right pair works on the test branch).
 - **Hibernation** (resume resets; low priority).
-- **USB-C controller failing after sleep** (TODO.md).
+- **USB-C controller / SoundWire clash after sleep** ([TODO.md](TODO.md),
+  `docs/upstream-drafts/`).
 
 ## 7. Waiting on others
 

@@ -1,6 +1,11 @@
 # Plan: kernel builds and GRUB on Arch, Fedora retired (18 November 2026)
 
-ROADMAP section 5, in detail. Nothing here has been done yet.
+> **Status (26 November 2026): Completed (18–23 November 2026).** Parts A, B
+> and C are done, Fedora was deleted on 23 November ([fedora-retired.md](fedora-retired.md)),
+> and Limine on `sda7` superseded Arch GRUB as default ([plan-limine.md](plan-limine.md)).
+> Kept as the execution record.
+
+ROADMAP section 5, in detail.
 
 ## What Fedora does today
 

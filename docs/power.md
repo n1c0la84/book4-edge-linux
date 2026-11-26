@@ -1,12 +1,16 @@
 # Power: suspend drain
 
-**Where it stands (13 November 2026; evidence in [TODO.md](TODO.md), CL5/DRIPS item).**
-- Daily setup (EL2, CL5 + SS1/DRIPS, AOSD off): `cxsd`/`ddr` ~100 %,
-  **0.70 W** over 3.5-4 h on battery (0.64-1.03 W across October-November;
-  no full night on battery yet). Other X1E laptops: 0.17-0.26 W. The SoC is
-  collapsed, so the rest is the board. **Windows on this board: 0.11 W**
-  (sleep study, 570 min on battery, 16 November; 0.06-0.17 W with the
-  gauge's steps), so about 0.6 W is still to find.
+**Where it stands (26 November 2026; details in [STATE.md](STATE.md) and [TODO.md](TODO.md)).**
+- Daily setup (`linux-book4` `7.3.4`, EL2, CL5 + SS1/DRIPS, CTCU disabled, AOSD
+  off): `cxsd`/`ddr` ~98–100 %, **0.70 W** over 3.5–4 h on battery (0.64–1.03 W
+  across October–November). Other X1E laptops: 0.17–0.26 W; **Windows on this
+  board: 0.11 W** (sleep study, 570 min on battery, 16 November). A 25 Nov rail
+  comparison against the Slim 5x confirmed no large Linux-visible always-on
+  rail remains; `tools/power/ec-standby-test.sh` (MODS + HPDC together) is
+  ready to test EC-controlled standby rails.
+- **Awake drain (26 November):** UPower history (19–26 Nov, 27.5 h awake on
+  battery) averaged **7.1 W** (~7 h from full vs ~4–5 W Windows light use);
+  `book4-drain` now logs per-minute awake wattage and top CPU consumers.
 - At EL2 TrustZone needs three things for DRIPS: every Linux vote gone, the
   wake deadline in the EL1 timer (`el1tmr`), and the clusters in CL5.
   Without CL5 it refuses SS1 and DRIPS every time and one CPU spins
@@ -56,7 +60,7 @@ but the EC moves `charge_now` in steps of about 1 % (35 mAh), so 0.5-1.5 W.
 The 1.55 W of 19 October (70 mAh in 41 min) has the same uncertainty.
 `tools/power/sleep-drain.sh` now waits for `charge_now` to change; precise
 figures need long sleeps (overnight: ~4 %).
-**Speakers lost after that sleep (20 October):** one WSA8845 amp
+**Speakers lost after that sleep (20 October):** one WSA883x amp
 (`sdw:4:0:0217:0202:00:1`) `UNATTACHED` after resume, SoundWire parity errors
 from the amps at suspend/resume, the speaker pipeline stuck in `[init]`;
 sound back only after a reboot. The known race (x1e-sleep): SoundWire gates

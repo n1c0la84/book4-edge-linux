@@ -1,5 +1,12 @@
 # Plan: Limine beside Arch GRUB, on a split /boot
 
+> **Status (26 November 2026): Steps 1–5 completed on 23 November 2026.**
+> `sda4` was split into 512 MiB ext4 + `sda7` 1.5 GiB FAT32 `BOOK4ESP` mounted
+> at `/boot`; Limine (`Boot0001`, EL2 UKIs built by `book4-boot`, no `cutmem`)
+> is the daily default; Arch GRUB (`Boot0004`) stays as fallback. Step 6
+> (Omarchy's own `limine-mkinitcpio-hook` / `limine-snapper-sync`) remains for
+> later. The text below is kept as the execution record.
+
 Written 22 November 2026, to execute later. ROADMAP section 5 item 5
 ("Optional, later: Limine"). Same rules as the GRUB move: a second firmware
 entry first, Arch GRUB stays the default until Limine has run for a few days,

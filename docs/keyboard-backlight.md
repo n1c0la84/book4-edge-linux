@@ -1,4 +1,10 @@
-# Keyboard backlight (experimental, disabled)
+# Keyboard backlight (early 0x62 experiment, superseded)
+
+> **Superseded (since 30 September 2026):** Keyboard backlight works cleanly
+> through Anatase's `samsung-galaxybook-ec` kernel driver (`0xFF10` mailbox,
+> `samsung-galaxybook::kbd_backlight`) and the Fn hotkey. The notes below
+> document our earlier experimental `0x62` I2C driver (`drivers/book4-kbd-backlight`),
+> which blinks and is disabled.
 
 Status: we can switch the backlight on and set its level from Linux, but no
 version of our driver keeps it on reliably. The driver

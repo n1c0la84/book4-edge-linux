@@ -40,8 +40,9 @@ the 16" (github.com/rafaelmnz/SB4-Edge-Linux, `overlay/sensors`,
    (`net.hadess.SensorProxy`); `monitor-sensor` shows it. The udev rule
    `81-book4-ssc-light.rules` marks `/dev/fastrpc-adsp` as an SSC light
    sensor and starts it.
-6. **Brightness** (to do): Omarchy has no automatic brightness, so a small
-   service for the screen and the keyboard backlight.
+6. **Automatic brightness**: `book4-autobrightness` (below) drives the panel
+   backlight from `iio-sensor-proxy` (screen done 25 Nov; automatic keyboard
+   backlight is optional / not yet added).
 
 ## Safety
 
@@ -51,18 +52,18 @@ the 16" (github.com/rafaelmnz/SB4-Edge-Linux, `overlay/sensors`,
   `/dev/kvm` guard is gone: it runs at both.
 - `fastrpc` ships no udev rules or units: upstream's start `cdsprpcd` by
   themselves, which crashed the CDSP on other X1E laptops.
-- Nothing is enabled on install.
+- `book4-sensors.service` and `iio-sensor-proxy` are started automatically by
+  udev at boot; `book4-autobrightness` is not enabled on install.
 
-## Testing (EL1 boot)
+## Installing and verifying
 
     bash install/arch/firmware-stage.sh && (cd packages/book4-edge-firmware && makepkg -f)
     bash install/arch/book4-repo.sh add book4-edge-firmware
     sudo pacman -Syu && sudo pacman -S book4-sensors
-    # reboot into Limine's "EL1" entry, then:
-    sudo systemctl start book4-sensors.service
+    # After a reboot (EL2 or EL1; udev starts the services automatically):
     journalctl -u book4-sensors -b; journalctl -k -b | grep -i -E "adsp|remoteproc"
     LIBSSC_LIGHT_DATA_TYPE=color ssccli --sensor light
-    sudo systemctl restart iio-sensor-proxy.service; monitor-sensor --light
+    monitor-sensor --light
 
 ## Automatic brightness
 

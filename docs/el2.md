@@ -1,5 +1,15 @@
 # Linux at EL2 (no Qualcomm hypervisor)
 
+**Status (26 November 2026): the daily boot, now packaged in `book4-edge-el2`
+and booting Limine.** Firmware entry `Boot0001` "Omarchy (EL2, Limine)" starts
+the UEFI Shell in `\EFI\book4-el2-limine\`, loads `qebspil` (starts ADSP and
+CDSP) and `slbounce` from `\EFI\book4-el2-arch\`, and hands off to Limine on
+`sda7` (`BOOK4ESP`) with EL2 UKIs for `linux-book4` (`7.3.4-book4`) and Arch
+GRUB (`Boot0004`) as fallback. KVM, audio, ambient light sensor, battery,
+USB-C, full `s2idle` deep sleep ([power.md](power.md)), EFI variables, and RTC
+all work at EL2. See [install.md](install.md) and [plan-limine.md](plan-limine.md).
+The sections below are the October 2026 bring-up history.
+
 **Status (20 October 2026): the daily boot.** The firmware entry "Book4 EL2
 (slbounce)" starts a UEFI Shell from the internal ESP, which loads qebspil
 (starts the ADSP and CDSP) and slbounce, then GRUB boots the sleep kernel

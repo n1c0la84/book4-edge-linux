@@ -3,9 +3,10 @@ Licensing of this repository
 
 Our own work in this repository is licensed as follows:
 
-- Code, scripts, configuration files and drivers we wrote (everything under
-  drivers/book4-ec/, drivers/book4-kbd-backlight/, install/, tools/,
-  userspace/, and our Makefile, dkms.conf and patches in drivers/anatase/):
+- Code, scripts, configuration files, packaging recipes and drivers we wrote
+  (everything under drivers/book4-ec/, drivers/book4-kbd-backlight/, install/,
+  packages/, tools/, userspace/, .github/, and our Makefile, dkms.conf and
+  patches in drivers/anatase/):
   GNU General Public License, version 2 only (GPL-2.0-only).
   Full text: LICENSES/GPL-2.0-only.txt
 

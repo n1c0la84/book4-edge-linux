@@ -1,5 +1,29 @@
 # Things to report upstream
 
+## Recent upstream activity (17–26 November 2026)
+
+- **`qcom_tsens` initramfs deferred-probe crash (`birkskyum/arewearmyet#10`,
+  linux-pm / lore):** root cause reported 23 Nov (`init_common` marked
+  `__init` in `drivers/thermal/qcom/tsens.c`); Christian Schmidbauer's fix
+  tested on `linux-omarchy` 7.3-79 and `Tested-by` sent to lore on 25 Nov.
+- **Omarchy Snapdragon (`omacom/omarchy#15860`, `birkskyum/arewearmyet#10`):**
+  14" `hw-test` report sent 23 Nov; `qcom_aoss` `val:` format fix credited for
+  upstream; memlat/boost/capacity/95 °C performance notes posted 17 Nov;
+  speaker side correction (`swr0` = left, `swr3` = right) posted 17 Nov.
+- **`jglathe/linux_ms_dev_kit#102`:** replied 22 Nov (`qcom_adsp_pwr_lmts`
+  crash, LPASS macro fixes, ~0.70 W EL2 numbers; syscon fix credited).
+- **Unsent upstream drafts (owner review):**
+  - `docs/upstream-drafts/2026-11-soundwire-clash.txt` (SoundWire clash,
+    `wsa883x` `suppress_bind_attrs`, `qcom_swrm_remove` IRQ race & re-probe
+    IRQ type mismatch; needs retest on untainted kernel)
+  - `docs/upstream-drafts/2026-11-usb-resume.txt` (xHCI death on `usb_2`, QMP
+    combo PHY init timeout & pipe-clock unwind warning; needs retest on
+    untainted kernel)
+  - `docs/drafts/2026-11-14-linux-arm-msm-el1-s2idle-cntv.txt` (EL1 s2idle
+    CNTV arming)
+  - `docs/drafts/2026-11-16-launchpad-2084591-14inch.txt` (keyboard tablet-pad
+    quirk)
+
 ## To Anatase (`ene-kb9058-battery`, `samsung-emuec`)
 
 1. **PD request after hot plug times out.** **Reported 1 October 2026 with the

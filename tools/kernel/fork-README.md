@@ -1,5 +1,12 @@
 # Linux for the Samsung Galaxy Book4 Edge 14" (Snapdragon X Elite)
 
+> **Note (26 November 2026):** The active daily branch on
+> [n1c0la84/linux-book4-edge](https://github.com/n1c0la84/linux-book4-edge) is
+> now **`book4/7.3`** (on Anatase 7.3.4, packaged natively on Arch by
+> `packages/linux-book4/PKGBUILD` and booted via Limine + EL2 UKIs without
+> `cutmem`). The table below reflects the earlier 7.2 layout until this
+> `.github/README.md` template is refreshed and pushed to the fork.
+
 This is the kernel that runs on a **Samsung Galaxy Book4 Edge 14"
 (NP940XMA, X1E80100)**: the [Anatase](https://github.com/anatase-org/patchwork)
 kernel tree with the few patches this machine still needs on top, and a
@@ -66,5 +73,5 @@ Kapenekakis: the device tree, the `samsung-galaxybook-ec` and
 This branch adds testing on real 14" hardware and a handful of fixes.
 Licence: as the kernel (GPL-2.0).
 
-*This file is `.github/README.md`, which GitHub shows instead of the
-kernel's own [README](../README).*
+*This file is the template for `.github/README.md` in `n1c0la84/linux-book4-edge`,
+which GitHub displays instead of the kernel's own `README`.*

@@ -1,21 +1,13 @@
-# Fedora retired (part C, from 19 November 2026)
+# Fedora retired and deleted (19–23 November 2026)
 
-Fedora is no longer needed for anything: the kernel is built and packaged on
-Arch (`packages/linux-book4`, plan part A), Arch's own GRUB boots by default
-with a menu written by `book4-boot` (part B), and its data is archived into
-Arch (`install/arch/fedora-retire.sh archive`). **Fedora is not deleted yet.**
-It still boots: as "Fedora Linux (Fedora's GRUB menu)" in the Arch GRUB menu,
-and through the firmware entries "Omarchy (EL2, Fedora GRUB, fallback)" and
-"Fedora GRUB (EL1)".
-
-Deletion approved by the owner 23 November 2026, together with the pre-4.5
-Arch copy (`arch`): `install/arch/fedora-delete.sh` (dry run first, then
-`--yes`). What deleting it will mean later (not done, needs the owner's go): the
-`root` and `home` btrfs subvolumes (~25 GB, minus what the archive's reflinks
-keep), Fedora's kernels, initramfs and BLS entries on sda4 (`/grub2`,
-`/loader`), the Fedora GRUB menu entry and, if wanted, firmware entry
-"Fedora GRUB (EL1)". `\EFI\fedora\` stays on the ESP (hard rule), so the
-fallback firmware entry keeps working as long as sda4 keeps the 7.3 kernel.
+Fedora is no longer installed: the kernel is built and packaged natively on
+Arch (`packages/linux-book4`), Limine on `sda7` (`BOOK4ESP`) is the default
+bootloader with Arch GRUB on `sda4` as fallback, and Fedora's data was archived
+into `~/fedora-archive/` (`install/arch/fedora-retire.sh archive`). **Fedora
+was deleted on 23 November 2026** (`install/arch/fedora-delete.sh --yes`:
+subvolumes `root`, `home`, and pre-4.5 `arch` removed, plus Fedora's kernel and
+rescue files on `sda4`). `\EFI\fedora\` stays on `sda1` (hard rule) as a
+fallback firmware entry.
 
 ## The archive
 

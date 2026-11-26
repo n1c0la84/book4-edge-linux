@@ -78,9 +78,11 @@ https://github.com/anatase-org/kernel-anatase/issues/2 . Copies in
 [`dts/patches/`](../dts/patches). They are functionally identical to the
 tested DTB apart from three empty CAMSS port nodes.
 
-Still to do: tuning/sensor helper in libcamera (ciscobugger has one), test in
-a browser and PipeWire, check the GPIO hogs against power use (they keep the
-sensor powered permanently).
+Still to do: tuning/sensor helper in libcamera (ciscobugger has one), Qt/V4L2
+apps (e.g. Monologue — `libcamerify` lacks `FrameDurationLimits` and
+`install/arch/camera-relay.sh` currently delivers a frozen frame; browsers work
+via PipeWire with `--enable-features=WebRtcPipeWireCamera`), and checking the
+camera regulators (`vreg_l7b_2p8` always-on in HPM) against sleep power.
 
 ## Background
 

@@ -32,7 +32,7 @@ runs, fix B is dead: record that and stop.
 
 The full ACPI dump is in Fedora's `~/src/acpi/` (all tables, there are no
 SSDTs; `dsdt.dsl` decompiled) and the raw DSDT in Windows at
-`C:\Users\nicol\Downloads\acpidump\dsdt.dat`. Line numbers refer to
+`%USERPROFILE%\Downloads\acpidump\dsdt.dat`. Line numbers refer to
 `dsdt.dsl`:
 
 - ~58836: `OperationRegion (MCU1, 0xA0, Zero, 0x10)` in `\_SB.ECTC`, fields

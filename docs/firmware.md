@@ -11,12 +11,13 @@ Copy from `C:\Windows\System32\DriverStore\FileRepository\` to
 | file | Windows driver package |
 |---|---|
 | `qcadsp8380.mbn`, `adsp_dtbs.elf` | `qcsubsys_ext_adsp8380.inf_arm64_*` |
-| `qccdsp8380.mbn`, `cdsp_dtbs.elf` | `qcsubsys_ext_cdsp8380.inf_arm64_*` |
-| `qcdxkmsuc8380.mbn` | probably `qcdx8380.inf_arm64_*` (not re-checked) |
+| `qccdsp8380.mbn`, `cdsp_dtbs.elf` | `qcnspmcdm_ext_cdsp8380.inf_arm64_*` |
+| `qcdxkmsuc8380.mbn` | `qcdx8380.inf_arm64_*` |
 
 `qcom_q6v5_pas` asks for the ADSP/CDSP images very early and gives up for good
-if they are missing, so they must be inside the initramfs:
-[`userspace/dracut/book4-fw.conf`](../userspace/dracut/book4-fw.conf).
+if they are missing, so they must be inside the initramfs
+([`userspace/initcpio/book4.conf`](../userspace/initcpio/book4.conf) on Arch;
+legacy Fedora dracut: [`userspace/dracut/book4-fw.conf`](../userspace/dracut/book4-fw.conf)).
 
 Note: Samsung's ADSP image has **no charger PD** (`charger_pd`), unlike Dell or
 Lenovo X1E images. That is why `qcom_battmgr` / `pmic_glink` can never work on
@@ -45,15 +46,23 @@ and 7.2.7 (16 October) a PCI remove of `0004:01:00.0` and a rescan of
 address changes across the reload). If Wi-Fi misbehaves, reboot.
 `cma=256M` on the kernel command line is required (it cleared an ath12k DMA failure).
 
-## Package (19 November 2026)
+## Package (updated 26 November 2026)
 
-`book4-edge-firmware` (packages/book4-edge-firmware) installs everything
-above into `/usr/lib/firmware/updates/`: the ADSP, CDSP (the NPU driver
-package's pair, `qcnspmcdm_ext_cdsp8380`) and GPU zap images from this
-laptop's own Windows driver store, `gen70500_sqe.fw`, the Wi-Fi c5-00302 set
-with its `board.bin`, and the topology alias to the CRD's. It is built
-locally and never published: `install/arch/firmware-stage.sh` stages the
-files in `~/.local/share/book4-edge-firmware` (Windows mounted read-only),
-picking each by the checksum in `packages/book4-edge-firmware/sha256sums.txt`;
-Windows keeps several versions side by side and updates them (a newer
-`qcdxkmsuc8380.mbn` arrived on 18 November and is not used).
+`book4-edge-firmware` (`packages/book4-edge-firmware`) installs everything
+above into `/usr/lib/firmware/updates/` plus EL2 and sensor files:
+- ADSP, CDSP (`qcnspmcdm_ext_cdsp8380`) and GPU zap images from Windows'
+  DriverStore;
+- `tcblaunch.exe` (build `10.0.26100.9616` from `WinSxS`, installed to
+  `/usr/lib/book4/tcblaunch.exe`, copied to `/efi` by `book4-el2`);
+- 157 ambient light sensor config and registry files from
+  `qcsensorsconfigcrd8380` and `System32/drivers/DriverData` (installed to
+  `/usr/share/book4/sensors/`, [sensors.md](sensors.md));
+- `gen70500_sqe.fw` (from `linux-firmware-qcom` on a fresh install) and the
+  four Wi-Fi `c5-00302` files (`amss.bin`, `m3.bin`, `board.bin`, `board-2.bin`);
+- the audio topology symlink to `X1E80100-CRD-tplg.bin`.
+
+It is built locally and never published: `install/arch/firmware-stage.sh`
+stages the files in `~/.local/share/book4-edge-firmware` (Windows `sda3`
+mounted read-only; pass `BOOK4_FW_LOCAL=<dir>` on a fresh install for the four
+`ath12k` `c5-00302` files), picking each by its checksum in
+`packages/book4-edge-firmware/sha256sums.txt`.

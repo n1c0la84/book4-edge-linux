@@ -1,4 +1,12 @@
-# Arch Linux ARM next to Fedora (toward Omarchy)
+# Arch Linux ARM (historical Fedora-to-Arch bring-up log)
+
+> **Current state (26 November 2026):** Arch Linux ARM + **Omarchy 4.5**
+> (`arch-45` subvolume spanning `sda5` + `sda6`) is the sole Linux installation
+> on this machine (Fedora was retired and deleted on 23 November;
+> [fedora-retired.md](fedora-retired.md)). Kernels (`linux-book4` 7.3.4) and
+> Book4 hardware configs come from `[book4]` packages, booting via Limine on
+> `sda7` (`BOOK4ESP`). See [install.md](install.md) and [updates.md](updates.md)
+> for current setup; the log below is the October 2026 bring-up next to Fedora.
 
 Status on 3 October 2026, 14" NP940XMA: **Omarchy 4.0.4 runs on Arch Linux
 ARM** with the shared Anatase kernel. This is the working log for the Arch

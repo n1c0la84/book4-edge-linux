@@ -1,5 +1,11 @@
 # Samsung Galaxy Book4 Edge EC protocol (from Windows EC2.sys)
 
+> **Note:** Initial reverse-engineering notes from 30 September 2026. On
+> `linux-book4` 7.3, `i2c@b94000` is enabled and Anatase's `samsung-galaxybook-ec`
+> and `samsung-emuec` drivers implement battery, keyboard backlight (`0xFF10`),
+> and charger input-limit commands (`0x90`/`0x91`, discovered 29 October; see
+> [power.md](power.md)).
+
 Source: `EC2.sys` (ec2.inf, ACPI\SAM060B), 66608 bytes, sha256
 2b4c7b2deaa4b654d574fbecdd15e24a95f39bdc99301b577e61833faafed9dd.
 Disassembled with binutils `objdump -d` (pei-aarch64-little); `annotate.py` resolves

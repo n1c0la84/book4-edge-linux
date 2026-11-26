@@ -1,0 +1,75 @@
+# Lightweight syntax, unit-test and device-tree overlay checks on every push/PR.
+name: lint
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install device-tree-compiler and PyYAML
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq device-tree-compiler python3-yaml
+
+      - name: Bash syntax check
+        run: |
+          set -euo pipefail
+          checked=0
+          while IFS= read -r f; do
+            case "$f" in
+              *.sh|packages/*/PKGBUILD|packages/*/*.install|.github/scripts/*.sh)
+                bash -n "$f"
+                checked=$((checked + 1))
+                ;;
+              userspace/*|drivers/*)
+                if [ -f "$f" ] && head -1 "$f" | grep -qE '^#!.*(ba)?sh'; then
+                  bash -n "$f"
+                  checked=$((checked + 1))
+                fi
+                ;;
+            esac
+          done < <(git ls-files)
+          echo "Checked $checked shell scripts/PKGBUILDs."
+
+      - name: Python syntax check and unit tests
+        run: |
+          python3 - <<'PY'
+          import ast, pathlib, subprocess
+          files = subprocess.check_output(["git", "ls-files"], text=True).splitlines()
+          checked = 0
+          for f in files:
+              p = pathlib.Path(f)
+              if not p.is_file():
+                  continue
+              is_py = p.suffix == ".py"
+              if not is_py and f.startswith(("userspace/", "tools/", "install/")):
+                  try:
+                      first = p.read_text(errors="ignore").splitlines()[:1]
+                      is_py = bool(first and first[0].startswith("#!") and "python" in first[0])
+                  except OSError:
+                      pass
+              if is_py:
+                  ast.parse(p.read_text(), filename=f)
+                  checked += 1
+          print(f"Checked {checked} Python files.")
+          PY
+          python3 -m unittest discover -s tools/power/psci-probe -v
+
+      - name: Compile active EL2 device-tree overlay
+        run: dtc -@ -I dts -O dtb -o /dev/null dts/src/x1-el2-book4.dtso
+
+      - name: Validate workflow YAML
+        run: |
+          python3 - <<'PY'
+          import glob, yaml
+          for f in sorted(glob.glob(".github/workflows/*.yml")):
+              with open(f) as fh:
+                  yaml.safe_load(fh)
+              print(f"YAML OK: {f}")
+          PY

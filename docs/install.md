@@ -1,127 +1,137 @@
 # Reproducing this machine
 
-The order to set the Galaxy Book4 Edge 14" up from scratch, the way the
-reference machine runs on 20 October 2026: **Arch Linux ARM + Omarchy as the
-daily system, booted at EL2 with the sleep kernel (full s2idle deep sleep),
-Fedora next to it** as the build host that owns `/boot` and GRUB. Each step
-links the script that does it and the document that explains it.
+How the Samsung Galaxy Book4 Edge 14" (NP940XMA) is set up as of
+**26 November 2026**: **Arch Linux ARM + Omarchy 4.5** as the daily system,
+booted at **EL2** via **Limine + EL2 UKIs** with our packaged `linux-book4`
+(`7.3.4-book4`) kernel and the Book4 layer packages from the signed online
+`[book4]` repository ([packages-online.md](packages-online.md)).
 
-Every script was run on the reference machine, but **the sequence as a whole
-has never been run on an empty disk.** Read each script before running it.
-All of them run as your user and call `sudo` themselves.
+> **Note:** Fedora was used during the original October 2026 bring-up and was
+> retired/deleted on 23 November 2026 ([fedora-retired.md](fedora-retired.md)).
+> Legacy Fedora scripts remain in `install/` as history; the current setup is
+> Arch-native. Every piece below runs on the reference machine, though the full
+> sequence from a blank disk has not been run end-to-end.
 
 ## What you need first
 
-- **Windows, kept.** The DSP and GPU firmware and `tcblaunch.exe` (for EL2)
-  come from it, and the firmware updates come through it.
-  ([firmware.md](firmware.md))
-- **Disk layout** (what the scripts assume): `sda1` ESP (shared with
-  Windows: only add files, never delete), `sda3` Windows, `sda4` `/boot`
-  (ext4, Fedora's), `sda5` btrfs with the subvolumes `root` and `home`
-  (Fedora) and `arch` (Arch, with its own `/home`).
-- A USB stick to boot Fedora's installer, and a charger.
+- **Windows, kept on `sda3`.** The ADSP/CDSP/GPU firmware, `tcblaunch.exe` (for
+  EL2), ambient light sensor config/registry, firmware updates, and Windows
+  Hello fingerprint enrolments all come from Windows ([firmware.md](firmware.md)).
+- **Disk layout on the reference machine:**
+  - `sda1` (260 MiB FAT32, `/efi`): firmware & Windows ESP — holds the UEFI
+    Shell EL2 chains (`\EFI\book4-el2-limine\`, `\EFI\book4-el2-arch\`) and
+    `qebspil`'s `\firmware\...` copy. **Only add or update our folders; never
+    delete Windows or firmware files.**
+  - `sda3` (NTFS): Windows.
+  - `sda4` (512 MiB ext4, unmounted normally): fallback Arch GRUB `/boot`.
+  - `sda5` + `sda6` (btrfs, two-device root): Arch/Omarchy subvolume (`arch-45`).
+  - `sda7` (1.5 GiB FAT32, label `BOOK4ESP`, `/boot`): second ESP for Limine,
+    `limine.conf`, and EL2 UKIs (`/EFI/Linux/book4-*-el2.efi`).
+- **Four non-Windows Wi-Fi firmware files (`c5-00302`)**: from Debian
+  `firmware-atheros` 20251111-1 + extracted `board.bin` ([firmware.md](firmware.md)).
+  Keep a local copy to pass via `BOOK4_FW_LOCAL=<dir>` on a fresh install.
 
-## 1. Fedora: a machine that boots
+## 1. Base Arch Linux ARM + Omarchy
 
-1. Install Fedora (aarch64) with a hand-made GRUB config and device tree:
-   [bootstrap.md](bootstrap.md). The load-bearing details are there (`cutmem`,
-   a padded DTB, `cma=256M`, `mem_sleep_default=s2idle`).
-2. The DSP/GPU firmware from Windows and the Wi-Fi firmware:
-   [firmware.md](firmware.md).
-3. The base layer and the fallback kernel's drivers:
-   `bash install/install-fedora.sh [BLUETOOTH_ADDRESS]` (boot hook, keyboard,
-   audio profile, Bluetooth address, Anatase's drivers through DKMS). With
-   the stock Fedora kernel that is already a working laptop (battery, USB-C,
-   charging, audio), minus the keyboard backlight, EFI variables and the
-   clock. `install/update-boot-hook.sh` and `install/update-audio.sh`
-   reinstall those pieces from the repo later.
-4. The GRUB guard before any `dnf update`: `bash install/guard-grub.sh`
-   ([updates.md](updates.md)).
+Start from an Arch Linux ARM + Omarchy 4.5 installation (or Omarchy's official
+Snapdragon ISO once available; see [ROADMAP.md](ROADMAP.md) and
+[arch.md](arch.md) for how this machine was originally bootstrapped).
 
-## 2. The kernel (on Fedora)
+Before installing `linux-book4`, keep `linux-modules-cleanup.service` masked if
+you keep more than one kernel installed, and never run
+`omarchy-reinstall-configs`, `omarchy-refresh-limine`,
+`omarchy-setup-security-fingerprint`, or Omarchy's x86 `post-install/pacman.sh`.
 
-5. Build `7.2.7-book4` from
-   [`book4/7.2`](https://github.com/n1c0la84/linux-book4-edge/tree/book4/7.2)
-   in `~/src/patchwork`, then `bash install/install-anatase-kernel.sh`
-   ([kernel.md](kernel.md)). This is Fedora's default kernel, the EL1 kernel
-   and the one every other build starts from.
-6. Optional: the camera device tree, `bash install/camera-dtb.sh`
-   ([camera.md](camera.md)); the fingerprint reader,
-   `bash install/fingerprint-libfprint.sh` then `bash install/fingerprint.sh`.
+## 2. Add the signed `[book4]` repository and install the Book4 layer
 
-## 3. Arch Linux ARM next to it
+See [packages-online.md](packages-online.md) for full details on key
+verification and CI builds:
 
-From Fedora ([arch.md](arch.md) has the details and the lessons):
+```sh
+curl -fsSLO https://raw.githubusercontent.com/n1c0la84/book4-edge-linux/main/keys/book4-repo.asc
+sudo pacman-key --add book4-repo.asc
+sudo pacman-key --lsign-key E75AAB6A080DCE59DC84259D595D834A7E98BBCE
 
-7. `bash install/arch/stage1-base.sh`: the `arch` subvolume, base system,
-   modules and firmware, initramfs into `/boot`, GRUB entry.
-8. `bash install/arch/stage2-desktop.sh`: Hyprland, PipeWire with our UCM
-   profile, Bluetooth address.
-9. `bash install/arch/sync-audio.sh`, and `bash install/arch/sync-fingerprint.sh`
-   if step 6 was done.
+printf '[book4]\nSigLevel = Required\nServer = https://github.com/n1c0la84/book4-edge-linux/releases/download/repo\n' |
+    sudo tee /etc/pacman.d/book4-repo.conf
+echo 'Include = /etc/pacman.d/book4-repo.conf' | sudo tee -a /etc/pacman.conf
 
-Then boot Arch, and on Arch:
+sudo pacman -Syu
+sudo pacman -S linux-book4 book4-edge book4-edge-boot book4-edge-el2 \
+    libfprint-sdcp limine systemd-ukify python-pefile
+```
 
-10. Omarchy: `stage3-omarchy-build.sh`, `stage3-omarchy-install.sh`,
-    `stage3-omarchy-user.sh`, then `stage3-yay.sh` (held packages) and
-    optionally `stage3-chrome.sh`, all in `install/arch/`
-    ([arch.md](arch.md), [omarchy.md](omarchy.md)). `stage3-omarchy-install.sh`
-    also masks `linux-modules-cleanup.service`, which must stay masked: it
-    deletes the module trees of every kernel but the running one.
-11. Arch as GRUB's default, plus the suspend defaults (`pcie_port_pm=force`,
-    no USB wakeup): `bash install/arch/boot-defaults.sh`. Then the low-battery
-    policy (warnings at 8 % and 5 %, a clean power-off at 3 %):
-    `bash install/arch/battery-policy.sh`. And a log of every sleep (minutes,
-    mAh, watts, deep-sleep residency): `bash install/arch/sleep-log.sh`.
-    Optional: the Copilot key as Super (keyd): `bash install/arch/copilot-key.sh`.
+*(On the reference machine itself, a local unsigned `[book4]` repository at
+`/var/lib/book4-repo` managed by `install/arch/book4-repo.sh` is used instead
+of the online release.)*
 
-From here, Fedora's container is used from Arch for kernel builds
-(`install/arch/fedora-shell.sh`); Fedora itself does not need to be booted.
+## 3. Build and install `book4-edge-firmware` (local only)
 
-## 4. Deep sleep: the sleep kernel at EL2
+Proprietary Windows/Qualcomm firmware and `tcblaunch.exe` are never published.
+Stage them read-only from this laptop's Windows partition (pass
+`BOOK4_FW_LOCAL=<dir>` containing `ath12k/WCN7850/hw2.0/{amss.bin,m3.bin,board.bin,board-2.bin}`
+on a fresh install; `qcom/gen70500_sqe.fw` is picked up from `linux-firmware-qcom`):
 
-On Arch, booted normally (EL1, kernel `7.2.7-book4`):
+```sh
+git clone https://github.com/n1c0la84/book4-edge-linux && cd book4-edge-linux
+BOOK4_FW_LOCAL=/path/to/wifi-fw-backup bash install/arch/firmware-stage.sh
+(cd packages/book4-edge-firmware && makepkg -f && \
+    sudo pacman -U --overwrite '/usr/lib/firmware/updates/*' book4-edge-firmware-*.pkg.tar.zst)
+```
 
-12. The sleep kernel `7.2.7-book4s` (7.2.7 + `tools/kernel/sleep-backport/`)
-    and its modules: `bash tools/kernel/build-sleep-kernel.sh` (an hour or two
-    in Fedora's container).
-13. The EL2 boot programs, from pinned commits:
-    `bash install/el2/build-efi.sh` (qebspil with the AOSS patch, slbounce).
-14. Onto the ESP, with a firmware boot entry "Book4 EL2 (slbounce)":
-    `bash install/arch/mount-ro.sh` (for Windows' `tcblaunch.exe`), then
-    `bash install/el2/esp-install.sh` ([el2.md](el2.md)).
-15. Everything else, in one script: `bash install/el2/sleep-setup.sh`. It
-    creates the GRUB entry "el2-sleep", installs `book4-el2-sleep.service`
-    (`el1tmr`, the UFS hold, releasing the boot votes at every EL2 boot),
-    blacklists `qcom_adsp_pwr_lmts`, and makes EL2 the default boot (firmware
-    boot order and GRUB default together; this part needs an EL1 boot).
-16. Reboot. Check with `bash tools/power/el2-drain-test.sh` on battery:
-    `aosd`/`cxsd`/`ddr` should be near 99 % ([power.md](power.md)).
+Optional: ambient light sensor and automatic brightness ([sensors.md](sensors.md)):
 
-**At EL2** EFI variables, the RTC and `efibootmgr` work since 21 October
-(sleep-backport 0027/0028 and the `qcom,shm-bridge-vmid` property in the EL2
-overlay). The normal entries stay in the GRUB menu, and F10 at power-on
-still picks the firmware's other entries.
+```sh
+sudo pacman -S book4-sensors
+systemctl --user enable --now book4-autobrightness
+```
 
-## Undo and recovery
+## 4. Enable the Book4 services
 
-- EL2 default off: `bash install/el2/sleep-setup.sh undo` (on EL1), or F10 →
-  the Fedora entry → an EL1 entry.
-- A broken Arch: Fedora boots on its own, and `tools/backup/snapshot-arch.sh`
-  snapshots taken before updates can be restored from it.
-- Old test entries and kernels: `bash install/arch/boot-cleanup.sh`.
-- A rescue stick: `install/arch/rescue-usb.sh` (built, never boot-tested).
-- A private live ISO of the whole installed system (29 October, not yet
-  boot-tested): `install/arch/live-iso.sh build` makes `~/book4-live.iso`
-  (squashfs + tmpfs overlay, initramfs hook `userspace/initcpio/*/book4live`)
-  from a read-only snapshot of the arch subvolume, plus the desktop
-  configuration (no personal files, connections, pairings, fingerprints or
-  keys) and its own boot chain (`install/arch/lib/book4-grub.sh`: GRUB with
-  cutmem; EL2 via UEFI Shell + qebspil + slbounce; EL1 directly). No Fedora
-  inside. `live-iso.sh write ISO /dev/sdX` puts it on a stick. It carries
-  tcblaunch.exe and the Windows firmware: never publish the ISO.
-- Reset from that ISO: `sudo book4-install` shows the plan; `--wipe` erases
-  every Linux partition (sda4, sda5: Arch and Fedora), keeps Windows, and
-  installs the ISO's system on one new btrfs partition (subvolume `arch`,
-  kernel in `/boot/book4`) with GRUB in `\EFI\book4\` and boot entry
-  "Book4" first. ESP files are only added or replaced.
+Arch packages do not enable systemd units automatically:
+
+```sh
+sudo systemctl enable book4-bt-addr book4-fingerprint-import book4-live-log book4-el2-sleep
+systemctl --user enable --now book4-battery-warn.timer book4-gpu-busy book4-drain
+```
+
+For Bluetooth's public address, extract it once from Windows with
+`tools/bt-address-from-windows.py` into `/etc/book4/bt-address`.
+For fingerprints, enroll in Windows Hello and `book4-fingerprint-import` will
+import the records on boot; configure PAM for `sudo` and
+`/etc/pam.d/omarchy-lock-fingerprint` (never run
+`omarchy-setup-security-fingerprint`, which replaces `libfprint-sdcp`).
+
+## 5. Bootloader and EL2 chain
+
+1. Create `/etc/book4/boot.conf` from `/usr/share/book4/boot.conf.example` (or
+   run `bash install/arch/book4-boot-setup.sh`), and ensure `sda7` (`BOOK4ESP`)
+   is mounted at `/boot` and `sda1` at `/efi` in `/etc/fstab`.
+2. Populate `/boot` (Limine EL2 UKIs + `limine.conf`) and fallback Arch GRUB:
+   `sudo book4-boot menu` (also triggered automatically by pacman hooks on
+   kernel/initramfs/overlay/Limine updates).
+3. Install the EL2 chains onto `/efi` (`sda1`) and create firmware boot entries
+   outside `BootOrder` first ([el2.md](el2.md), [plan-limine.md](plan-limine.md)):
+   ```sh
+   sudo book4-el2 install          # \EFI\book4-el2-arch\ (qebspil, slbounce, tcblaunch, Arch GRUB fallback)
+   sudo book4-el2 install-limine   # \EFI\book4-el2-limine\ (starts Limine on BOOK4ESP)
+   ```
+4. Test the new Limine firmware entry once with `efibootmgr --bootnext XXXX`.
+   Confirm `/dev/kvm`, `book4-el2 status`, ADSP/CDSP attached, audio, and
+   `s2idle` deep sleep (`journalctl -t book4-sleep`) before putting it first in
+   `BootOrder`.
+
+## Backup and recovery
+
+- **Full Linux backup to an external drive or mounted share:**
+  `bash tools/backup/linux-backup.sh /path/to/mounted/drive` (snapshots the
+  running btrfs subvolume, backs up `/boot` (`sda7`), fallback `sda4`, Linux/EL2
+  files + `firmware/` on `sda1`, `efibootmgr -v`, and the partition table, and
+  writes `RESTORE.md`).
+- **Pre-update btrfs snapshots:** `bash tools/backup/snapshot-arch.sh` (also run
+  automatically by `book4-update`).
+- **Firmware boot menu:** press **F10** at power-on to pick Arch GRUB fallback,
+  EL1, or Windows.
+- **Note on `live-iso.sh` / `book4-install.sh` / `rescue-usb.sh`:** those
+  October scripts still target the pre-23-Nov `arch` subvolume / `sda4` GRUB
+  layout and need updating before reuse on the current disk layout.

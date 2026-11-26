@@ -1,5 +1,12 @@
 # The kernel: QSEECOM, and the quirks we do not carry
 
+> **Current state (26 November 2026):** The daily kernel is now the Arch
+> package `linux-book4` (`7.3.4-book4`, `packages/linux-book4/PKGBUILD`), built
+> natively on Arch (and in GitHub Actions for `[book4]`) from branch
+> `book4/7.3` of [n1c0la84/linux-book4-edge](https://github.com/n1c0la84/linux-book4-edge)
+> on top of Anatase 7.3. Fedora was deleted on 23 November. The notes below
+> document the October 2026 7.2 bring-up and QSEECOM/RTC background.
+
 Three patches exist upstream (in [Anatase](https://github.com/anatase-org/patchwork))
 that this machine would benefit from and that we do **not** have, because all
 three are compiled into the kernel rather than loadable as modules. This is the

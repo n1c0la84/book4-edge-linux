@@ -1,6 +1,6 @@
 Posted 17 November: omarchy#15860 discussioncomment-19681553.
 For: omarchy#15860 (birkskyum), and as a list for Anatase (his tree lacks the
-same four: they applied cleanly to `anatase` 7.3.4). Not posted.
+same four: they applied cleanly to `anatase` 7.3.4).
 Claims checked 17 Nov against linux-omarchy 7.3-43 (DTB: no capacity-dmips-mhz,
 no protocol@80, CPU zones critical 115 C only; patches 2320-2327) and v7.3
 freq_table.c:41 / arch_topology.c:407.

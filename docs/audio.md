@@ -1,5 +1,15 @@
 # Audio
 
+> **Current state (26 November 2026):** All four speakers (2 woofers + 2
+> tweeters; `swr0` = left, `swr3` = right, corrected 17 Nov on `book4/7.3`)
+> and both DMICs work via `book4-edge` (system-wide UCM + PipeWire drop-ins:
+> `book4-speakers.conf`, `book4-mic-ns.conf` WebRTC noise suppression,
+> `book4-clock.conf` + `api.alsa.htimestamp = true` + `rtkit` fixing PipeWire
+> resyncs on 25 Nov). Topology alias is shipped by `book4-edge-firmware`.
+> Sporadic SoundWire clashes after resume remain open ([TODO.md](TODO.md),
+> `docs/upstream-drafts/2026-11-soundwire-clash.txt`). The sections below are
+> the bring-up history from October 2026.
+
 With the Anatase device tree the sound card is named
 `X1E80100-GalaxyBook4Edge`, and the speakers are two WSA883x amplifiers
 (`SpkrLeft`, `SpkrRight`), one on each WSA macro, plus a WCD938x headset codec

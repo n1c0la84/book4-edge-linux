@@ -5,6 +5,20 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 15:25: documentation refresh, provenance update and lint CI.**
+Rewrote `README.md`, `docs/install.md`, `docs/updates.md` and the bottom
+summary of `docs/STATE.md` to match the current Arch/Omarchy 4.5 + Limine/UKI
++ `linux-book4` 7.3.4 + signed `[book4]` setup (retiring Fedora/GRUB/7.2
+contradictions across `ROADMAP.md`, `sensors.md`, `firmware.md`, `power.md`,
+`camera.md`, `fedora-retired.md`, `plan-limine.md`, `plan-arch-boot.md` and
+topic docs). Updated `CREDITS.md` (Rafael Meneses / `SB4-Edge-Linux`,
+`sleep-backport` `0029–0045`, `UEFI-Shell`, `fastrpc`, `libssc`,
+`iio-sensor-proxy`, `libfprint` MR !547, community contributors) and `LICENSE`.
+Redacted home LAN IPs, personal email/usernames from `STATE.md` and handoff
+docs per the privacy rule. Added `.claude/` to `.gitignore` and added
+`.github/workflows/lint.yml` (`bash -n`, Python AST + `unittest`, `dtc`
+overlay compile check, YAML check).
+
 **26 November 2026, 15:15: packaging and fresh-install fixes.**
 `packages/book4-edge`: added missing runtime `depends` (`swh-plugins`,
 `pipewire-audio`, `bluez-utils`, `kmod`, `util-linux`, `python`) and `fprintd`
@@ -286,14 +300,12 @@ untested. Side note: every `?`-marked module in Omarchy's Qualcomm list logs
 "Failed to find module 'x?'" from systemd-modules-load in the initramfs
 (mkinitcpio's systemd hook writes MODULES with the `?` into
 /etc/modules-load.d/MODULES.conf); harmless, udev loads them by modalias.
-**Sent 25 Nov:** Tested-by as a reply to the cover letter (git send-email via
-Gmail, Message-ID 20261125084611.11437-1-nicola084@gmail.com; mail file
-`.git/upstream-mail/tsens-tested-by.eml`, not committed) and the result on #10
-(issuecomment-7157487373). git send-email is now set up for Gmail
-(sendemail.* in ~/.gitconfig, perl-authen-sasl + perl-io-socket-ssl; needs a
-Gmail app password at each send). On lore in the thread (5 messages), under
-the cover letter, at 08:46 UTC. Next: wait for Christian/Daniel; a v2 would
-need the Tested-by carried or re-given.
+**Sent 25 Nov:** Tested-by as a reply to the cover letter (git send-email;
+mail file `.git/upstream-mail/tsens-tested-by.eml`, not committed) and the
+result on #10 (issuecomment-7157487373). `git send-email` is configured in
+`~/.gitconfig` (`perl-authen-sasl` + `perl-io-socket-ssl`). On lore in the
+thread (5 messages), under the cover letter, at 08:46 UTC. Next: wait for
+Christian/Daniel; a v2 would need the Tested-by carried or re-given.
 
 **24 November 2026, afternoon: no sound, recovered without a reboot.** The
 SoundWire clash at playback (TODO.md, "SoundWire clash at the first playback")
@@ -304,25 +316,23 @@ check `cat /sys/bus/soundwire/devices/sdw:[14]*/status` first next time
 (`Alert` = the stuck case, reboot).
 
 **24 November 2026**: controlling the Mac mini from here: the Mac's own Screen
-Sharing (VNC on 5900; it offers Apple's login, type 30, which uses the macOS
-user and password) with `remmina` + `libvncserver` installed here. Profiles
-`~/.local/share/remmina/macmini-lan.remmina` (192.168.178.7) and
-`macmini-ts.remmina` (`mac-mini-m4`, needs `tailscale up`); launcher entry
-`~/.local/share/applications/macmini-remote.desktop` ("Mac mini"). Remmina
-prefs: toolbar and single-tab strip hidden. Host key is Right Ctrl (alone:
-keyboard grab so Super reaches the Mac as Cmd; +F fullscreen; +T toolbar).
-Gliff (Omarchy's remote desktop, installed) is Hyprland-to-Hyprland only. If
-VNC is too choppy: Sunshine on the Mac + the moonlight-qt already here.
+Sharing (VNC on 5900; Apple login type 30) with `remmina` + `libvncserver`
+installed here. Profiles in `~/.local/share/remmina/` (LAN and Tailscale,
+private); launcher entry `~/.local/share/applications/macmini-remote.desktop`
+("Mac mini"). Remmina prefs: toolbar and single-tab strip hidden. Host key is
+Right Ctrl (alone: keyboard grab so Super reaches the Mac as Cmd; +F fullscreen;
++T toolbar). Gliff (Omarchy's remote desktop, installed) is Hyprland-to-Hyprland
+only. If VNC is too choppy: Sunshine on the Mac + the moonlight-qt already here.
 
-**17 November 2026**: printing set up: HP ENVY Photo 6200 (192.168.178.9) as
+**17 November 2026**: printing set up: HP ENVY Photo 6200 on the LAN as
 driverless IPP Everywhere queue `HP_ENVY_6200` (`lpadmin -m everywhere`, dnssd
 URI, A4, not shared), system default. Needs only cups + avahi + nss-mdns, all
 already installed; no HP driver.
 Scanning: `sane sane-airscan simple-scan` installed (eSCL over the network);
-`escl` and `v4l` commented out in /etc/sane.d/dll.conf (duplicate entry; v4l
+`escl` and `v4l` commented out in `/etc/sane.d/dll.conf` (duplicate entry; v4l
 probed the camera and printed junk). If a job sits at "printing", check the
 printer panel: it holds jobs until a low-ink alert is acknowledged
-(`curl http://192.168.178.9/DevMgmt/ProductStatusDyn.xml`).
+(`/DevMgmt/ProductStatusDyn.xml`).
 Scan to PDF: `~/.local/bin/scan [name] [dpi] [color|gray]` (private, A4 area,
 300 dpi default, to ~/Documents/Scans); Document Scanner set to text mode,
 300 dpi, PDF, same folder, HP preselected (gsettings org.gnome.SimpleScan).
@@ -343,7 +353,7 @@ first fault (`tools/video/iris-test.sh` after a reboot, then a 2832x1700 file).
 
 **Updated 22 November 2026**: Replied on jglathe/linux_ms_dev_kit#102 (issuecomment-7079688959; jglathe credited our syscon fix, now in 7.3.3-jg-2): their T14s ADSP stuck awake in s2idle may be `qcom_adsp_pwr_lmts` crashing it (dead DSP at EL2 looks frozen in qcom_stats); our blacklist, the 7.3 LPASS va/wsa macro fix and our ~0.7 W EL2 numbers. Open: birkskyum (arewearmyet#10) asks for a run of Omarchy's kernel (linux-omarchy 7.3-75, edge) beside ours; side-by-side test entry "omarchy-el2" prepared, not installed yet (edge alsa-ucm-conf would collide with book4-edge's Samsung UCM files; hw-test not available on the stable channel). **Limine plan written** (docs/plan-limine.md, not started): sda4 /boot measured (2 GB ext4, 1.3 GB used, ~1 GB of it Fedora rescue/fc45 files and old copies); clean it with the Fedora deletion, split into 512 MiB ext4 (same UUID, GRUB unaffected) + ~1.5 GiB FAT32 for Limine, Limine started by the UEFI Shell after qebspil/slbounce from a second firmware entry, our EL2 DTB per entry, `cutmem` need to be tested.
 
-**Updated 20 November 2026**: **[book4] online** (docs/packages-online.md): workflow `.github/workflows/packages.yml` (manual) builds linux-book4, book4-edge, book4-edge-boot and book4-edge-el2 on GitHub's arm64 runner in an Arch Linux ARM container (official rootfs, signature checked against keys/archlinuxarm-build-system.asc), signs with makepkg --sign and publishes a signed repository in the release `repo`. Signing key E75AAB6A080DCE59DC84259D595D834A7E98BBCE (ed25519, made in RAM, private part only in the secret BOOK4_SIGN_KEY, public in keys/book4-repo.asc). linux-book4's PKGBUILD pins `_commit` (book4/7.3 f1ea704) and falls back to packages/linux-book4/config (this machine's .config). Firmware never built there. Nothing changed on the laptop: it keeps the local [book4]. First publish 09:50 (run 44713389902, after three fixes: DisableSandbox, explicit mirror list, runner paths allowed in the home-path check since the upstream UEFI Shell carries one): book4-edge r581, book4-edge-boot r581, book4-edge-el2 -2; signatures checked from outside with keys/book4-repo.asc; the CI-built Shell, qebspil and slbounce are byte-identical to the installed ones. Kernel published 13:30 (run 44734722137, ~70 min build; signature checked from outside; same 5910 files as the installed linux-book4 7.3.4-3). The first two kernel runs built and signed fine but were stopped by the home-path check (upstream kernel files name developers' homes: BPF iterators skeleton, scripts in the headers); the check now reads only the build metadata (.BUILDINFO/.PKGINFO), where a local build shows /home/nicola. Local builds record that path, so publish only CI builds. All four public packages are now in the release `repo`.
+**Updated 20 November 2026**: **[book4] online** (docs/packages-online.md): workflow `.github/workflows/packages.yml` (manual) builds linux-book4, book4-edge, book4-edge-boot and book4-edge-el2 on GitHub's arm64 runner in an Arch Linux ARM container (official rootfs, signature checked against keys/archlinuxarm-build-system.asc), signs with makepkg --sign and publishes a signed repository in the release `repo`. Signing key E75AAB6A080DCE59DC84259D595D834A7E98BBCE (ed25519, made in RAM, private part only in the secret BOOK4_SIGN_KEY, public in keys/book4-repo.asc). linux-book4's PKGBUILD pins `_commit` (book4/7.3 f1ea704) and falls back to packages/linux-book4/config (this machine's .config). Firmware never built there. Nothing changed on the laptop: it keeps the local [book4]. First publish 09:50 (run 44713389902, after three fixes: DisableSandbox, explicit mirror list, runner paths allowed in the home-path check since the upstream UEFI Shell carries one): book4-edge r581, book4-edge-boot r581, book4-edge-el2 -2; signatures checked from outside with keys/book4-repo.asc; the CI-built Shell, qebspil and slbounce are byte-identical to the installed ones. Kernel published 13:30 (run 44734722137, ~70 min build; signature checked from outside; same 5910 files as the installed linux-book4 7.3.4-3). The first two kernel runs built and signed fine but were stopped by the home-path check (upstream kernel files name developers' homes: BPF iterators skeleton, scripts in the headers); the check now reads only the build metadata (.BUILDINFO/.PKGINFO), where a local build shows `/home/<user>`. Local builds record that path, so publish only CI builds. All four public packages are now in the release `repo`.
 
 **Updated 19 November 2026**: **Camera in Qt apps (Monologue):** Qt Multimedia 6.12 finds cameras only through V4L2, where this laptop has just the raw CAMSS nodes; the camera itself is a libcamera camera (PipeWire shows "Built-in Front Camera", so browsers and portal apps see it). `libcamerify` (libcamera's V4L2 compatibility layer) presents it as /dev/video0 with BGRA/BGRX up to 1920x1080 (a frame grabbed through ffmpeg). That did not help: Qt finds the camera through libcamerify but drops it (no frame intervals: "Camera does not support FrameDurationLimits"). Then `install/arch/camera-relay.sh` (v4l2-relayd + v4l2loopback "Book4 Camera", as Omarchy's Cam Link; the unit needed DeviceAllow for /dev/udmabuf and dma_heap, else no software ISP): the relay hands out a frozen frame (60 identical frames), while a plain `gst-launch libcamerasrc ! videoconvert ! NV12 ! v4l2sink` into the same loopback gives live video (58 of 60 frames distinct) and libcamerasrc alone runs at 41 fps. Relay parked (stopped, not started at boot) until solved; next idea: an on-demand relay of our own (start that gst pipeline on the loopback's client-usage event). Browsers use PipeWire's "Built-in Front Camera": Chromium already had --enable-features=WebRtcPipeWireCamera, Google Chrome did not (webcamtests failed); added to ~/.config/chrome-flags.conf; works (webcamtests), a bit washed out: libcamera has no ov02c10 tuning file and uses simple/uncalibrated.yaml (possible later: an ov02c10.yaml with a colour matrix, contrast and saturation). Bar after the packaging: the hw-monitor plugin enabled GPU load only for ~/.local/bin/book4-gpu-busy; its hw-probe (and userspace/desktop/hw-monitor-snapdragon.patch) now also accepts /usr/lib/book4/book4-gpu-busy. Plugin updated 1.1.1 -> 1.7.0 (our local changes had blocked the plugin manager); our changes rebased onto it (two conflicts: upstream's new temperature-only GPU dial kept, Apple SMC and Snapdragon tsens both kept), the repo patch regenerated against 1.7.0; old copy in ~/.config/omarchy/plugins-hw-monitor-1.1.1-patched.bak. OmaSettings removed from the bar and kept as a service plugin (shell.json "plugins"), so the launcher entry / `omarchy-shell omasettings toggle` still open it. **EL2 chain packaged and installed** (13:02, through [book4]: book4-edge-el2, book4-edge-boot r566, book4-edge-firmware -2 with tcblaunch; the 95-book4-el2 hook put the new slbounce.efi and startup.nsh on the ESP; `book4-el2 status` all current; first boot with everything packaged 13:05 OK: BootCurrent 0004, EL2 + KVM, el2-sleep helper (AOSD off, UFS held), all packaged units success, no failed units, Wi-Fi c5-00302, ADSP/CDSP attached, sound card and Speakers sink, fingerprints, Bluetooth; the boot-time audio messages (one APM CMD timeout, MultiMedia5 no backend) are in every earlier boot too): `packages/book4-edge-el2` (UEFI Shell 26H1 pinned; qebspil 8e4d9e6 and slbounce c090a8c built from upstream with our patches; startup.nsh, windows.nsh; `book4-el2 install|update|status` writes only \EFI\book4-el2-arch\ and \firmware\..., never deletes; hook 95-book4-el2 keeps the ESP current). Built: Shell and qebspil byte-identical to the ESP copies; slbounce differs (patch now also looks in \EFI\book4-el2-arch\, so a fresh install needs no \EFI\book4-el2\). tcblaunch.exe 10.0.26100.9616 joins book4-edge-firmware (from WinSxS by checksum; System32 is now 9882). windows.nsh moved from book4-edge-boot to the EL2 package. **Local pacman repository [book4]** written (`install/arch/book4-repo.sh setup`, not yet run): /var/lib/book4-repo (yours, never published), /etc/pacman.d/book4-repo.conf included at the end of /etc/pacman.conf (Omarchy migrations edit pacman.conf in place, so the Include survives); `book4-repo.sh add [NAME]` after a makepkg, then pacman -Syu / omarchy-update installs it. **Firmware packaged** (12:41): book4-edge-firmware 2026.11.19 installed (staged from Windows by checksum, install/arch/firmware-stage.sh; all of /usr/lib/firmware/updates now owned except the old tplg .bin.xz copy, superseded by the packaged .bin alias; delete it after a reboot with sound). **Book4 layer packaged** (afternoon): `packages/book4-edge` and `packages/book4-edge-boot` build (makepkg); `install/arch/book4-edge-migrate.sh` (run 12:33: both installed, 30 copies backed up and retired, units now from /usr/lib, hook rebuilt the initramfs with the blacklists and the menu) installs them and retires the script-installed copies (all 26 checked identical to the packaged files, two differ only in comments; backups to ~/book4-edge-migrated-*). Brought into the repo from the system: the EL2 sleep helper and unit (userspace/standby/book4-el2-sleep*), the pwrlmts and spss-nvm blacklists, the USB no-wake rule, the WirePlumber software-volume drop-in (90-book4-software-volume.conf, 30 Oct), the mkinitcpio drop-in. Not packaged on purpose: test/debug pieces (book4-modules-swap, book4-spk-test, emuec dyndbg, fastrpc rule, sshd drop-in). **Windows round trip (12:02-12:11):** fingerprints enrolled in Windows Hello and imported at the next Linux boot (left and right index; book4-fingerprint-import on arch-45). Two problems: (1) Arch GRUB 2.16 cannot chainload Windows (bootmgr: BCD 0xc00000bb; Fedora GRUB 2.12 could; suspect the device path GRUB gives the image on this 4K-sector disk); the GRUB entry now chainloads the UEFI Shell with windows.nsh (`arch-grub.sh windows`; untested), F10 meanwhile; lock screen uses the fingerprint by itself (pam omarchy-lock-fingerprint + fprintd-list); (2) Windows re-created its BCD copy of the old "Fedora" firmware entry (0002, \EFI\fedora\grubaa64.efi at EL1) and put it FIRST; at EL1 its default omarchy45 (EL2 DTB) hangs. Fix: BootOrder 0004,0003,0000,0002 (arch-grub.sh default no longer renames that entry), and in Windows `bcdedit /delete` its firmware object. Roadmap rewritten at the top (Status table, next steps, the owner's plan for a fresh install from the official ISO instead of Limine now: space, the 260 MB ESP, cutmem/DTB/EL2, package the layer first). **Windows shrunk, root grown to 196 GB (89 GB free)** (`install/arch/windows-shrink.sh`, 11:40-11:55; three restarts: chkdsk-flagged volume needs `ntfsresize --info --force`, this UFS disk has 4096-byte logical sectors so sfdisk counts in 4K units, partx -a on an already-added sda6). Table before: ~/sda-table-before-shrink.sfdisk. Boot Windows once (chkdsk scheduled). The root btrfs now spans sda5 + sda6 (devid 2, 74.5 GiB): any rescue/live system must see both. NTFS 380 -> 300 GB (264 GB used; ntfsresize dry run OK, 43 GB to relocate), sda3 shrunk in place (start/GUID kept), new sda6 (~80 GB) added to the root btrfs (`btrfs device add`; the initramfs systemd hook carries 64-btrfs.rules, so a two-device root assembles at boot). Iris from a fresh boot: 1080p h264/hevc decode clean (h264 hw 2.2 s vs sw 0.39 s, hevc 1.3 vs 1.7 s per 600 frames); the fault needs the 2832x1700 stream. **Unplug-during-sleep reset is back on 7.3, fix ported** (morning: charger out with the lid shut, hard reset, no log; Anatase's reworked samsung-emuec re-enables its interrupt at device resume instead of after every device has resumed). Ported our 0002 quiesce (PM notifier, PM_SUSPEND_PREPARE to PM_POST_SUSPEND) to book4/7.3 (8c90bfa97a), plus 0003 wake on plug-in into an empty port (f1ea704def); linux-book4 7.3.4-3. Checked 7.2-sleep against 7.3 by commit subject: nothing else missing (0001 PD retry covered by Anatase's rework; timer half-range and DSP attach present in other commits). Test: sleep with the charger in, unplug, wake; journal must show `samsung-emuec ... pm: quiesced (attached=1 wake=0)` / `pm: resumed, resync`. Screensaver turned off (`omarchy toggle screensaver`). **Verified** 10:28-10:29 (charger port 1-0033 `attached=1 wake=0`, empty port 3-0033 `wake=1`, unplugged with the lid shut, resumed on battery, no reset). **Part B: Arch GRUB boots** (first test boot via `arch-grub.sh next`, BootCurrent 0004: Shell + qebspil + slbounce + Arch GRUB 2.16 + 7.3.4-3, EL2, KVM, sleep service active). Normal boot is still 0003 (Fedora GRUB). B3 installed and booted (10:48 setup, test entries retitled; Arch GRUB boot via `next`: BootCurrent 0004, EL2, sleep service active, no failed units): `install/arch/book4-boot-setup.sh` installs book4-boot and its pacman hooks (plan-arch-boot.md B3); test entries get real titles (`test-entry.sh retitle`; they all said "Arch Linux (7.2.7-book4)"). B5 done 19 Nov (`arch-grub.sh default`; BootOrder 0004,0003,0001,0000): labels "Omarchy (EL2, Arch GRUB)", "Omarchy (EL2, Fedora GRUB, fallback)", "Fedora GRUB (EL1)", OpenBSD entry removed (files stay), order Arch GRUB first; the Arch startup.nsh falls back to Fedora GRUB; `/efi` gets an fstab automount (gpt-auto mounts the ESP only when Fedora GRUB booted: it sets LoaderDevicePartUUID, Arch GRUB does not). Back: `arch-grub.sh fedora-default`. EL1 entry still to try. **Part C started (retire, not delete):** archive done 11:17 (home 1.9 GB reflinked, 3487 files; both 7.2 .git copies fsck clean; dirty patch 69 files; disk unchanged at 15 GB free) by `install/arch/fedora-retire.sh archive` (Fedora home -> ~/fedora-archive reflinked; patchwork/patchwork-sleep .git copies plus dirty patch, 69 uncommitted files in patchwork-sleep = 7.2.7-book4s source; linux-73 branches -> refs/fedora/linux-73/*); diagnostic module builds now on Arch (`tools/power/build-module.sh`, 7 built on 7.3.4); docs/fedora-retired.md classifies every Fedora-using script.
 
@@ -423,154 +433,99 @@ working session on this machine, and to update (with the commit) at the end.
 Details live in the linked docs; open work in [TODO.md](TODO.md); history in
 `git log`.
 
-## How the machine runs today
+## How the machine runs today (26 November 2026)
 
 - **Hardware:** Galaxy Book4 Edge 14" NP940XMA (X1E80100), 476.7 GB UFS:
-  `sda1` ESP (260 MB, shared with Windows), `sda2` MSR, `sda3` Windows,
-  `sda4` ext4 `/boot` (Fedora's; holds the kernels and DTBs of both Linuxes),
-  `sda5` btrfs with subvolumes `root` (Fedora 45) and `arch` (daily).
-- **Daily system:** Arch Linux ARM + Omarchy 4.0.4 (local build,
-  [omarchy.md](omarchy.md)), sleep kernel `7.2.7-book4s` (branch
-  `book4/7.2-sleep` of n1c0la84/linux-book4-edge,
-  `tools/kernel/sleep-backport/`), **at EL2**: firmware entry "Book4 EL2
-  (slbounce)" -> UEFI Shell in `\EFI\book4-el2\` (qebspil + slbounce) ->
-  Fedora's GRUB -> entry `el2-sleep` ([el2.md](el2.md)).
-- **Kernel base:** on end-of-life 7.2 by choice (5 November); revisit if 7.4
-  becomes long-term, findings in [TODO.md](TODO.md).
-- **Primary USB-C controller can fail after sleep** (7 November): see TODO.md.
-  Workaround: use the other USB-C port, or reboot.
+  `sda1` firmware ESP (260 MiB FAT32, `/efi`, shared with Windows), `sda2` MSR,
+  `sda3` Windows (300 GB NTFS), `sda4` fallback GRUB `/boot` (512 MiB ext4,
+  unmounted normally), `sda5` + `sda6` two-device btrfs (196 GB, subvolume
+  `arch-45`), `sda7` second ESP `BOOK4ESP` (1.5 GiB FAT32, `/boot`, Limine +
+  UKIs). Fedora (`root`, `home`) and pre-4.5 `arch` were deleted 23 November
+  ([fedora-retired.md](fedora-retired.md)); `~/fedora-archive/` keeps Fedora's
+  archived home and 7.2 `.git` trees.
+- **Daily system:** Arch Linux ARM + **Omarchy 4.5** (from `[omarchy]` repo),
+  kernel **`linux-book4` 7.3.4** (branch `book4/7.3` of
+  `n1c0la84/linux-book4-edge`, built natively on Arch via `packages/linux-book4`;
+  `7.2.7-book4s` remains as fallback), booted **at EL2** via **Limine**
+  (`Boot0001` "Omarchy (EL2, Limine)" -> UEFI Shell in `\EFI\book4-el2-limine\`
+  -> `qebspil` + `slbounce` -> Limine on `sda7` -> EL2 UKI; no `cutmem` needed
+  on Limine/7.3). Arch GRUB (`Boot0004`, `\EFI\book4-el2-arch\`) and Fedora GRUB
+  (`Boot0003`, `\EFI\fedora\`) stay as fallbacks.
+- **Book4 layer packages:** built in `packages/` (`linux-book4`, `book4-edge`,
+  `book4-edge-boot`, `book4-edge-el2`, `fastrpc`, `libssc-book4`,
+  `iio-sensor-proxy-book4`, `book4-sensors`, `libfprint-sdcp`, plus local-only
+  `book4-edge-firmware`). This laptop uses its local `[book4]` repo
+  (`/var/lib/book4-repo`); the public packages are also built and signed in CI
+  ([packages-online.md](packages-online.md)), and `book4-edge-firmware` is
+  backed up to the private LAN repo (`install/arch/book4-private.sh`).
+- **Updates:** `book4-update` (snapshots `arch-45` via
+  `tools/backup/snapshot-arch.sh`) or `omarchy-update`. `91-book4-boot.hook`,
+  `92-book4-limine.hook` and `95-book4-el2.hook` keep `/boot`, `sda4` GRUB and
+  `/efi` current on package upgrades ([updates.md](updates.md)).
 - **Android development:** Google Android CLI `1.1.16717390` for Linux ARM64
-  is installed at `~/.local/bin/android`; its SDK root is `~/Android/Sdk`
-  (31 October 2026).
-- **Flea file manager** 0.4.0, built locally (4 November): upstream ships it
-  only in the x86_64-only Omarchy Package Repository, so `omarchy pkg add
-  flea` fails here and `omarchy update` never updates it. Rebuild each
-  release with `install/arch/flea.sh <version>`.
-- **Updates:** `book4-update` (`userspace/update/`, installed by
-  `install/arch/update.sh`) instead of `omarchy update`: cache prune,
-  read-only snapshot via `tools/backup/snapshot-arch.sh` (`arch-pre-update-*`, 2 kept;
-  rollback steps in `book4-update --help`), `pacman -Syu`, `yay -Sua`,
-  `mise up`, then Hyprland config check, .pacnew, orphans, pending Omarchy
-  migrations and a newer flea release. `--check` lists what is pending.
-  Snapshots now (4 November): `arch-pre-omarchy-20261003-1109` (0.7 GB of
-  its own) and `arch-pre-update-20261104-0934`; Fedora's `root` + `home`
-  hold ~22 GB (the kernel tree `~/src/patchwork` is in Fedora's home).
-- **Pacman:** full `-Syu` on 4 November (113 packages, clean; mkinitcpio
-  stays IgnorePkg). Checked first as boot-safe: Arch has no kernel package,
-  no mkinitcpio preset and no `pkgbase`, so pacman hooks write nothing to
-  Fedora's `/boot` or the ESP; Book4 firmware is in
-  `/usr/lib/firmware/updates/` (no package owns it), and the one packaged
-  file the GPU loads, `qcom/gen70500_gmu.bin`, was byte-identical. Hyprland
-  0.57.1 passed `--verify-config` on our Lua config; upgrade its stack as a
-  whole. The cache keeps one version per package, plus the previous
-  Hyprland stack and mesa for a `pacman -U` rollback (drop them with
-  `paccache -rk1` once 0.57 has run a few days).
-- **Fedora:** owns `/boot` and GRUB, and is the kernel build environment
-  (Arch builds in a Fedora container, `install/arch/fedora-shell.sh`). The EL1
-  kernel `7.2.7-book4` stays: Fedora's default and the kernel to build
-  `book4s` from (`build-sleep-kernel.sh` refuses to run on `book4s`).
+  at `~/.local/bin/android`; SDK root `~/Android/Sdk`.
 
-## What works (EL2, book4s)
+## What works (EL2, 7.3.4-book4)
 
-Deep sleep in s2idle with both DSPs (board ~0.9 W, [power.md](power.md));
-four speakers at PA 23 (+12 dB, about Windows' level) with crossover, woofer
-high-pass and silent pilots ([audio.md](audio.md)); camera; fingerprint;
-Iris hardware video decode; EFI variables and RTC; KVM; battery and charging
-through the Samsung EC, awake charging included since 29 October (PD contract
-passed to the EC, [ec-protocol.md](ec-protocol.md)); Wi-Fi (firmware c5-00302,
-[firmware.md](firmware.md)).
+Deep sleep in `s2idle` with both DSPs (~0.70 W at EL2, ~0.77–0.84 W at EL1,
+AOSD off everywhere; [power.md](power.md)); four speakers at PA 23 (+12 dB)
+with crossover, limiter, PipeWire clock resync fix (`book4-clock.conf` +
+`rtkit`) and WebRTC mic noise suppression ([audio.md](audio.md)); ambient light
+sensor (VEML3328 via SSC) + `book4-autobrightness` at EL1 and EL2
+([sensors.md](sensors.md)); webcam in browsers/PipeWire ([camera.md](camera.md));
+fingerprint reader (`libfprint-sdcp` + Windows enrolment import); EFI variables
+and RTC; KVM; battery and 20 V charging (including awake charging, hot replug,
+and unplug during sleep); Wi-Fi (`c5-00302`, [firmware.md](firmware.md)) and
+Bluetooth; awake drain logger (`book4-drain`) and resume health check
+(`book4-resume-check`).
 
 Low battery: Omarchy warns at 10 %, `book4-battery-warn` at 8 % and 5 %,
-UPower powers off at 3 %. Under heavy load the EC's reading drops from ~8 %
-to 0 in seconds (30 October, all cores busy: dead at "8 %"), so plug in at
-the 8 % warning.
+UPower powers off at 3 %. Under heavy load the EC's reading can drop from ~8 %
+to 0 in seconds, so plug in at the 8 % warning.
 
-Charging through a powered USB-C hub does not work (4 November): the
-laptop is the power source on that port, the partner shows no USB PD and
-no `PD contract` is logged, so the input-limit fix never runs. Replugged
-with its charger already in (14:21): the same. The hub is a VIA VL817
-(2109:2817). Next: does it charge a phone, or the laptop under Windows?
-
-Not working: external monitor over USB-C (AUX timeouts); NPU inference
-(dspqueue hang; dspsignal port 0041 written, untested).
+Not working / open: external monitor over USB-C DP (AUX timeouts; HDMI works);
+NPU inference (`dspqueue` hang; `dspsignal` ported, untested); Iris hardware
+decode faults on odd-size streams (e.g. 2832×1700; 1080p works from fresh boot,
+mpv uses `hwdec=auto-safe`); Qt V4L2 camera apps (`camera-relay.sh` parked);
+sporadic SoundWire clash after resume (`TODO.md`); charging through VIA VL817
+powered USB-C hub; ~0.6 W board power delta over Windows in sleep (`0.11 W` vs
+`0.70 W`) and ~7.1 W average awake drain.
 
 ## In progress
 
-- **Live ISO and reset installer** (29-30 October,
-  [install.md](install.md#undo-and-recovery)): `install/arch/live-iso.sh`
-  builds `~/book4-live.iso` (private: tcblaunch.exe and Windows firmware
-  inside; rebuilt 4 November with the DC ZVA kernel). First boot of the
-  stick (4 November): EL1 works (long black screen first); EL2 loops
-  GRUB -> slbounce -> GRUB without a reset (the second GRUB showed the
-  first menu; it now loads its own `grub-el2.cfg`, EL2 entries only); `book4-install` refused, which
-  exposed a keep-list bug that put the MSR (sda2) on the wipe list (fixed,
-  plus a refusal for unknown partitions without a filesystem); checked against this disk's real table afterwards: keeps sda1-3, wipes only sda4-5. With the
-  stick plugged in, the internal "Book4 EL2" Shell picked the stick's
-  `\EFI\book4-el2\` and stopped at `FS3:\>` (startup-esp.nsh now also
-  requires `\EFI\fedora\grubaa64.efi`; the ESP copy is updated by
-  `~/book4-boot-check.sh`). Arch EL1 ("Arch Linux (7.2.7-book4)") hung
-  after GRUB without reaching the root filesystem (no log). That entry is
-  stale: old EL1 kernel, Arch initramfs of 10 October, unused since EL2
-  became daily (every logged Arch boot since 21 October is book4s at EL2).
-  Arch EL1 fallback since 4 November: GRUB entry "Arch Linux (7.2.7-book4) -
-  test: el1-book4s" (`test-entry.sh add el1-book4s`: book4s, book4-sleep.dtb,
-  the stick's EL1 arguments; not booted yet). The old "Arch Linux
-  (7.2.7-book4)" entry has no logged boot since at least 19 October; its
-  kernel and DTB are Fedora's and boot, so it stops in Arch's initramfs of
-  10 October or right after it. Second stick test (4 November, ISO of 13:23): booted after a few
-  bounces (not resets) at EL1: no `/dev/kvm`. A photo of the "second GRUB"
-  shows the FIRST menu (full entries, 5 s countdown; grub-el2.cfg has only EL2
-  entries and 1 s): the UEFI Shell chainloaded from GRUB returns at once, so
-  GRUB re-shows its menu and retries (the morning's loop was likely the same
-  thing). No key was pressed (only power held), so the boot that came up
-  most likely went through grub-el2.efi's EL2 entry after one good round,
-  yet ran at EL1: slbounce did not switch. Two faults then: the Shell
-  returning (intermittent) and no Secure Launch. Agreed for the next ISO
-  (not done yet): startup-live.nsh logs to `\book4-boot.log` on the stick
-  (which fs, each `load`'s result, the second GRUB), and `write` adds a
-  `BOOK4-LOG` partition where a live service keeps the journal and dmesg,
-  so the whole boot can be read back from Arch. Next: let it bounce untouched,
-  then `cat /proc/cmdline` (ecv=1 = EL2 entry) and `dmesg | grep 'started at EL'`; Next: from GRUB's console,
-  `chainloader ($esp)/EFI/book4-el2/Shellaa64.efi` + `boot`, and see whether
-  the Shell errors, runs startup.nsh and returns, or sits at `Shell>`; whether the EL2 entry was
-  chosen and slbounce did not switch is unknown (next time: EL2 entry, then
-  `/proc/cmdline` and `dmesg | grep 'started at EL'`); `book4-install`
-  plan correct (keeps sda1-3, wipes sda4-5); the bar showed the battery at 0 %
-  in the live session (not the battery, per the owner); the internal disk rebooted fine with the
-  stick still in.
-  A reset erases Fedora too, so before using it for real: back up both
-  homes, and give the kernel tools a Fedora-less path (build environment,
-  `/boot/book4`, `lib/book4-grub.sh` instead of Fedora's GRUB).
-- **Awake resets at EL2** (22 and 29 October, 1 November; PMIC goes down,
-  RTC resets to 2024-05-29, nothing logged; the third one froze the screen
-  first, with Chrome open): `install/arch/crash-log.sh` keeps a text journal
-  per boot in `/var/log/book4-live/` (worked: 30 s more than the journal,
-  still no clue). Cause: the X1 DC ZVA + CL5 erratum,
-  reproduced with `x1e-crash` on 1 November (TODO.md). Fixed by sleep-backport
-  0043 (DZE off + DC ZVA emulation, CL5 kept) and 0044 (KVM guests:
-  `HCR_EL2.TDZ`), running since 1 November: the reproducer survives on
-  the host and gets SIGILL in the VM. Watch: no awake reset for a few
-  days.
-- **Speaker VI feedback** (optional): works on the right pair on the test
-  branch `book4/7.2-sleep-spk` (boot entry `el2-spk`); left pair not
-  captured. Notes in `~/src/qcaudio-re` (private).
-- **Deep-sleep power** 0.9 W against ~0.2 W on other X1E laptops: candidate
-  rails in [TODO.md](TODO.md).
+- **Board sleep power (~0.70 W vs Windows 0.11 W):** `tools/power/ec-standby-test.sh`
+  (MODS + HPDC together) ready for an overnight run; next candidates in
+  [ROADMAP.md](ROADMAP.md) section 2.
+- **Awake battery drain (~7.1 W avg):** `book4-drain` collecting per-minute
+  data; report with `book4-drain report`.
+- **SoundWire clash & USB-C/xHCI resume bugs:** upstream report drafts in
+  `docs/upstream-drafts/` (need retest on an untainted kernel before sending);
+  `book4-resume-check` mitigates fingerprint xHCI / `fprintd` / `adsprpcd` after
+  resume.
+- **Toward stock `linux-omarchy`:** `qcom_tsens` initramfs crash verified fixed
+  on 7.3-79 (Tested-by sent 25 Nov); remaining upstream items in
+  [ROADMAP.md](ROADMAP.md) and [upstream.md](upstream.md).
+- **Live ISO / reset installer:** `install/arch/live-iso.sh`, `book4-install.sh`
+  and `rescue-usb.sh` still target the pre-23-Nov `arch`/GRUB layout and need
+  updating for `arch-45`/Limine before reuse.
 
 ## Hard rules
 
-- **Boot:** keep `cutmem` and `cma=256M`. Never delete anything from the ESP.
+- **Boot:** keep `cma=256M` (and `cutmem` on GRUB entries; Limine on 7.3 does
+  not need `cutmem`). Never delete anything from the firmware ESP (`sda1`).
   Keep `linux-modules-cleanup.service` masked while Arch has more than one
   kernel. Never run `omarchy-reinstall-configs`, `omarchy-refresh-limine`,
   `omarchy-setup-security-fingerprint` or Omarchy's `post-install/pacman.sh`.
 - **Resets the machine:** reading `clk_summary` after LPASS powers down,
   unbinding `lpasscc-sc8280xp`, reading `0xAF20000` at EL1, stopping DSPs at
   EL2 (votes stay stuck), a hung NPU session (reboot at once; no NPU runs
-  that can hang until dspsignal works).
+  that can hang until dspsignal works). Unbinding `qcom-soundwire` controllers
+  breaks audio until reboot (IRQ type mismatch on re-probe).
 - **Speakers:** never hand the gain to the amps' DRE (garbled output, one
   PMIC reset). Thermal at PA 23 is a non-issue (coils +3 °C).
 - **Keep blacklisted:** `qcom_adsp_pwr_lmts` (crashes the ADSP on this
-  machine; Samsung disables it on Windows too).
+  machine; Samsung disables it on Windows too) and `qcom_spss_nvm` (probe loop
+  on 7.3).
 - **Privacy and publishing:** no personal data (MAC, IPs, SSIDs) in this
   repo; Windows/Samsung/Qualcomm binaries, decompiled code and ACDB data stay
   local; posting on GitHub, mailing upstream or force-pushing needs the
