@@ -87,7 +87,7 @@ done
 retire /etc/modules-load.d/book4-cpufreq.conf         /usr/lib/modules-load.d/book4-cpufreq.conf
 retire /etc/systemd/journald.conf.d/60-book4-sync.conf /usr/lib/systemd/journald.conf.d/60-book4-sync.conf
 # user level
-userunits=(book4-battery-warn.timer book4-gpu-busy.service)
+userunits=(book4-battery-warn.timer book4-gpu-busy.service book4-drain.service)
 systemctl --user disable -q "${userunits[@]}" 2>/dev/null || true
 for u in book4-battery-warn.service book4-battery-warn.timer book4-gpu-busy.service; do
     retire "$HOME/.config/systemd/user/$u" "/usr/lib/systemd/user/$u" user

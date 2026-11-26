@@ -9,7 +9,7 @@
 # Services are enabled by the migration script (Arch packages do not enable
 # units by themselves); see book4-edge.install for the list.
 pkgname=book4-edge
-pkgver=r668.ed4615a
+pkgver=r684.06b0111
 pkgrel=1
 pkgdesc='Galaxy Book4 Edge 14": audio (UCM, PipeWire), sleep, battery, keyboard, fingerprint and boot-time services'
 arch=(aarch64)
@@ -42,10 +42,12 @@ package() {
   install -Dm755 "$u/crash-log/book4-live-log"                "$L/book4/book4-live-log"
   install -Dm755 "$u/standby/book4-el2-sleep"                 "$L/book4/book4-el2-sleep"
   install -Dm755 "$u/battery/book4-battery-warn"              "$L/book4/book4-battery-warn"
+  install -Dm755 "$u/battery/book4-drain"                    "$L/book4/book4-drain"
   install -Dm755 "$u/desktop/book4-gpu-busy"                  "$L/book4/book4-gpu-busy"
   install -Dm755 "$u/kbd-backlight/book4-kbd-backlight-bind"  "$L/book4/book4-kbd-backlight-bind"
   install -d "$pkgdir/usr/bin"
   ln -s ../lib/book4/book4-fingerprint-import "$pkgdir/usr/bin/book4-fingerprint-import"
+  ln -s ../lib/book4/book4-drain "$pkgdir/usr/bin/book4-drain"
 
   _unit() {  # source, destination directory
     install -Dm644 "$1" "$2/${1##*/}"
@@ -58,7 +60,7 @@ package() {
            kbd-backlight/book4-kbd-backlight.service; do
     _unit "$u/$f" "$L/systemd/system"
   done
-  for f in battery/book4-battery-warn.service battery/book4-battery-warn.timer desktop/book4-gpu-busy.service; do
+  for f in battery/book4-battery-warn.service battery/book4-battery-warn.timer battery/book4-drain.service desktop/book4-gpu-busy.service; do
     _unit "$u/$f" "$L/systemd/user"
   done
   install -Dm755 "$u/standby/book4-sleep-log"       "$L/systemd/system-sleep/book4-sleep-log"

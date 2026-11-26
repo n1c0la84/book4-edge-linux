@@ -1,0 +1,14 @@
+# Book4: one row a minute of power draw and what explains it (screen,
+# CPU, GPU, top processes) in ~/.local/state/book4-drain; `book4-drain
+# report` summarises the time on battery. docs/STATE.md (26 Nov 2026).
+[Unit]
+Description=Book4: drain logger (watts and their causes, every minute)
+
+[Service]
+ExecStart=/usr/lib/book4/book4-drain log
+Restart=on-failure
+RestartSec=30
+Nice=10
+
+[Install]
+WantedBy=default.target

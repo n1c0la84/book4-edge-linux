@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+"""Book4 drain logger: where the watts go while the laptop is in use.
+
+  book4-drain log              run for ever (book4-drain.service, user): one CSV row
+                               a minute in ~/.local/state/book4-drain/drain-YYYY-MM.csv
+  book4-drain report [DAYS]    summary of the last DAYS days (default 7), on battery only
+  book4-drain now              the current minute so far, for a quick look
+
+Every 5 s it reads the battery's power (EC current x voltage) and the CPU
+frequency and GPU load; each minute it writes the average/min/max power with
+what explains it: screen state and brightness, keyboard backlight, CPU use
+and frequency, GPU load, Wi-Fi, and the three processes (by name, all of a
+program's processes together) that used the most CPU in that minute.
+Needs no root. 26 November 2026, docs/STATE.md.
+"""
+import csv, datetime as dt, glob, os, sys, time
+from collections import defaultdict
+
+BAT = "/sys/class/power_supply/samsung-galaxybook-battery"
+BL = glob.glob("/sys/class/backlight/*")
+KBD = "/sys/class/leds/samsung-galaxybook::kbd_backlight/brightness"
+EDP = glob.glob("/sys/class/drm/card*-eDP-1/dpms")
+WLAN = glob.glob("/sys/class/net/wl*/operstate")
+CPUF = sorted(glob.glob("/sys/devices/system/cpu/cpufreq/policy*/scaling_cur_freq"))
+GPU = os.path.join(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"), "gpu_busy_percent")
+DIR = os.path.expanduser("~/.local/state/book4-drain")
+HZ = os.sysconf("SC_CLK_TCK")
+STEP = 5
+FIELDS = ["time", "status", "w_avg", "w_min", "w_max", "capacity", "brightness_pct", "kbd",
+          "display", "cpu_pct", "cpu_mhz", "gpu_pct", "wifi", "top"]
+
+
+def rd(path, default=""):
+    try:
+        with open(path) as f:
+            return f.read().strip()
+    except OSError:
+        return default
+
+
+def watts():
+    try:
+        return abs(int(rd(f"{BAT}/current_now"))) * int(rd(f"{BAT}/voltage_now")) / 1e12
+    except ValueError:
+        return None
+
+
+def cpu_total():  # (busy, all) jiffies over all CPUs
+    v = [int(x) for x in rd("/proc/stat").split("\n", 1)[0].split()[1:]]
+    idle = v[3] + v[4]
+    return sum(v) - idle, sum(v)
+
+
+def procs():  # {pid: (comm, utime+stime)}
+    out = {}
+    for p in os.listdir("/proc"):
+        if not p.isdigit():
+            continue
+        s = rd(f"/proc/{p}/stat")
+        if not s:
+            continue
+        r = s.rfind(")")
+        comm = s[s.find("(") + 1:r]
+        f = s[r + 2:].split()
+        out[p] = (comm, int(f[11]) + int(f[12]))
+    return out
+
+
+def brightness():
+    if not BL:
+        return ""
+    cur, mx = rd(f"{BL[0]}/brightness", "0"), rd(f"{BL[0]}/max_brightness", "1")
+    return round(100 * int(cur) / max(int(mx), 1))
+
+
+def minute(seconds=60):
+    """Sample for `seconds`, return one row (dict)."""
+    p0, c0, t0 = procs(), cpu_total(), time.monotonic()
+    ws, fr, gp = [], [], []
+    end = t0 + seconds
+    while True:
+        w = watts()
+        if w is not None:
+            ws.append(w)
+        f = [int(rd(x, "0")) for x in CPUF]
+        if f:
+            fr.append(sum(f) / len(f) / 1000)
+        g = rd(GPU)
+        if g.isdigit():
+            gp.append(int(g))
+        left = end - time.monotonic()
+        if left <= 0:
+            break
+        time.sleep(min(STEP, left))
+    p1, c1, el = procs(), cpu_total(), time.monotonic() - t0
+    use = defaultdict(int)
+    for pid, (comm, t) in p1.items():
+        if pid in p0 and p0[pid][0] == comm:
+            use[comm] += t - p0[pid][1]
+        elif pid not in p0:
+            use[comm] += t
+    top = sorted(use.items(), key=lambda kv: -kv[1])[:3]
+    busy, total = c1[0] - c0[0], c1[1] - c0[1]
+    ncpu = os.cpu_count() or 1
+    avg = lambda v, n=1: round(sum(v) / len(v), n) if v else ""
+    return {
+        "time": dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "status": rd(f"{BAT}/status", "Unknown"),
+        "w_avg": avg(ws, 2), "w_min": round(min(ws), 2) if ws else "",
+        "w_max": round(max(ws), 2) if ws else "",
+        "capacity": rd(f"{BAT}/capacity"),
+        "brightness_pct": brightness(), "kbd": rd(KBD),
+        "display": rd(EDP[0]) if EDP else "",
+        "cpu_pct": round(100 * busy / total * ncpu) if total else "",  # % of one core, like top
+        "cpu_mhz": avg(fr, 0), "gpu_pct": avg(gp, 0),
+        "wifi": rd(WLAN[0]) if WLAN else "",
+        "top": "|".join(f"{c}:{round(100 * t / HZ / el)}" for c, t in top if t > 0),
+    }
+
+
+def log():
+    os.makedirs(DIR, exist_ok=True)
+    # align to the minute so rows are comparable
+    time.sleep(60 - time.time() % 60)
+    while True:
+        row = minute(60 - time.time() % 60 if time.time() % 60 > 1 else 60)
+        path = os.path.join(DIR, f"drain-{row['time'][:7]}.csv")
+        new = not os.path.exists(path)
+        with open(path, "a", newline="") as f:
+            w = csv.DictWriter(f, FIELDS)
+            if new:
+                w.writeheader()
+            w.writerow(row)
+
+
+def rows(days):
+    since = (dt.datetime.now() - dt.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
+    out = []
+    for path in sorted(glob.glob(os.path.join(DIR, "drain-*.csv"))):
+        with open(path) as f:
+            out += [r for r in csv.DictReader(f) if r["time"] >= since]
+    return out
+
+
+def report(days):
+    rs = [r for r in rows(days) if r["status"] == "Discharging" and r["w_avg"]]
+    if not rs:
+        print(f"No minutes on battery in the last {days} days (log: {DIR}).")
+        return
+    full = int(rd(f"{BAT}/charge_full", "0")) * int(rd(f"{BAT}/voltage_now", "0")) / 1e12 or 50
+    W = lambda sel: sum(float(r["w_avg"]) for r in sel) / len(sel)
+    print(f"Last {days} days on battery: {len(rs) / 60:.1f} h logged, average {W(rs):.2f} W "
+          f"-> {full / W(rs):.1f} h from a full battery ({full:.0f} Wh)\n")
+
+    def table(title, key, order=None):
+        groups = defaultdict(list)
+        for r in rs:
+            groups[key(r)].append(r)
+        print(title)
+        for k in (order or sorted(groups)):
+            if k in groups:
+                g = groups[k]
+                print(f"  {k:<22} {len(g) / 60:6.1f} h  {W(g):6.2f} W  -> {full / W(g):5.1f} h")
+        print()
+
+    def bright(r):
+        if r["display"] != "On":
+            return "screen off"
+        b = int(r["brightness_pct"] or 0)
+        return f"screen {b // 25 * 25}-{b // 25 * 25 + 25} %" if b < 100 else "screen 100 %"
+    table("By screen", bright)
+
+    def load(r):
+        c = int(r["cpu_pct"] or 0)
+        return "CPU < 10 %" if c < 10 else "CPU 10-50 %" if c < 50 else "CPU 50-200 %" if c < 200 else "CPU > 200 %"
+    table("By CPU use (% of one core)", load, ["CPU < 10 %", "CPU 10-50 %", "CPU 50-200 %", "CPU > 200 %"])
+
+    cpu = defaultdict(float)
+    for r in rs:
+        for item in filter(None, r["top"].split("|")):
+            c, _, p = item.rpartition(":")
+            cpu[c] += float(p)
+    print("Most CPU on battery (core-hours, top 3 of each minute)")
+    for c, p in sorted(cpu.items(), key=lambda kv: -kv[1])[:10]:
+        print(f"  {c:<22} {p / 100 / 60:6.2f}")
+
+
+def now():
+    r = minute(10)
+    for k in FIELDS:
+        print(f"{k:>15}: {r[k]}")
+
+
+if __name__ == "__main__":
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "report"
+    if cmd == "log":
+        log()
+    elif cmd == "report":
+        report(int(sys.argv[2]) if len(sys.argv) > 2 else 7)
+    elif cmd == "now":
+        now()
+    else:
+        sys.exit(__doc__)
