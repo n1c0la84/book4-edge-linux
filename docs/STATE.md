@@ -16,6 +16,13 @@ the lid closed, overnight and 09:19-11:57): `dwc3-qcom a800000.usb: port-1
 HS-PHY not in L2`, then `xhci-hcd.1.auto ... platform_pm_suspend returns
 -22`. Lid closed in that loop drained 3.2 W (vs ~0.7 W real sleep). The same
 message appeared 8 times on boot -5 without blocking every sleep.
+Cause narrowed: on internal bus 1 (xhci-hcd.1, the EGIS ETU905A80-E fingerprint
+reader, 1c7a:05a1) the reader normally drops and re-enumerates on every
+resume (24 and 25 Nov: `USB disconnect` then `new high-speed USB device`
+in the same second). At 22:28:38 (first resume, 25 s after boot, charger
+plugged in during it) it dropped and never came back; every suspend since
+fails on that controller. Not the SDDM greeter (its PAM has no fprintd;
+fprintd was not running). Recovery: reboot or rebind the controller.
 book4-ec-standby hook inert (daily DTB). Also `adsprpcd sensorspd adsp`
 restarts every 100 ms (`remote_init ... No space left on device`, ~10
 log lines/s, 15 min CPU in 13.5 h) since the light-sensor work: to fix.
