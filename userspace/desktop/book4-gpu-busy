@@ -8,54 +8,113 @@
 # like amdgpu's sysfs file. Clients are re-discovered every RESCAN s; only
 # their fdinfo is read in between. Sees the user's own processes only, which
 # are the desktop's GPU clients (compositor, browser, games).
-import os, time
+import glob, os, time
 
-INTERVAL, RESCAN = 2.0, 10.0
-out = os.path.join(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"), "gpu_busy_percent")
+INTERVAL, IDLE_INTERVAL, RESCAN = 2.0, 5.0, 30.0
+MY_UID = os.getuid()
+out = os.path.join(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{MY_UID}"), "gpu_busy_percent")
+dpms_paths = sorted(glob.glob("/sys/class/drm/card*-eDP-*/dpms"))
+last_written = None
+
+def display_off():
+    if not dpms_paths:
+        return False
+    for p in dpms_paths:
+        try:
+            with open(p) as f:
+                if f.read().strip() == "On":
+                    return False
+        except OSError:
+            return False
+    return True
+
+def read_fdinfo(path):
+    driver = cid = ns = None
+    with open(path) as f:
+        for line in f:
+            if line.startswith("drm-driver:"):
+                driver = line.split(":", 1)[1].strip()
+            elif line.startswith("drm-client-id:"):
+                cid = line.split(":", 1)[1].strip()
+            elif line.startswith("drm-engine-gpu:"):
+                ns = int(line.split(":", 1)[1].split()[0])
+    return driver, cid, ns
 
 def find_clients():
-    found = []
+    # Keep one fdinfo path per unique msm drm-client-id; duplicate FDs of the
+    # same drm_file report identical drm-engine-gpu counters.
+    found = {}
     for pid in os.listdir("/proc"):
         if not pid.isdigit():
             continue
+        pdir = f"/proc/{pid}"
         try:
-            for fd in os.listdir(f"/proc/{pid}/fd"):
-                if os.readlink(f"/proc/{pid}/fd/{fd}").startswith("/dev/dri/"):
-                    found.append(f"/proc/{pid}/fdinfo/{fd}")
+            if os.stat(pdir).st_uid != MY_UID:
+                continue
+            fddir = f"{pdir}/fd"
+            fds = os.listdir(fddir)
         except OSError:
             continue
+        for fd in fds:
+            try:
+                if not os.readlink(f"{fddir}/{fd}").startswith("/dev/dri/"):
+                    continue
+                path = f"{pdir}/fdinfo/{fd}"
+                driver, cid, ns = read_fdinfo(path)
+                if driver and "msm" in driver and cid and ns is not None and cid not in found:
+                    found[cid] = path
+            except (OSError, ValueError):
+                continue
     return found
 
-def busy_ns(paths):
+def busy_ns(clients):
     per_client = {}
-    for p in paths:
+    stale = False
+    for cid, p in clients.items():
         try:
-            with open(p) as f:
-                info = dict(l.split(":", 1) for l in f if ":" in l)
-        except OSError:
+            _, cur_cid, ns = read_fdinfo(p)
+        except (OSError, ValueError):
+            stale = True
             continue
-        if "msm" not in info.get("drm-driver", ""):
+        if cur_cid != cid or ns is None:
+            stale = True
             continue
-        cid = info.get("drm-client-id", "").strip()
-        ns = info.get("drm-engine-gpu", "0").split()[0]
-        per_client[cid] = max(per_client.get(cid, 0), int(ns))
-    return per_client
+        per_client[cid] = ns
+    return per_client, stale
 
 def write(pct):
+    global last_written
+    if pct == last_written:
+        return
     tmp = out + ".tmp"
     with open(tmp, "w") as f:
         f.write(f"{pct}\n")
     os.replace(tmp, out)
+    last_written = pct
 
 clients, scanned = find_clients(), time.monotonic()
-prev, t_prev = busy_ns(clients), time.monotonic()
+prev, _ = busy_ns(clients)
+t_prev = time.monotonic()
 write(0)
 while True:
+    if display_off():
+        write(0)
+        prev = None
+        time.sleep(IDLE_INTERVAL)
+        continue
     time.sleep(INTERVAL)
-    if time.monotonic() - scanned >= RESCAN:
-        clients, scanned = find_clients(), time.monotonic()
-    cur, t = busy_ns(clients), time.monotonic()
-    # only clients present both times; a counter can't go backwards
-    d = sum(max(0, v - prev[c]) for c, v in cur.items() if c in prev)
-    write(min(100, round(100 * d / ((t - t_prev) * 1e9))))
+    now = time.monotonic()
+    if prev is None or now - scanned >= RESCAN:
+        clients, scanned = find_clients(), now
+    cur, stale = busy_ns(clients)
+    t = time.monotonic()
+    if stale:
+        scanned = 0.0
+    if prev is None:
+        write(0)
+    else:
+        # only clients present both times; a counter can't go backwards
+        dt = t - t_prev
+        d = sum(max(0, v - prev[c]) for c, v in cur.items() if c in prev)
+        write(min(100, round(100 * d / (dt * 1e9))) if dt > 0 else 0)
     prev, t_prev = cur, t

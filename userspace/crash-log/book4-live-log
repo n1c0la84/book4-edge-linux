@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
-# Plain-text copy of this boot's journal, synced every 2 s, for hard resets.
+# Plain-text copy of this boot's journal, synced every 5 s when written, for hard resets.
 # journald rewrites its files in place (nodatacow); after the 29 October
 # reset the next boot found system.journal damaged and replaced it, losing
 # 22 h. An appended text file loses at most its last couple of seconds.
@@ -17,10 +17,20 @@ find "$dir" -name '*.cursor' ! -name "$boot.cursor" -delete
     echo "== cmdline $(cat /proc/cmdline)"
 } >> "$log"
 
-# fsync on a clean file costs nothing, so a fixed tick is cheap.
-(while sleep 2; do sync "$log"; done) &
+# Sync file data only when new bytes were appended, so idle periods do not
+# trigger btrfs transactions every few seconds.
+(
+    last=0
+    while sleep 5; do
+        cur=$(stat -c %s "$log" 2>/dev/null || echo 0)
+        if [ "$cur" != "$last" ]; then
+            sync -d "$log"
+            last=$cur
+        fi
+    done
+) &
 syncer=$!
-trap 'kill $syncer 2>/dev/null; sync "$log"' EXIT
+trap 'kill $syncer 2>/dev/null; sync -d "$log"' EXIT
 
 # Monotonic time: the wall clock jumps at boot (2024 RTC, then NTP).
 # The cursor lets a restarted service go on without repeating the boot.

@@ -5,6 +5,35 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 16:25: awake-drain & performance fixes (`powerprofiles`, `book4-gpu-busy`, `book4-live-log`, UFW logging, LAN mDNS storm found).**
+Investigated awake battery drain and CPU performance:
+- **CPU `2.515 GHz` cap on AC:** `omarchy-power-profiles-daemon 0.30-3` caps
+  `scmi` `scaling_max_freq` to 75 % (`2.515 GHz`) in `balanced`, 60 %
+  (`2.19 GHz`, `boost=0`) in `power-saver`, and 100 % (`3.42 / 4.01 GHz`,
+  `boost=1`) in `performance`. Omarchy defaults AC to `performance`, but a
+  stale `~/.local/state/omarchy/powerprofiles/ac` file from 10 October (before
+  Snapdragon PPD support existed) was forcing `balanced` on AC. Running
+  `omarchy-powerprofiles-set ac performance` immediately restored full
+  `3.42 / 4.01 GHz` clocks on AC while keeping `balanced` (`2.515 GHz`) on
+  battery.
+- **Root cause of `avahi-daemon` #3 CPU & high idle wakeups:** live mDNS
+  capture found three LAN repeaters in an mDNS name-conflict storm over
+  `_tr064._tcp.local`, flooding ~180 IPv4+IPv6 multicast packets/s continuously
+  (~1.3 M wakeups in 2 h on `avahi-daemon`, plus waking `ath12k` and Chrome's
+  mDNS sockets). Fix is on the repeaters themselves, not in Linux.
+- **`book4-gpu-busy` (`userspace/desktop/book4-gpu-busy`):** skipped `/proc`
+  scans and `fdinfo` polling when eDP DPMS is `Off`, filtered `/proc` by UID,
+  deduplicated DRM FDs by `drm-client-id` (27 -> 11 FDs), raised `RESCAN`
+  from 10 s to 30 s (rescanning early on stale FDs), and skipped rewriting
+  `gpu_busy_percent` when unchanged.
+- **`book4-live-log` (`userspace/crash-log/book4-live-log`) & UFW:** switched
+  the background syncer from blind 2 s `sync` to 5 s `sync -d` only when file
+  size grew; deleted the 1.0 GB stale live log from the earlier `adsprpcd`
+  `ENOSPC` loop; set `ufw logging off` to stop LAN SSDP/IGMP/multicast
+  `[UFW BLOCK]` kernel log spam (~376 lines/2 h) from triggering journal/btrfs
+  flushes (all firewall rules unchanged). Rebuilt and installed `book4-edge`
+  and synced `/var/lib/book4-repo`.
+
 **26 November 2026, 16:08: live system cleanup (dead camera loopback, `linux-omarchy`, `libfprint-sdcp` OpenSSL 4 rebuild, repo sync, hygiene).**
 Cleaned up the running Arch/Omarchy system after auditing it: removed the dead
 out-of-tree `v4l2-relayd` / `v4l2loopback-dkms` / `v4l2loopback-utils` stack,
