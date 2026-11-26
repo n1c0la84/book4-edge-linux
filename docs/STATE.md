@@ -18,13 +18,14 @@ NM auto-activates only at +12.2 s (first scan with the new channel list,
 6 GHz enabled); auth+assoc 0.27 s, DHCP 2.2 s. Same on earlier real
 resumes: 12.7-14.9 s (23-25 Nov). This time it joined 2.4 GHz (ch 5,
 ...a7) instead of the 5 GHz BSSID (...a8) used before.
-Set up (to judge on the next real resumes, after a reboot):
-`/etc/modprobe.d/cfg80211-regdom.conf` (`options cfg80211
-ieee80211_regdom=IT`; cfg80211 is not in the initramfs, so it reads this);
-NM profile "Vodafone-C01620117 5GHz" (clone, band a, autoconnect-priority
-10) ahead of the original (priority 0, any band) as fallback. Undo: delete
-the file and `nmcli c delete "Vodafone-C01620117 5GHz"`. Machine-local,
-not in a package (country and network are the owner's, not the Book4's).
+Tried 12:37 and reverted (both removed): (1) `cfg80211
+ieee80211_regdom=IT` took (global IT) but the ath12k phy is
+`self-managed`, so it ignores it and still starts on its own hint US after
+each firmware load (boot: US, IT 5.5 s later, as before); (2) a cloned NM
+profile with `band a` and priority 10 never connected: wpa_supplicant
+scanned 18 s and NM failed it with `ssid-not-found`, although the three
+APs' 5 GHz BSSIDs (ch 36) are visible and the original profile has joined
+...a8 on 5 GHz before. The 2.4/5 GHz choice stays with wpa_supplicant.
 
 **26 November 2026: awake drain measured; sleep broken this boot (xhci).**
 UPower charge history, 19-26 Nov, awake on battery only (gaps > 15 min
