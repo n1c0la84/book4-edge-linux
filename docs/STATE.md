@@ -5,6 +5,18 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 17:17: first `book4-update` → `omarchy-update` run, reboot OK; Agents widget Antigravity quota fix.**
+The first run through `omarchy-update` upgraded `hyprland` 0.57.2, `hyprgraphics`
+0.7.0 and Qt 6.12.1 (Omarchy's `quickshell` hook warns it was built against
+6.12.0; the shell runs fine). `90-book4-verify.sh` passed, the reboot came up
+clean (EL2, both DSPs attached, all six SoundWire devices attached, no failed
+units, kernel no longer tainted by `v4l2loopback`). `mirrorlist.pacnew` removed.
+Private, outside the repo: `~/.config/omarchy/plugins/nicola.agents/bin/omarchy-agent-usage-agy`
+(see its `LOCAL-FIX.md`) shows the real Gemini quota from
+`v1internal:retrieveUserQuota`; Omarchy's stock collector reads only
+`retrieveUserQuotaSummary`, which currently returns just the Claude/GPT group,
+and showed that unused group as the main Session/Weekly bars (always 0 %).
+
 **26 November 2026, 16:55: safe `omarchy-update` integration and post-update verification hook.**
 Added `userspace/update/book4-post-update-check`, installed by
 `install/arch/update.sh` as Omarchy's post-update hook
