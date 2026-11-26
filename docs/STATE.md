@@ -5,6 +5,21 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 15:00: CI signing/publish hardening and backup script updated.**
+`.github/scripts/build-packages.sh` now imports `BOOK4_SIGN_KEY` into a
+root-only keyring and unsets it before any `makepkg` build runs as `builder`
+(builds unsigned, checks `.BUILDINFO`/`.PKGINFO`, then signs packages and
+runs `repo-add` as root; `builder` only owns `packages/`). `.github/workflows/packages.yml`
+only skips `gh release download` when the `repo` release has 0 assets (no
+`|| true`, so a transient download error cannot wipe existing packages on a
+partial build), disables globbing for `$PKGS`, and uploads `*.pkg.tar.*`
+before `book4.{db,files}*`. `tools/backup/linux-backup.sh` updated for the
+post-23-Nov layout: detects the running btrfs subvolume (`arch-45`, failing
+if missing instead of silently skipping deleted `root`/`home`/`arch`), backs
+up Limine's `/boot` (`sda7` `BOOK4ESP`) and fallback GRUB `/boot` (`sda4`),
+archives all Linux/EL2 directories plus `firmware/` from `sda1`, and saves
+`efibootmgr -v`. Not yet run live on an external drive or CI workflow.
+
 **26 November 2026, 13:00: resume health check and drain logger installed**
 (book4-edge r685.8ed440e). `book4-resume-check` (system-sleep hook; runs
 15 s after every resume, also after a failed suspend, through a transient

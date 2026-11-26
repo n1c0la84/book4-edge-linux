@@ -41,7 +41,10 @@ jobs:
           gh release view repo >/dev/null 2>&1 ||
             gh release create repo --title "[book4] pacman repository" --latest=false \
               --notes "Pacman repository of the Book4 Edge layer. See docs/packages-online.md."
-          gh release download repo -D out || true
+          assets=$(gh release view repo --json assets -q '.assets | length')
+          if [ "$assets" -gt 0 ]; then
+            gh release download repo -D out
+          fi
 
       - name: Build
         env:
@@ -49,6 +52,7 @@ jobs:
           BOOK4_SIGN_FPR: ${{ vars.BOOK4_SIGN_FPR }}
           PKGS: ${{ inputs.packages }}
         run: |
+          set -f
           docker run --rm -v "$PWD:/w" -e BOOK4_SIGN_KEY -e BOOK4_SIGN_FPR alarm \
             bash /w/.github/scripts/build-packages.sh $PKGS
 
@@ -57,7 +61,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           sudo chown -R "$(id -u)" out
-          gh release upload repo out/* --clobber
+          shopt -s nullglob
+          pkgs=(out/*.pkg.tar.*)
+          dbs=(out/book4.db* out/book4.files*)
+          [ "${#pkgs[@]}" -gt 0 ]
+          [ "${#dbs[@]}" -gt 0 ]
+          # Upload packages and signatures before the repository database so
+          # pacman never sees an index pointing to a file that is not uploaded yet.
+          gh release upload repo "${pkgs[@]}" --clobber
+          gh release upload repo "${dbs[@]}" --clobber
           # drop release files the repository no longer lists (older builds)
           gh release view repo --json assets -q '.assets[].name' | while read -r a; do
             [ -e "out/$a" ] || gh release delete-asset repo "$a" -y

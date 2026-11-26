@@ -61,10 +61,12 @@ gh workflow run packages -f packages="book4-edge book4-edge-boot"
 
 It runs on GitHub's arm64 runner inside an Arch Linux ARM container made
 from the official root filesystem (signature checked against the Arch Linux
-ARM Build System key, `keys/archlinuxarm-build-system.asc`), builds with
-`makepkg --sign` (`.github/scripts/build-packages.sh`), adds the packages
-to the repository database (the older build of each is dropped) and uploads
-everything to the release. The kernel takes the longest (the run's limit is
+ARM Build System key, `keys/archlinuxarm-build-system.asc`), builds the
+packages unsigned as an unprivileged `builder` user (without access to the
+signing key), checks `.BUILDINFO`/`.PKGINFO`, then signs the packages and
+updates the repository database as root (`.github/scripts/build-packages.sh`,
+dropping the older build of each) and uploads packages and signatures before
+the repository database. The kernel takes the longest (the run's limit is
 350 minutes). A build fails if a package's build metadata (`.BUILDINFO`,
 `.PKGINFO`) names a home directory other than the build user's (local builds
 record their own; package contents come from public sources and do mention
