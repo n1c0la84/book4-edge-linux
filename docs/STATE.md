@@ -38,6 +38,12 @@ WSA amps UNATTACHED, playback fails -61. Amp rebind impossible (wsa883x
 has no bind/unbind), see TODO.md "SoundWire clash". Controller rebind
 (6ab0000, 6b10000) tried at the owner's request: removed the sound card,
 re-probe failed (IRQ type mismatch); reboot needed.
+Upstream bug report drafts (not sent; owner reviews, checklist at the end
+of each): docs/upstream-drafts/2026-11-soundwire-clash.txt (clash, wsa883x
+not rebindable, qcom_swrm_remove IRQ race and re-probe IRQ type mismatch)
+and docs/upstream-drafts/2026-11-usb-resume.txt (xHCI death on usb_2, QMP
+combo PHY init timeout with the pipe-clock unwind warnings). Both need a
+retest on an untainted kernel first.
 
 **26 November 2026, 12:48: fingerprint unavailable on the lock screen after
 a resume** (reader present on the bus). The fprintd-resume hook

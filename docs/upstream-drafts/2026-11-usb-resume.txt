@@ -1,0 +1,98 @@
+# DRAFT, not sent. Plain-text mail for git send-email / a mail client.
+# Before sending (see the checklist at the end), remove these # lines.
+#
+# To:  Vinod Koul <vkoul@kernel.org>                 (PHY)
+#      Bjorn Andersson <andersson@kernel.org>         (arm64 Qualcomm, dwc3-qcom)
+#      Konrad Dybcio <konradybcio@kernel.org>
+#      Thinh Nguyen <Thinh.Nguyen@synopsys.com>       (dwc3)
+# Cc:  Neil Armstrong <neil.armstrong@linaro.org>
+#      linux-arm-msm@vger.kernel.org
+#      linux-usb@vger.kernel.org
+#      linux-phy@lists.infradead.org
+
+Subject: X1E80100: USB controllers fail to resume from s2idle (QMP combo PHY init timeout, xHCI "HC died")
+
+Hi,
+
+On a Samsung Galaxy Book4 Edge 14" (X1E80100) two different USB resume
+failures from s2idle show up, both on resume paths. I can test patches.
+
+1) xHCI on usb_2 (a200000.usb, internal fingerprint reader only) dies
+
+On the first resume after boot:
+
+  [48.124932] dwc3-qcom a800000.usb: port-1 HS-PHY not in L2
+  [48.125167] dwc3-qcom a600000.usb: port-1 HS-PHY not in L2
+  [48.125334] qcom-pcie 1c08000.pcie: Timeout waiting for L2 entry! LTSSM: 0x11
+  [48.126670] xhci-hcd xhci-hcd.1.auto: Abort failed to stop command ring: -110
+  [48.126819] xhci-hcd xhci-hcd.1.auto: xHCI host controller not responding, assume dead
+  [48.126951] xhci-hcd xhci-hcd.1.auto: HC died; cleaning up
+  [48.127102] xhci-hcd xhci-hcd.1.auto: Timeout waiting for reset device command
+  [48.127222] PM: resume devices took 15.751 seconds
+  [48.127904] usb 1-1: USB disconnect, device number 2
+
+The device (1c7a:05a1) never comes back, and every later suspend fails:
+
+  xhci-hcd xhci-hcd.1.auto: PM: dpm_run_callback(): platform_pm_suspend returns -22
+  xhci-hcd xhci-hcd.1.auto: PM: failed to suspend async: error -22
+  PM: Some devices failed to suspend, or early wake event detected
+
+so the machine retried suspend every ~30 s all night (about 3000
+attempts) instead of sleeping. Unbinding and rebinding a200000.usb from
+dwc3-qcom recovers it (device back within 1 s, suspend works again).
+Seen once so far; normally the device disconnects and re-enumerates on
+every resume without errors.
+
+2) QMP combo PHY (fd5000, usb_1 / a600000) init timeout on resume
+
+With a USB 2 hub and a USB stick on that Type-C port:
+
+  qcom-qmp-combo-phy fd5000.phy: phy initialization timed-out
+  phy phy-fd5000.phy.5: phy init failed --> -110
+  dwc3-qcom a600000.usb: Enabling runtime PM for inactive device with active children
+  dwc3-qcom a600000.usb: PM: dpm_run_callback(): dwc3_qcom_pm_resume [dwc3_qcom] returns -110
+  dwc3-qcom a600000.usb: PM: failed to resume: error -110
+  gcc_usb3_prim_phy_pipe_clk already disabled
+  WARNING: drivers/clk/clk.c:1257 at clk_core_disable+0x18c/0x1a8
+  Call trace:
+   clk_core_disable+0x18c/0x1a8 (P)
+   qmp_combo_usb_power_on+0x600/0x618 [phy_qcom_qmp_combo]
+   qmp_combo_usb_init+0x68/0xc0 [phy_qcom_qmp_combo]
+   phy_init+0x78/0x148
+   usb_phy_roothub_init+0x50/0xb0
+   usb_phy_roothub_resume+0x98/0xe0
+  gcc_usb3_prim_phy_pipe_clk already unprepared
+  WARNING: drivers/clk/clk.c:1116 at clk_core_unprepare+0x204/0x250
+   (same call trace, qmp_combo_usb_power_on+0x608)
+  PM: resume devices took 2.387 seconds
+
+The USB 2 devices re-enumerate and work; SuperSpeed on that port is gone
+until reboot. The clk warnings look like qmp_combo_usb_power_on()'s error
+path disabling the pipe clock that was never enabled when init times out.
+
+Questions:
+- Is the pipe-clock unwind in qmp_combo_usb_power_on() on timeout a known
+  issue? Happy to test a fix.
+- For (1), is there anything known about xHCI on the multiport/usb_2
+  controller not surviving s2idle with CX collapse?
+
+System:
+- Samsung Galaxy Book4 Edge 14" (NP940XMA), X1E80100, BIOS P00AKY.053.250618
+- Kernel: 7.3.4 based on <BASE>, booted at EL2; s2idle reaches CX collapse
+- Taint: OE (<list, or "none" after the retest>)
+- Device tree: <upstream file / out-of-tree, link>
+
+Thanks,
+Nicola Nicodemo
+
+# ---------------------------------------------------------------------
+# Checklist before sending (owner):
+# [ ] Reproduce on an untainted kernel (mainline 7.4-rc), see the
+#     SoundWire draft. Part 2 (clk warnings on the PHY error path) is a
+#     code-level issue and can be argued from the trace alone.
+# [ ] Part 1 happened once; send it only if it recurs, or mark it "seen
+#     once" (as written) so nobody chases a ghost.
+# [ ] Fill <BASE>, taint and device-tree lines; attach or link dmesg
+#     (25 Nov boot 02937c95..., 22:28:13-22:29; 26 Nov boot 6cd106c8...,
+#     13:01:48).
+# [ ] Plain text only.

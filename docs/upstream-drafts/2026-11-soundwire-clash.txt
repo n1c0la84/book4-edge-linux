@@ -1,0 +1,107 @@
+# DRAFT, not sent. Plain-text mail for git send-email / a mail client.
+# Before sending (see the checklist at the end), remove these # lines.
+#
+# To:  Srinivas Kandagatla <srini@kernel.org>
+#      Vinod Koul <vkoul@kernel.org>
+#      Bard Liao <yung-chuan.liao@linux.intel.com>
+# Cc:  Pierre-Louis Bossart <pierre-louis.bossart@linux.dev>
+#      linux-sound@vger.kernel.org
+#      linux-arm-msm@vger.kernel.org
+# (MAINTAINERS: "QCOM AUDIO (ASoC) DRIVERS" covers drivers/soundwire/qcom.c
+#  and sound/soc/codecs/wsa88*; "SOUNDWIRE SUBSYSTEM" covers drivers/soundwire/)
+
+Subject: soundwire: qcom: bus clash leaves WSA883x amps detached on X1E80100; controller unbind/bind cannot recover
+
+Hi,
+
+On a Samsung Galaxy Book4 Edge 14" (X1E80100, four WSA8835 speaker amps
+on two SoundWire buses, 6ab0000 and 6b10000) the speakers stop working
+after a "bus clash" interrupt, and nothing short of a reboot brings them
+back. Trying to recover by unbinding and rebinding the controller exposed
+two further problems in soundwire-qcom. Details below; I can test patches.
+
+1) Bus clash leaves the amps unusable
+
+Usually shortly after resume from s2idle, or at the start of playback:
+
+  [1065.013053] qcom-soundwire 6b10000.soundwire: qcom_swrm_irq_handler: SWR bus clsh detected
+  [1065.021047] qcom-soundwire 6ab0000.soundwire: qcom_swrm_irq_handler: SWR bus clsh detected
+
+(here 33 s after resume). All four amps then read UNATTACHED in
+/sys/bus/soundwire/devices/*/status, and the next playback fails:
+
+  wsa883x-codec sdw:4:0:0217:0202:00:2: ASoC error (-61): at snd_soc_pcm_component_pm_runtime_get() on sdw:4:0:0217:0202:00:2
+   WSA Playback: ASoC error (-61): at __soc_pcm_open() on WSA Playback
+   MultiMedia2 Playback: ASoC error (-61): at dpcm_be_dai_startup() on MultiMedia2 Playback
+  qcom-soundwire 6ab0000.soundwire: swrm_wait_for_wr_fifo_avail err write overflow
+  qcom-soundwire 6ab0000.soundwire: qcom_swrm_irq_handler: SWR unknown interrupt value: 2048
+
+Other occurrences on this machine: 20 and 28 Oct, 23 Nov (that time "Bus
+clash detected", "Reached MAX_RETRY" and parity errors on
+sdw:1:0:0217:0202:00:{1,2}, both amps stuck in "Alert"), 24 Nov (clashes
+on 6ab0000, 6ad0000 and 6b10000; that time the amps came back by
+themselves). Roughly once a day of use, more often with many suspend
+cycles. Restarting PipeWire does not help.
+
+2) wsa883x cannot be rebound
+
+wsa883x-codec has no bind/unbind attributes (writes fail with EACCES even
+as root), so the amps cannot be re-probed on their own.
+
+3) Controller unbind races its own IRQ, and re-probe fails
+
+With PipeWire stopped, unbinding 6ab0000.soundwire and 6b10000.soundwire
+from qcom-soundwire removed the sound card as expected, but during
+qcom_swrm_remove() the IRQ handler was still enumerating and tried to
+re-add a peripheral that was being deleted:
+
+  sysfs: cannot create duplicate filename '/devices/platform/soc@0/6b10000.soundwire/sdw-master-1-0/sdw:1:0:0217:0202:00:2'
+   sdw_slave_add+0x204/0x2d0 [soundwire_bus]
+   qcom_swrm_enumerate.isra.0+0x1c4/0x1e8 [soundwire_qcom]
+   qcom_swrm_irq_handler+0x45c/0x580 [soundwire_qcom]
+   sdw_bus_master_delete+0x30/0x70 [soundwire_bus]
+   qcom_swrm_remove+0x20/0x50 [soundwire_qcom]
+  kobject: kobject_add_internal failed for sdw:1:0:0217:0202:00:2 with -EEXIST, ...
+  soundwire sdw-master-1-0: Failed to add slave: ret -17
+
+Binding them again then failed for both controllers:
+
+  irq: type mismatch, failed to map hwirq-202 for interrupt-controller@17000000!
+  qcom-soundwire 6b10000.soundwire: error -EINVAL: request_irq(0) 0x0 qcom_swrm_irq_handler [soundwire_qcom] soundwire
+  qcom-soundwire 6b10000.soundwire: probe with driver qcom-soundwire failed with error -22
+  (same for 6ab0000 with hwirq-203)
+
+So the IRQ seems to be left mapped with a different trigger type after
+the first probe, and remove does not quiesce the IRQ before deleting the
+bus. The full log of both events is available on request.
+
+Questions:
+- Is a bus clash on these WSA buses expected to be recoverable in the
+  driver (re-enumeration, a bus reset), or is the clash itself the bug
+  (e.g. timing/clock-stop around s2idle)?
+- Would you take a fix that disables the IRQ before sdw_bus_master_delete()
+  in qcom_swrm_remove(), and is the re-probe IRQ type mismatch known?
+
+System:
+- Samsung Galaxy Book4 Edge 14" (NP940XMA), X1E80100, BIOS P00AKY.053.250618
+- Kernel: 7.3.4 based on <BASE: e.g. the x1e laptop tree / mainline + N patches>,
+  booted at EL2; s2idle reaches CX collapse (cxsd ~98 %)
+- Taint: OE (out-of-tree helper modules: <list, or "none" after the retest>)
+- Device tree: <upstream file / out-of-tree, link>
+
+Thanks,
+Nicola Nicodemo
+
+# ---------------------------------------------------------------------
+# Checklist before sending (owner):
+# [ ] Reproduce on an untainted kernel, ideally mainline 7.4-rc (no
+#     aoss_cxsd_only, icc_hold, el1tmr, book4_dsp_sleepstate), and say so;
+#     maintainers will ask first. If it only happens with our modules,
+#     do not send part 1 as is.
+# [ ] Fill <BASE>, taint and device-tree lines honestly (our tree is
+#     Anatase's 7.3 branch + book4 patches; the 14" DT is not upstream).
+# [ ] Parts 2-3 (rebind) are reproducible on any X1E: unbind/bind
+#     6ab0000.soundwire with the card idle. Could also be sent alone.
+# [ ] Attach or link the full dmesg (journalctl -k -b of the 26 Nov boot
+#     6cd106c8...: clash at 13:02:21, rebind at 13:16:43).
+# [ ] Send as plain text (git send-email or a client in plain-text mode).
