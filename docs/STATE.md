@@ -5,6 +5,34 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 16:08: live system cleanup (dead camera loopback, `linux-omarchy`, `libfprint-sdcp` OpenSSL 4 rebuild, repo sync, hygiene).**
+Cleaned up the running Arch/Omarchy system after auditing it: removed the dead
+out-of-tree `v4l2-relayd` / `v4l2loopback-dkms` / `v4l2loopback-utils` stack,
+`/etc/modprobe.d/v4l2loopback-exclusive-caps.conf`, and
+`/etc/systemd/system/book4-camera-loopback.service` (kernel will boot untainted
+on the next reboot); removed the unused `linux-omarchy` `7.3-79` test kernel and
+its unmarked `/etc/book4/limine-extra.conf` lines while keeping the
+`ec-standby-test.sh` block intact; backed up unowned
+`/usr/lib/systemd/system-sleep/fprintd-resume` to `~/backup/fprintd-resume.bak`
+and removed it (superseded by `book4-resume-check`); rebuilt and installed
+`book4-edge-el2 2026.11.19-6` (ESP updated cleanly via `95-book4-el2.hook`) and
+`libfprint-sdcp 1.94.100.r547.g2d7c5277-1` (verified `libfprint-2.so.2` now
+links `libcrypto.so.4`, OpenSSL 4); synced `/var/lib/book4-repo` so all 11
+packages match the installed versions (`linux-book4 7.3.4-4`,
+`linux-book4-headers 7.3.4-4`, `book4-edge r695.4d38d25-1`,
+`book4-edge-boot r695.4d38d25-1`, `book4-edge-el2 2026.11.19-6`,
+`book4-edge-firmware 2026.11.23-1`, `book4-sensors r695.4d38d25-1`,
+`fastrpc r402.89508ea-1`, `libssc-book4 0.4.4-1`, `iio-sensor-proxy-book4 3.9-1`,
+`libfprint-sdcp 1.94.100.r547.g2d7c5277-1`); merged all 3 `.pacnew` files,
+removed leftover `/etc/modprobe.d/book4-emuec-debug.conf`,
+`/etc/systemd/system/book4-modules-swap.service`, and
+`/etc/systemd/system/book4-spk-test.service`, and removed all orphan Python
+build dependencies. Still open on the live machine: `pacman -Syu` blocked by
+`[omarchy]` shadowing `extra/hyprland` (`hyprgraphics 0.7.0-1` needs
+`extra/hyprland 0.57.2-2` or `--ignore hyprgraphics`), plus awake-drain/perf
+tuning (`omarchy-power-profiles-daemon` capping `balanced` at 2.515 GHz, UFW
+multicast log spam + `book4-live-log` 2 s sync, and `avahi-daemon` CPU usage).
+
 **26 November 2026, 15:35: active userspace/boot bug fixes and `hangover.sh` kept.**
 Fixed daily userspace and boot script bugs (installed live 15:45: `book4-edge`,
 `book4-edge-boot`, `book4-sensors` `r695.4d38d25-1`, `book4-edge-el2`
