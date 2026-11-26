@@ -378,6 +378,15 @@ the end.
       WirePlumber `link failed` 6 times 15:32-15:49 and the YouTube Music
       mpv ended up paused (silence). This time all four amps came back
       `Attached` by themselves: unpausing played normally, no reboot.
+      26 Nov 13:02:21: clash on 6b10000 and 6ab0000 33 s after a resume
+      (13:01:48); all four amps UNATTACHED, the next playback (13:13,
+      Radio Atlas) failed with -61 (`snd_soc_pcm_component_pm_runtime_get`
+      on sdw:4:…:2, `swrm_wait_for_wr_fifo_avail err write overflow` on
+      6ab0000). **wsa883x cannot be rebound:** the driver has no
+      bind/unbind files (suppress_bind_attrs); writing them fails with
+      EACCES even as root. Next level that has them: the qcom-soundwire
+      controllers (6ab0000, 6ad0000, 6b10000, 6d30000), untested, likely
+      takes the sound card down with it.
 - [x] **Hardware video decoding at EL2** (25 October): Moonlight found no
       V4L2 decoder because there was none: the video clock controller driver
       was never built (`CONFIG_SM_VIDEOCC_8550`) and the EL2 overlay disabled
