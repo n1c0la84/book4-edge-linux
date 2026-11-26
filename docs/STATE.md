@@ -5,6 +5,21 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026: awake drain measured; sleep broken this boot (xhci).**
+UPower charge history, 19-26 Nov, awake on battery only (gaps > 15 min
+dropped): 27.5 h, 395 % of 49.7 Wh, **7.1 W average** (segments 5.5-11 W,
+most 6.5-8 W) = ~7 h from full; at the moment 6-9 W at brightness 640/2047,
+balanced. Windows-class light use on this SoC is ~4-5 W, so the awake
+budget, not s2idle, is where the hours are. Found while looking: since the
+22:27 boot of 25 Nov every suspend fails (2991 attempts, ~every 30 s with
+the lid closed, overnight and 09:19-11:57): `dwc3-qcom a800000.usb: port-1
+HS-PHY not in L2`, then `xhci-hcd.1.auto ... platform_pm_suspend returns
+-22`. Lid closed in that loop drained 3.2 W (vs ~0.7 W real sleep). The same
+message appeared 8 times on boot -5 without blocking every sleep.
+book4-ec-standby hook inert (daily DTB). Also `adsprpcd sensorspd adsp`
+restarts every 100 ms (`remote_init ... No space left on device`, ~10
+log lines/s, 15 min CPU in 13.5 h) since the light-sensor work: to fix.
+
 **25 November 2026, 15:00: slow charging on 7.3 fixed (kernel built, not installed).**
 Charging at 11 % was ~5 W (0.34 A at 14.9 V): the 65 W charger, plugged in
 while awake (14:46), was left at `PD contract 5000 mV 3000 mA (PDO 1)`.
