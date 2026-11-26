@@ -11,16 +11,27 @@ pacman hooks keep `/boot` (Limine EL2 UKIs on `sda7`, fallback Arch GRUB on
 
 1. Connect the charger.
 2. Run **`book4-update`** (`userspace/update/book4-update`, symlinked to
-   `~/.local/bin/book4-update` by `install/arch/update.sh`), or run
-   **`omarchy-update`** after taking a manual snapshot with
-   `bash tools/backup/snapshot-arch.sh pre-update`.
-   - `book4-update --check` lists pending repo/AUR updates without changing
-     anything.
-   - A bare `pacman -Syu` is guarded by Omarchy 4.5's
-     `00-omarchy-update-guard.hook` (set `OMARCHY_ALLOW_DIRECT_PACMAN=1` when
-     running pacman directly).
-3. Review `.pacnew` files and orphan lists before accepting removals.
-4. Reboot if the kernel, systemd, Mesa, PipeWire, or firmware updated.
+   `~/.local/bin/book4-update` by `install/arch/update.sh`):
+   - Shows pending repo, AUR, `mise`, and `flea` updates (`book4-update --check`
+     stops here without root).
+   - Prunes the pacman cache and takes a read-only btrfs snapshot of the
+     running root subvolume (`arch-45-pre-update-<stamp>`, keeping the newest 2)
+     because `snapper` is not installed.
+   - Delegates to **`omarchy-update`** (keyring refresh, PID 1 scope-shielded
+     `pacman -Syu`, Omarchy migrations, shell update clear, service restarts,
+     `mise`, AUR, and reboot prompt), automatically handling the case where
+     `[omarchy]` shadows a newer `extra/hyprland` needed for `extra/hyprgraphics`.
+   - Use `book4-update --direct` to bypass `omarchy-update` and run
+     `pacman -Syu` / `yay` / `mise` directly.
+3. **`90-book4-verify.sh` post-update hook** (`userspace/update/book4-post-update-check`,
+   symlinked into `~/.config/omarchy/hooks/post-update.d/` by
+   `install/arch/update.sh`): runs automatically at the end of every
+   `omarchy-update` (even if launched from the Omarchy menu/bar) and verifies
+   core Book4 packages, `libfprint-sdcp`, `linux-modules-cleanup.service`
+   masked, `book4-el2 status`, `/boot/limine.conf` + UKIs, `Hyprland --verify-config`,
+   and `.pacnew` files.
+4. Review `.pacnew` files before rebooting. Reboot if the kernel, systemd,
+   Hyprland, Mesa, PipeWire, or firmware updated.
 
 **Rules to keep:**
 - **Never** unmask `linux-modules-cleanup.service` while more than one kernel

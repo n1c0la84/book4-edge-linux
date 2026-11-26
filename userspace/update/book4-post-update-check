@@ -1,0 +1,98 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# Book4 post-update verification hook for Omarchy (`omarchy-hook post-update`,
+# symlinked to ~/.config/omarchy/hooks/post-update.d/90-book4-verify.sh by
+# install/arch/update.sh) and book4-update.
+# Checks the Book4 hardware invariants after every system/Omarchy update
+# without modifying anything.
+set -uo pipefail
+
+ok()   { printf '  \e[32m[ok]\e[0m   %s\n' "$*"; }
+warn() { printf '  \e[33m[warn]\e[0m %s\n' "$*" >&2; }
+fail() { printf '  \e[31m[FAIL]\e[0m %s\n' "$*" >&2; issues=$((issues + 1)); }
+
+issues=0
+printf '\n\e[1;32m== Book4 post-update verification\e[0m\n'
+
+# 1. Core Book4 packages still installed
+missing=()
+for pkg in linux-book4 book4-edge book4-edge-boot book4-edge-el2 book4-edge-firmware; do
+    pacman -Q "$pkg" &>/dev/null || missing+=("$pkg")
+done
+if (( ${#missing[@]} == 0 )); then
+    ok "Book4 core packages present ($(pacman -Q linux-book4 | awk '{print $2}'))"
+else
+    fail "Missing Book4 packages: ${missing[*]}"
+fi
+
+# 2. Fingerprint driver must stay libfprint-sdcp (not stock libfprint)
+if pacman -Q libfprint-sdcp &>/dev/null; then
+    ok "libfprint-sdcp intact ($(pacman -Q libfprint-sdcp | awk '{print $2}'))"
+elif pacman -Q libfprint &>/dev/null; then
+    fail "libfprint-sdcp was replaced by stock libfprint! Reinstall libfprint-sdcp from [book4]."
+else
+    warn "No libfprint package installed."
+fi
+
+# 3. linux-modules-cleanup.service must remain masked
+mask_state=$(systemctl is-enabled linux-modules-cleanup.service 2>/dev/null || true)
+if [[ $mask_state == masked ]]; then
+    ok "linux-modules-cleanup.service masked"
+else
+    fail "linux-modules-cleanup.service is '$mask_state' (expected 'masked'; run: sudo systemctl mask linux-modules-cleanup.service)"
+fi
+
+# 4. Boot chain checks (uses cached sudo from omarchy-update if available)
+if sudo -n true 2>/dev/null; then
+    if command -v book4-el2 >/dev/null; then
+        if el2_out=$(sudo -n book4-el2 status 2>&1); then
+            ok "book4-el2 status: all EL2 chain & firmware files current"
+        else
+            fail "book4-el2 status reported issues:"
+            printf '%s\n' "$el2_out" >&2
+        fi
+    fi
+
+    if sudo -n test -s /boot/limine.conf; then
+        if sudo -n grep -qE 'book4-.*\.efi|linux-book4|7\.3\.' /boot/limine.conf; then
+            ukis=$(sudo -n sh -c 'ls -1 /boot/EFI/Linux/book4-*.efi 2>/dev/null | wc -l')
+            if (( ukis > 0 )); then
+                ok "/boot/limine.conf valid ($ukis Book4 UKI(s) present)"
+            else
+                fail "/boot/limine.conf present, but no /boot/EFI/Linux/book4-*.efi UKI found!"
+            fi
+        else
+            fail "/boot/limine.conf does not reference Book4! (Was Limine overwritten?) Run: sudo book4-boot menu"
+        fi
+    else
+        fail "/boot/limine.conf missing or empty!"
+    fi
+else
+    warn "No cached sudo — skipping /boot and book4-el2 status checks (run 'sudo book4-el2 status' to verify)."
+fi
+
+# 5. Hyprland config check (stdbuf -oL flushes stdout before Hyprland's
+#    teardown segfault; ulimit -c 0 suppresses a core dump)
+if command -v Hyprland >/dev/null && [[ -f $HOME/.config/hypr/hyprland.lua ]]; then
+    hypr_out=$( (ulimit -c 0; stdbuf -oL Hyprland --verify-config -c "$HOME/.config/hypr/hyprland.lua") 2>&1 || true )
+    if grep -q '^config ok' <<<"$hypr_out"; then
+        ok "Hyprland $(pacman -Q hyprland 2>/dev/null | awk '{print $2}'): config ok"
+    else
+        warn "Hyprland --verify-config did not report 'config ok':"
+        printf '%s\n' "$hypr_out" | tail -n 15 >&2
+    fi
+fi
+
+# 6. Pending .pacnew files
+pacnew=$(find /etc -name '*.pacnew' 2>/dev/null | sort || true)
+if [[ -n $pacnew ]]; then
+    warn "Review .pacnew files:"
+    printf '    %s\n' $pacnew >&2
+else
+    ok "No .pacnew files in /etc"
+fi
+
+if (( issues > 0 )); then
+    printf '\e[31mBook4 verification found %d issue(s) — fix before rebooting!\e[0m\n' "$issues" >&2
+    exit 1
+fi

@@ -9,15 +9,20 @@
 #      tools/backup/snapshot-arch.sh (top level of the root btrfs,
 #      <subvol>-pre-update-<date>); keeps the newest 2 *-pre-update-* by
 #      timestamp, never deletes any other snapshot
-#   4. pacman -Syu (with OMARCHY_ALLOW_DIRECT_PACMAN=1), yay -Sua, mise up;
-#      pacman hooks keep /boot (Limine UKIs + fallback GRUB) and /efi in sync
-#   5. after: Hyprland --verify-config on our config, relogin hint, new
-#      .pacnew files, orphans, pending Omarchy migrations (never run here:
-#      review them against the hard rules in docs/STATE.md first)
+#   4. runs `omarchy-update` (keyring refresh, PID 1 scope-shielded upgrade,
+#      migrations, shell update clear, service restarts, post-update Book4
+#      verification hook, mise, AUR, reboot prompt); if `[omarchy]` shadows a
+#      newer `extra/hyprland` needed for `extra/hyprgraphics`, upgrades it
+#      cleanly first via `omarchy-update-pacman -Syu extra/hyprland`.
+#      Use `--direct` to bypass `omarchy-update` and run pacman/yay/mise directly.
+#   5. after: Book4 verification hook checks packages, libfprint-sdcp,
+#      linux-modules-cleanup mask, book4-el2 status, Limine UKIs, Hyprland
+#      config, and .pacnew files
 #
-# Usage:  book4-update           update (asks before changing anything)
+# Usage:  book4-update           snapshot + omarchy-update (asks before changing anything)
 #         book4-update --check   only show what is pending, no root needed
 #         book4-update --no-snapshot
+#         book4-update --direct  bypass omarchy-update (raw pacman -Syu, yay, mise)
 #
 # Rollback from a snapshot (from a live medium or TTY as root):
 #   mount -o subvolid=5 UUID=<root uuid> /mnt
@@ -28,13 +33,15 @@
 set -euo pipefail
 
 REPO=$(cd "$(dirname "$(readlink -f "$0")")/../.." && pwd)
+VERIFY="$REPO/userspace/update/book4-post-update-check"
 KEEP_SNAPSHOTS=2
 MIN_FREE_GB=5
-check=0 snapshot=1
+check=0 snapshot=1 direct=0
 for a in "$@"; do
     case $a in
         --check) check=1 ;;
         --no-snapshot) snapshot=0 ;;
+        --direct) direct=1 ;;
         -h|--help) sed -n '3,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
         *) echo "Unknown option: $a (see --help)" >&2; exit 2 ;;
     esac
@@ -109,7 +116,41 @@ fi
 before=$(pacman -Q)
 pacnew_before=$({ find /etc -name '*.pacnew' 2>/dev/null || true; } | sort)
 
+# If [omarchy] (above [extra] in pacman.conf) pins an older hyprland than the
+# extra/hyprland already installed or needed for extra/hyprgraphics, plain
+# `pacman -Syu` fails on libhyprgraphics.so. Upgrade with `extra/hyprland`
+# explicitly first so `omarchy-update` completes cleanly.
+maybe_unblock_extra_hyprland() {
+    pacman -Q hyprland &>/dev/null || return 0
+    local loc om_ver
+    loc=$(pacman -Q hyprland | awk '{print $2}')
+    om_ver=$(pacman -Si omarchy/hyprland 2>/dev/null | awk -F': ' '/^Version/{print $2; exit}')
+    [[ -n $om_ver ]] || return 0
+    if (( $(vercmp "$loc" "$om_ver") > 0 )); then
+        say "Syncing system with extra/hyprland (local $loc is ahead of [omarchy] $om_ver)"
+        if command -v omarchy-update-pacman >/dev/null; then
+            omarchy-update-pacman -Syu --needed --overwrite '/usr/share/omarchy/*' extra/hyprland
+        else
+            sudo env OMARCHY_ALLOW_DIRECT_PACMAN=1 pacman -Syu --needed extra/hyprland
+        fi
+    fi
+}
+
+if (( direct == 0 )) && command -v omarchy-update >/dev/null; then
+    maybe_unblock_extra_hyprland
+    say "Omarchy update"
+    OMARCHY_UPDATE_UNATTENDED=0 omarchy-update -y
+    # Run the Book4 check if not installed as an Omarchy post-update hook yet.
+    if [[ -x $VERIFY && ! -e $HOME/.config/omarchy/hooks/post-update.d/90-book4-verify.sh ]]; then
+        "$VERIFY" || true
+    fi
+    f=$(flea_latest)
+    [[ -z $f ]] || echo "$f"
+    exit 0
+fi
+
 say "System packages"
+maybe_unblock_extra_hyprland
 sudo env OMARCHY_ALLOW_DIRECT_PACMAN=1 pacman -Syu
 
 if pacman -Qqm | grep -q .; then
@@ -126,13 +167,11 @@ say "After the update"
 changed=$(diff <(echo "$before") <(pacman -Q) | grep -c '^>' || true)
 echo "$changed package(s) installed or changed."
 
-if command -v Hyprland >/dev/null && [ -f "$HOME/.config/hypr/hyprland.lua" ]; then
-    if Hyprland --verify-config -c "$HOME/.config/hypr/hyprland.lua" 2>&1 | grep -q '^config ok'; then
-        echo "Hyprland $(pacman -Q hyprland | awk '{print $2}'): config ok."
-    else
-        warn "Hyprland reports config errors:"
-        Hyprland --verify-config -c "$HOME/.config/hypr/hyprland.lua" 2>&1 | tail -20
-    fi
+if [[ -x $VERIFY ]]; then
+    "$VERIFY" || true
+fi
+
+if command -v Hyprland >/dev/null; then
     exe=$(readlink "/proc/$(pgrep -x Hyprland | head -1)/exe" 2>/dev/null || true)
     if [[ $exe == *"(deleted)"* ]]; then
         warn "Hyprland was updated: log out and back in, then check hyprctl configerrors and the lock screen."

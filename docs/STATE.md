@@ -5,6 +5,21 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**26 November 2026, 16:55: safe `omarchy-update` integration and post-update verification hook.**
+Added `userspace/update/book4-post-update-check`, installed by
+`install/arch/update.sh` as Omarchy's post-update hook
+`~/.config/omarchy/hooks/post-update.d/90-book4-verify.sh` so every
+`omarchy-update` (whether run from the Omarchy menu or `book4-update`) verifies
+core Book4 packages, `libfprint-sdcp`, `linux-modules-cleanup.service` masked,
+`book4-el2 status`, `/boot/limine.conf` + UKIs, `Hyprland --verify-config`, and
+`.pacnew` files. Updated `userspace/update/book4-update` to prune cache, take
+the `arch-45-pre-update-*` btrfs snapshot, unblock `extra/hyprland` when
+`[omarchy]` shadows a newer `extra` build needed for `hyprgraphics`, and
+delegate to `OMARCHY_UPDATE_UNATTENDED=0 omarchy-update -y` (`--direct` keeps
+the raw `pacman -Syu` fallback). Also verified that renaming the two LAN
+repeaters stopped the mDNS storm (`~180 pkts/s` -> `0.0/s`, `avahi-daemon`
+wakeups `~178/s` -> `0/s`).
+
 **26 November 2026, 16:25: awake-drain & performance fixes (`powerprofiles`, `book4-gpu-busy`, `book4-live-log`, UFW logging, LAN mDNS storm found).**
 Investigated awake battery drain and CPU performance:
 - **CPU `2.515 GHz` cap on AC:** `omarchy-power-profiles-daemon 0.30-3` caps
