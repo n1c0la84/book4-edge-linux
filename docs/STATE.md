@@ -28,7 +28,18 @@ echo a200000.usb > /sys/bus/platform/drivers/dwc3-qcom/bind` (root); the
 reader re-enumerates within 1 s.
 book4-ec-standby hook inert (daily DTB). Also `adsprpcd sensorspd adsp`
 restarts every 100 ms (`remote_init ... No space left on device`, ~10
-log lines/s, 15 min CPU in 13.5 h) since the light-sensor work: to fix.
+log lines/s, 15 min CPU in 13.5 h). Cause: a side effect of the suspend
+storm, not of the sensor setup: at 23:00:40, in one of the failed suspends
+(user space frozen mid-call), the DSP call returned 0x8000042f, the
+listener thread exited, and adsprpcd's in-process restart (every 100 ms)
+cannot reattach because the old sensorspd session is still held by the
+same process (ENOSPC). Not seen on earlier boots. The sensor keeps working
+(monitor-sensor 153 lux at 12:2x): the PD runs, only its file service is
+gone, so a registry write would now fail (the firmware asserts if it
+can't write, taking the ADSP and sound down). Fix: restart
+book4-sensors.service (the exit frees the session) or reboot; lasting fix
+to do: make adsprpcd exit after N failed restarts so systemd restarts it
+cleanly.
 
 **25 November 2026, 15:00: slow charging on 7.3 fixed (kernel built, not installed).**
 Charging at 11 % was ~5 W (0.34 A at 14.9 V): the 65 W charger, plugged in
