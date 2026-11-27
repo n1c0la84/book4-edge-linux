@@ -5,6 +5,9 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**27 November 2026: prepared `omarchy-kernel-test.sh` and `omarchy-kernel-report.sh` for `linux-omarchy` 7.3.6-6 EL1 test (`arewearmyet#10`).**
+`install/arch/omarchy-kernel-test.sh` now defaults `OMARCHY_TEST_TSENS=1` (use `=0` only on kernels older than `7.3-79`) and adds Omarchy 4.6's Book4 Edge 14 board parameters (`qcom_aoss.prevent_aoss_sleep=1 usbcore.autosuspend=-1`, matching `install/hardware/samsung/galaxy-book4-edge-14.sh`) to the EL1 stock entry. `tools/omarchy-kernel-report.sh` now records `power_supply` `voltage_now`/`current_max`/`current_now`/`power_now` fields and `emuec`/`galaxybook`/SoundWire/`dpu_encoder` kernel log lines. Also spotted the speaker DT routing bug in `omacom/omarchy-pkgs#2968` (`2962` wires `SpkrRight IN` to `WSA2 WSA_SPK2 OUT` while `right_spkr` uses `port-mapping <1 2 3 7>`, i.e., `SPK1`).
+
 **26 November 2026, 17:17: first `book4-update` → `omarchy-update` run, reboot OK; Agents widget Antigravity quota fix.**
 The first run through `omarchy-update` upgraded `hyprland` 0.57.2, `hyprgraphics`
 0.7.0 and Qt 6.12.1 (Omarchy's `quickshell` hook warns it was built against

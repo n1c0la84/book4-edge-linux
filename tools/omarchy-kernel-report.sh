@@ -27,10 +27,17 @@ sec "sound"
 aplay -l 2>&1 | grep card
 for d in /sys/bus/soundwire/devices/sdw:*; do echo "$(basename "$d") $(cat "$d/status" 2>/dev/null)"; done
 wpctl status 2>&1 | sed -n '/Audio/,/Video/p' | head -25
+journalctl -k -b --no-pager | grep -iE 'soundwire|wsa88|x1e80100.*sound|dpu_encoder' | tail -30
 sec "battery and USB-C (EC)"
 for p in /sys/class/power_supply/*; do
-    echo "$(basename "$p"): $(cat "$p/status" 2>/dev/null) $(cat "$p/capacity" 2>/dev/null)% online=$(cat "$p/online" 2>/dev/null)"
+    line="$(basename "$p"): $(cat "$p/status" 2>/dev/null) $(cat "$p/capacity" 2>/dev/null)% online=$(cat "$p/online" 2>/dev/null)"
+    for attr in voltage_now current_max current_now power_now; do
+        val=$(cat "$p/$attr" 2>/dev/null || true)
+        [ -n "$val" ] && line="$line $attr=$val"
+    done
+    echo "$line"
 done
+journalctl -k -b --no-pager | grep -iE 'emuec|galaxybook|s2mm006' | tail -40
 ls /sys/class/typec 2>&1
 sec "network"
 ip -br link; rfkill list 2>&1; nmcli -t device 2>&1 | head   # not iwctl: it D-Bus-activates iwd next to NetworkManager (23 Nov)

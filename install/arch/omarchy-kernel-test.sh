@@ -10,8 +10,8 @@
 #   OMARCHY_TEST_DTB=ours bash ... setup --yes   same, with linux-book4's DTB
 #   OMARCHY_TEST_DISABLE="usb_2 usb_2_hsphy" ...  with those DT nodes disabled
 #   OMARCHY_TEST_DEBUG=1 ...                       EL1 entries print an oops whole
-#   OMARCHY_TEST_TSENS=1 ...                       keep qcom_tsens in the initramfs
-#                                                  (tests the tsens __init fix, 7.3-79+)
+#   OMARCHY_TEST_TSENS=0 ...                       drop qcom_tsens from the initramfs
+#                                                  (only needed on kernels older than 7.3-79)
 #
 # setup:
 #   - pacman -U from https://pkgs.omarchy.org/edge/aarch64 (signed with
@@ -129,22 +129,20 @@ qsrc=/usr/share/omarchy/install/hardware/qualcomm/initramfs.sh
   cat /etc/mkinitcpio.conf
   for f in /etc/mkinitcpio.conf.d/*.conf; do [ -r "$f" ] && { echo "# --- $f"; cat "$f"; }; done
   echo "# --- $qsrc"
-  # Without qcom_tsens: its ops->init functions (init_common, init_tsens_v2_
-  # no_rpm, ...) are __init, freed once the module has loaded; from the
-  # initramfs its probe is deferred and the retry calls freed memory (oops in
-  # tsens_probe+0x170, 23 Nov). Loaded later from the root filesystem it
-  # probes at once, as on linux-book4 and the nightly ISO.
-  # OMARCHY_TEST_TSENS=1 keeps it, as stock Omarchy has it: 7.3-79 carries
-  # Christian Schmidbauer's fix (the init functions no longer __init, lore
-  # 20261104145740.2623473-1-opensource@grische.xyz), to be tested this way.
-  if [ -n "${OMARCHY_TEST_TSENS:-}" ]; then
+  # OMARCHY_TEST_TSENS=1 (default) keeps qcom_tsens, as stock Omarchy has it:
+  # 7.3-79+ carries Christian Schmidbauer's fix (init_* no longer __init,
+  # lore 20261104145740.2623473-1-opensource@grische.xyz). Set
+  # OMARCHY_TEST_TSENS=0 on older kernels where deferred probe jumps into freed
+  # .init.text (oops in tsens_probe+0x170, 23 Nov).
+  TSENS=${OMARCHY_TEST_TSENS:-1}
+  if [ "$TSENS" = 1 ]; then
       sed -n "/^MODULES+=(/,/)\$/p" "$qsrc"
   else
       sed -n "/^MODULES+=(/,/)\$/p" "$qsrc" | sed 's/ qcom_tsens?//'
   fi
 } > "$w/mkinitcpio-omarchy.conf"
 grep -q 'pinctrl-x1e80100' "$w/mkinitcpio-omarchy.conf" || die "could not take the module list from $qsrc"
-if [ -n "${OMARCHY_TEST_TSENS:-}" ]; then
+if [ "$TSENS" = 1 ]; then
     grep -q 'qcom_tsens' "$w/mkinitcpio-omarchy.conf" || die "qcom_tsens not in $qsrc's module list"
     echo "   qcom_tsens kept in the initramfs (OMARCHY_TEST_TSENS=1)"
 else
@@ -157,7 +155,7 @@ grep -q "^default_config=\"$OCONF\"" "$preset" || die "$preset: default_config n
 sudo mkinitcpio -p linux-omarchy
 list=$(sudo lsinitcpio /boot/initramfs-linux-omarchy.img)   # whole listing: grep -q would cut the pipe
 mods="pinctrl-x1e80100 qnoc-x1e80100 ufs-qcom i2c-qcom-geni"
-[ -z "${OMARCHY_TEST_TSENS:-}" ] || mods="$mods qcom_tsens"
+[ "$TSENS" != 1 ] || mods="$mods qcom_tsens"
 for m in $mods; do
     grep -q "/$m\.ko" <<<"$list" || die "$m missing from the new initramfs"
 done
@@ -200,6 +198,10 @@ cmd1="root=UUID=$(findmnt -rn -o UUID /) $CMDLINE rootflags=subvol=$sub"
 kp=/usr/share/omarchy/install/hardware/qualcomm/kernel-params.sh
 cmdel1=$cmd1
 for a in $(grep -o '+=" [^"]*"' "$kp" | sed 's/^+=" //; s/"$//'); do
+    [[ " $cmdel1 " == *" $a "* ]] || cmdel1="$cmdel1 $a"
+done
+# Omarchy 4.6 Book4 Edge 14 board parameters (install/hardware/samsung/galaxy-book4-edge-14.sh).
+for a in qcom_aoss.prevent_aoss_sleep=1 usbcore.autosuspend=-1; do
     [[ " $cmdel1 " == *" $a "* ]] || cmdel1="$cmdel1 $a"
 done
 [[ $cmdel1 == *clk_ignore_unused* ]] || die "could not take Omarchy's kernel parameters from $kp"
