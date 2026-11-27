@@ -5,6 +5,11 @@ what to do next and where it is heading (stock Omarchy plus a Book4 layer on
 top), with the scripts, the kernel port analysis to Anatase's 7.3 and the
 boot move from GRUB/Fedora to Limine.
 
+**27 November 2026, 12:57: 0% deep sleep traced to `sdw:2` `Alert` clash; built `linux-book4` `7.3.4-5` with UFS `clk8` + `soundwire-qcom` fixes.**
+- The 50-minute `11:33` sleep hit `0%` `cxsd`/`ddr` (`1.64 W`) despite `apss`/`adsp`/`cdsp` sleeping cleanly and an identical `vote-dump-7.3.4-book4.txt` to healthy boots; the one anomaly on this boot was the `11:11:16` WCD9380 parity error + `6ad0000.soundwire` bus clash leaving `sdw:2:0:0217:010d:00:4` in `Alert`.
+- `vote-dump-7.3.4-book4.txt` also showed `clk8` / `gcc_ufs_phy_*` enable counts leaked to `834`. Cherry-picked upstream `f07317a8d57f` ("scsi: ufs: ufs-qcom: Enable only lane clocks in lane clock APIs") onto `book4/7.3` (`30a5e3ba3b90`), followed by three `soundwire-qcom` fixes (`3db44c681d91`): take controller IRQ trigger from DT (`omacom/omarchy-pkgs` `2290`), quiesce IRQs + balance `pm_runtime`/hclk in `qcom_swrm_remove()` (combining `2292` with `disable_irq()` before `sdw_bus_master_delete()`), and extend v3.1.0 runtime-resume soft-reset/re-enumeration (`2438`) to `v2.0.0+` controllers to avoid clock-stop bus clashes.
+- Fixed `cp -a --no-preserve=ownership` in `packages/linux-book4/PKGBUILD` `_package_headers()`, bumped to `7.3.4-5`, and built `linux-book4` + `linux-book4-headers` locally (ready to install with `bash tools/kernel/install-book4-kernel.sh book4` and reboot). Also refreshed `docs/upstream-drafts/2026-11-soundwire-clash.txt` (unsent, owner review).
+
 **27 November 2026: `linux-omarchy` `7.3.6-6` EL1 test run (`arewearmyet#10`) — charging works, both speakers work, `s2idle` loses UFS on resume.**
 Ran `linux-omarchy` `7.3.6-6-omarchy` + `linux-omarchy-dtbs` `7.3-74` on the NP940XMA at EL1 (stock DTB, `qcom_tsens` in initramfs, `qcom_aoss.prevent_aoss_sleep=1` verified `Y`, `usbcore.autosuspend=-1`, no `earlycon=efifb keep_bootcon`; report `~/boot-report-7.3.6-6-omarchy-20261127-1005.txt`). Results:
 - **Boot:** clean, both ADSP/CDSP running, zero `qcom_tsens` or `dpu_encoder` errors.

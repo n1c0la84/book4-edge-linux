@@ -21,12 +21,12 @@ _suffix=${BOOK4_SUFFIX:--book4}
 _tree=${BOOK4_TREE:-$HOME/src/linux-book4}
 _repo() { cd "$startdir/../.." && pwd; }
 _dtb=x1e80100-samsung-galaxy-book4-edge-14.dtb
-_commit=fabd94f467785046cdca1b4f11a7a4261081cf8f   # book4/7.3
+_commit=3db44c681d91b2265afd258708fda71749ee88fc   # book4/7.3
 
 pkgbase=linux${_suffix}
 pkgname=("linux${_suffix}" "linux${_suffix}-headers")
 pkgver=7.3.4
-pkgrel=4
+pkgrel=5
 pkgdesc="Samsung Galaxy Book4 Edge kernel (Anatase 7.3 + book4 patches)"
 arch=(aarch64)
 url="https://github.com/n1c0la84/linux-book4-edge"
@@ -101,10 +101,10 @@ _package_headers() {
   done
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/arm64" -m644 arch/arm64/Makefile
-  cp -t "$builddir" -a scripts
-  cp -t "$builddir/arch/arm64" -a arch/arm64/include
+  cp -t "$builddir" -a --no-preserve=ownership scripts
+  cp -t "$builddir/arch/arm64" -a --no-preserve=ownership arch/arm64/include
   install -Dt "$builddir/arch/arm64/kernel" -m644 arch/arm64/kernel/asm-offsets.s
-  cp -t "$builddir" -a include
+  cp -t "$builddir" -a --no-preserve=ownership include
   find . -name 'Kconfig*' -exec install -Dm644 {} "$builddir/{}" \;
   find -L "$builddir" -type l -delete
   find "$builddir" -type f -name '*.o' -delete
